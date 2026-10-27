@@ -33,7 +33,7 @@ def _id() -> uuid.UUID:
 
 async def main() -> None:
     print("=" * 70)
-    print("  OpenConstructionERP  -  4D / 5D / Tendering Demo Seeder")
+    print("  PM Project Management  -  4D / 5D / Tendering Demo Seeder")
     print("=" * 70)
 
     async with engine.begin() as conn:

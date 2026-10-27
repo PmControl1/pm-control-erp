@@ -1111,7 +1111,7 @@ async def offline_readiness(request: Request) -> DwgOfflineReadinessResponse:
     AND the server is not a hosted/production deployment, so the strong
     "files never leave your computer" copy is shown only when it is true.
     On the hosted demo the UI falls back to honest "processed on your
-    OpenConstructionERP server" wording.
+    PM Project Management server" wording.
     """
     payload = DwgTakeoffService.get_offline_readiness()
     settings = get_settings()

@@ -32,6 +32,7 @@ import clsx from 'clsx';
 import { APP_VERSION, isNewerFeatureRelease } from '@/shared/lib/version';
 import { openLink } from '@/shared/lib/desktop';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
 
 /** Shared with WhatsNewCard: which release the user has acknowledged. */
 const LAST_SEEN_KEY = 'oe.last_seen_version';
@@ -62,6 +63,7 @@ function hasUnseenRelease(current: string): boolean {
 }
 
 export function HeaderNewsButton({ className }: { className?: string }) {
+  if (!UPSTREAM_PROMPTS_ENABLED) return null;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [unseen, setUnseen] = useState(false);
@@ -186,7 +188,7 @@ export function HeaderNewsButton({ className }: { className?: string }) {
                 <p className="text-sm text-content-secondary">
                   {t('header.news.body', {
                     defaultValue:
-                      'Read the latest OpenConstructionERP release news on our site.',
+                      'Read the latest PM Project Management release news on our site.',
                   })}
                 </p>
                 <p className="text-xs leading-relaxed text-content-tertiary">

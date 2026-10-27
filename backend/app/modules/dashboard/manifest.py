@@ -21,7 +21,7 @@ manifest = ModuleManifest(
         "approvals/alerts inbox and the acknowledge/dismiss actions that let "
         "a user work through it."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects"],
     auto_install=True,

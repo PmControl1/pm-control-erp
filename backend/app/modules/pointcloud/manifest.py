@@ -22,7 +22,7 @@ manifest = ModuleManifest(
         "core that stores metadata only and dispatches heavy conversion to the "
         "out-of-core converter service."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=[
         "oe_projects",

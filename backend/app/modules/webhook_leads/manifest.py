@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "Per-source API key / HMAC / JWT auth, IP allowlisting, rate "
         "limiting, payload mapping, and full audit logging."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_crm"],
     auto_install=True,

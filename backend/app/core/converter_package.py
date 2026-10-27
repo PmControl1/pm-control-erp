@@ -42,7 +42,7 @@ class ConverterPackageMissingError(RuntimeError):
         self.asset, self.tag, self.repo = asset, tag, repo
         super().__init__(
             f"This version expects {asset} from {tag}, which the converter release no longer offers. "
-            "Update OpenConstructionERP."
+            "Update PM Project Management."
         )
 
 

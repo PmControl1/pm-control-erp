@@ -4575,7 +4575,7 @@ async def email_propdev_document(
     email_service = get_email_service()
     result = await email_service.send_document(
         recipient,
-        subject=f"{document_name} - OpenConstructionERP",
+        subject=f"{document_name} - PM Project Management",
         document_name=document_name,
         attachment=EmailAttachment(
             filename=filename,

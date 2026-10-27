@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "firms up. Rolls the remaining allowances into the estimate total per "
         "currency and shows how much has been spent against each."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

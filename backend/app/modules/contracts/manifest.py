@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "unit-price, design-build with progress claims, retention, "
         "gainshare, LDs, final account"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "status, owner organisation, consultants, operator build-up and knowledge handover; plus the personnel "
         "file of each person on the project with document expiry, travel, leave and retention"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     # oe_project_governance owns the catalogue store, the gate that approves the
     # plan and the frame document that carries it; teams owns the person

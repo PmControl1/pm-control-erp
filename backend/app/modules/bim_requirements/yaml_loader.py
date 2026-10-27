@@ -22,7 +22,7 @@ Why we built this
 ~~~~~~~~~~~~~~~~~
 A common commercial moat in BIM rule-checking tools is the opacity of
 their proprietary rule files.
-OpenConstructionERP ships its rule packs as plain YAML in the repo so
+PM Project Management ships its rule packs as plain YAML in the repo so
 they can be code-reviewed, diffed, branched, and shared the same way any
 other source artifact is. That is a feature commercial tools cannot copy
 without giving up their proprietary editor.

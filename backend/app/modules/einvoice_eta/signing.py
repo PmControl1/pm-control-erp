@@ -314,7 +314,7 @@ def _throwaway_key() -> tuple[Any, bytes]:
     name = x509.Name(
         [
             x509.NameAttribute(NameOID.COUNTRY_NAME, "EG"),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "OpenConstructionERP test signer"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "PM Project Management test signer"),
             x509.NameAttribute(NameOID.COMMON_NAME, "Not an eSeal"),
         ]
     )

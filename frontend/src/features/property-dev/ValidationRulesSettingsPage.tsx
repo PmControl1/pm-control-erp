@@ -115,7 +115,7 @@ export function ValidationRulesSettingsPage() {
               <p>
                 {t('validation_rules.intro_1', {
                   defaultValue:
-                    'All validation rules built into OpenConstructionERP. Use this catalogue to see what gets checked on every import (BOQs, CAD models, tender data, takeoff results).',
+                    'All validation rules built into PM Project Management. Use this catalogue to see what gets checked on every import (BOQs, CAD models, tender data, takeoff results).',
                 })}
               </p>
               <p>

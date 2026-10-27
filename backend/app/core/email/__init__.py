@@ -1,6 +1,6 @@
 # DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-"""Pluggable email service for OpenConstructionERP.
+"""Pluggable email service for PM Project Management.
 
 Public API (import from ``app.core.email``):
 

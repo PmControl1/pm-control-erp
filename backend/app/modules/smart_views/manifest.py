@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "geometry has been re-imported - and the same view can be "
         "applied to any model that exposes the right properties."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users", "oe_bim_hub"],
     auto_install=True,

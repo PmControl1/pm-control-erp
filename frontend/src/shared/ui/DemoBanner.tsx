@@ -172,7 +172,7 @@ export function DemoBanner() {
               <p>
                 {t('demo_banner.modal_intro_before_vps')}{' '}
                 <strong className="text-content-primary">
-                  OpenConstructionERP
+                  PM Project Management
                 </strong>
                 {'. '}{t('demo_banner.modal_intro_runs_on')}{' '}
                 <strong className="text-content-primary">

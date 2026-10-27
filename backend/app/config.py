@@ -244,7 +244,7 @@ def _userinfo_split_at_the_wrong_at_sign(url: str) -> bool:
 
 
 class Settings(BaseSettings):
-    """OpenConstructionERP application settings."""
+    """PM Project Management application settings."""
 
     model_config = SettingsConfigDict(
         env_file=_find_env_file() or ".env",
@@ -293,7 +293,7 @@ class Settings(BaseSettings):
         )
 
     # ── App ──────────────────────────────────────────────────────────────
-    app_name: str = "OpenConstructionERP"
+    app_name: str = "PM Project Management"
     app_version: str = Field(default_factory=_detect_version)
     app_env: Literal["development", "staging", "production"] = "development"
     # Off unless asked for. Debug switches on verbose 422 bodies (the raw
@@ -950,7 +950,7 @@ class Settings(BaseSettings):
                     f"Refusing to start: JWT_SECRET is a well-known weak default "
                     f"({secret!r}) but APP_ENV is {self.app_env!r}. Known-weak "
                     f"secrets are admin-forgeable by anyone who reads the public "
-                    f"OpenConstructionERP source. Set OE_JWT_SECRET to a fresh "
+                    f"PM Project Management source. Set OE_JWT_SECRET to a fresh "
                     f"random value of at least {_JWT_SECRET_MIN_LENGTH} "
                     f"characters, e.g.\n"
                     f'  python -c "import secrets;print(secrets.token_urlsafe(32))"\n'

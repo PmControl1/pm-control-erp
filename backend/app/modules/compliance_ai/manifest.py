@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "builder powered by Claude. Rules compile into core ValidationRule "
         "subclasses so evaluation uses the single validation pipeline."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_users", "oe_projects", "oe_dashboards"],
     optional_depends=["oe_ai"],

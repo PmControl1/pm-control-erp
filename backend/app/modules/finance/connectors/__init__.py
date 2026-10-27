@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 """Finance ERP / accounting connectors.
 
-A connector moves money documents between OpenConstructionERP and an
+A connector moves money documents between PM Project Management and an
 external accounting or ERP system. The first concrete connector is
 file-based (CSV / JSON drop), but the contract in :mod:`base` is
 transport-agnostic so a later SFTP / REST / SAP connector slots into the

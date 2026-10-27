@@ -18,7 +18,7 @@ manifest = ModuleManifest(
         "the GB 50854-50862 measurement family, national and provincial quotas, "
         "VAT (13/9/6/3%), CNY, and Chinese model contract forms."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="regional",
     depends=[],
     auto_install=False,

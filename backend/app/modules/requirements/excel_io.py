@@ -84,7 +84,7 @@ def build_template_xlsx() -> bytes:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = header_align
-        cell.comment = Comment(_TEMPLATE_HINT[col], "OpenConstructionERP")
+        cell.comment = Comment(_TEMPLATE_HINT[col], "PM Project Management")
         ws.column_dimensions[letter].width = max(16, len(col) + 6)
 
         sample_cell = ws[f"{letter}2"]

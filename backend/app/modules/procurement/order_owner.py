@@ -1,8 +1,8 @@
 # DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-"""Who places the orders for a project: OCERP or an external purchasing system (issue #516).
+"""Who places the orders for a project: PM Project Management or an external purchasing system (issue #516).
 
-A project without a settings row orders in OCERP, which is how every project
+A project without a settings row orders in PM Project Management, which is how every project
 behaved before the setting existed. With ``external``:
 
 * new requisitions are created with ``order_owner = external``, so they are
@@ -27,9 +27,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.procurement.models import ProcurementProjectSettings
 
-OCERP = "ocerp"
+PM Project Management = "ocerp"
 EXTERNAL = "external"
-ORDER_OWNERS: frozenset[str] = frozenset({OCERP, EXTERNAL})
+ORDER_OWNERS: frozenset[str] = frozenset({PM Project Management, EXTERNAL})
 
 OrderOwner = Literal["ocerp", "external"]
 
@@ -46,10 +46,10 @@ async def load_settings(session: AsyncSession, project_id: uuid.UUID) -> Procure
 async def order_owner_for_project(session: AsyncSession, project_id: uuid.UUID) -> str:
     """``ocerp`` or ``external`` for a project; ``ocerp`` when nothing is configured."""
     row = await load_settings(session, project_id)
-    owner = (row.order_owner if row is not None else "") or OCERP
-    return owner if owner in ORDER_OWNERS else OCERP
+    owner = (row.order_owner if row is not None else "") or PM Project Management
+    return owner if owner in ORDER_OWNERS else PM Project Management
 
 
 def effective_owner(raw: str | None) -> str:
     """A requisition's stored owner as it is read: null and unknown values are ``ocerp``."""
-    return raw if raw in ORDER_OWNERS else OCERP
+    return raw if raw in ORDER_OWNERS else PM Project Management

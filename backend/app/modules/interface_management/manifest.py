@@ -21,7 +21,7 @@ manifest = ModuleManifest(
         "per-work-package health view and a single overall health score, so a "
         "coordinator can see at a glance where the coordination risk sits."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     # Hard dep supplies the project scope every table foreign-keys into.
     depends=["oe_projects"],

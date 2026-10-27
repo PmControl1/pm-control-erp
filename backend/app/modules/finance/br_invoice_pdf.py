@@ -543,7 +543,7 @@ def render_br_invoice_pdf(
     story.append(
         _safe_para(
             "Este documento é um Recibo Provisório de Serviços (RPS) gerado pelo "
-            "OpenConstructionERP. Não substitui Nota Fiscal Eletrônica (NF-e / NFS-e). "
+            "PM Project Management. Não substitui Nota Fiscal Eletrônica (NF-e / NFS-e). "
             "A emissão fiscal definitiva deve ser realizada pelo sistema da prefeitura "
             "competente ou via integração SEFAZ.",
             styles["disclaimer"],

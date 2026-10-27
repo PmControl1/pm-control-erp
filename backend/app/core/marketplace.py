@@ -1,6 +1,6 @@
 # DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-"""Marketplace registry - static catalog of installable OpenConstructionERP modules.
+"""Marketplace registry - static catalog of installable PM Project Management modules.
 
 Provides a browsable catalog of add-ons: cost databases, vector indices,
 language packs, CAD converters, analytics, and integrations. Each entry
@@ -62,7 +62,7 @@ class MarketplaceModule:
 # ---------------------------------------------------------------------------
 
 _DDC = "Data Driven Construction"
-_OE = "OpenConstructionERP Core Team"
+_OE = "PM Project Management Core Team"
 
 #: What a vector-index card says about the encoder it needs. sentence-transformers
 #: is in requirements-desktop.lock, reaching the bundle through the

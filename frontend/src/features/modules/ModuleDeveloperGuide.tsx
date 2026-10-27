@@ -122,7 +122,7 @@ export function ModuleDeveloperGuide() {
         srTitle={t('modules.dev_guide_title', { defaultValue: 'Build your own module' })}
         subtitle={t('modules.dev_guide_subtitle', {
           defaultValue:
-            'A practical, 10-minute walkthrough for adding business features to OpenConstructionERP.',
+            'A practical, 10-minute walkthrough for adding business features to PM Project Management.',
         })}
         actions={
           <Link

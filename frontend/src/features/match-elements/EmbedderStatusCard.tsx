@@ -197,13 +197,13 @@ export function installSentence(status: EmbedderStatus, t: TFunction): string {
   const general = () =>
     t(
       'match_elements.embedder_required_body',
-      'OpenConstructionERP uses BGE-M3 - a free, open-source multilingual encoder by BAAI. It runs entirely on your machine. No API key. No cloud calls. Install once with one command:',
+      'PM Project Management uses BGE-M3 - a free, open-source multilingual encoder by BAAI. It runs entirely on your machine. No API key. No cloud calls. Install once with one command:',
     );
 
   if (status.install_hint_code === 'frozen_no_extra') {
     return t(
       'match_elements.embedder_required_frozen',
-      'OpenConstructionERP uses BGE-M3, a free, open-source multilingual encoder by BAAI that runs entirely on your machine. This desktop build ships a fixed set of packages, so the model cannot be added here. Use the server install, or a desktop build that already includes it.',
+      'PM Project Management uses BGE-M3, a free, open-source multilingual encoder by BAAI that runs entirely on your machine. This desktop build ships a fixed set of packages, so the model cannot be added here. Use the server install, or a desktop build that already includes it.',
     );
   }
   if (status.install_hint_code === 'pip') return general();

@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "threshold check per package, prequalification to a short list, market sounding, "
         "award schedule from need dates and lead times, framework agreements with call-offs"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     # oe_project_governance owns the catalogue store, the frame document and
     # gate readiness; bid_management and rfq_bidding are the execution vehicles

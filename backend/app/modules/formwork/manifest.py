@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "time, a project rollup showing what the reuse assumption is worth, and eleven "
         "validation rules over the whole thing"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="estimation",
     depends=["oe_projects", "oe_boq"],
     auto_install=True,

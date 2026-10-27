@@ -19,7 +19,7 @@ manifest = ModuleManifest(
         "payload is the single source for both the machine XML and the human "
         "review, and a submission must validate cleanly before it can be sent."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

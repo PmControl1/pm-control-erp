@@ -777,7 +777,7 @@ class FieldDiaryService:
 
         # Mock SMS dispatch - production wires Twilio here.
         sms_body = (
-            f"OpenConstructionERP field link:\n"
+            f"PM Project Management field link:\n"
             f"https://app.example.com/f/{plain_token}\n"
             f"PIN: {plain_pin}\n"
             f"Expires in {int(MAGIC_LINK_TTL.total_seconds() // 60)} min."

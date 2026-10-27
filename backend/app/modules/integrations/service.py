@@ -138,7 +138,7 @@ class WebhookService:
         """Send a test payload to the webhook and return the delivery record."""
         test_payload = {
             "event": "webhook.test",
-            "message": "This is a test delivery from OpenConstructionERP.",
+            "message": "This is a test delivery from PM Project Management.",
             "webhook_id": str(webhook.id),
             "timestamp": datetime.now(UTC).isoformat(),
         }

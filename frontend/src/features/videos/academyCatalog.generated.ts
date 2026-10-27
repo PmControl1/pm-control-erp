@@ -21,7 +21,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
     },
     {
       "id": "landshut-de",
-      "title": "OpenConstructionERP auf Deutsch: Lernprojekt Landshut",
+      "title": "PM Project Management auf Deutsch: Lernprojekt Landshut",
       "language": "de",
       "market": "DE",
       "channel": "academy",
@@ -36,7 +36,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
     },
     {
       "id": "playbook-getting-started",
-      "title": "Builder's Playbook USA: Construction Management with OpenConstructionERP",
+      "title": "Builder's Playbook USA: Construction Management with PM Project Management",
       "language": "en",
       "market": "US",
       "channel": "academy",
@@ -146,8 +146,8 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
         "/daily-diary",
         "/closeout"
       ],
-      "title": "How to Install OpenConstructionERP | Windows Setup & First Project",
-      "description": "Install OpenConstructionERP on Windows and set up your first construction project. This beginner's guide covers the desktop app, installation with Python/pip, workspace settings and team access.",
+      "title": "How to Install PM Project Management | Windows Setup & First Project",
+      "description": "Install PM Project Management on Windows and set up your first construction project. This beginner's guide covers the desktop app, installation with Python/pip, workspace settings and team access.",
       "recordedOn": "17.7",
       "duration": 281,
       "cover": "https://i.ytimg.com/vi/WjDK-uk9b1w/maxresdefault.jpg",
@@ -158,7 +158,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
         },
         {
           "t": 24,
-          "title": "What OpenConstructionERP does"
+          "title": "What PM Project Management does"
         },
         {
           "t": 51,
@@ -2252,7 +2252,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       "example": {
         "country": "US"
       },
-      "description": "On bid day, three quotes land for the same job, and none of them line up. The lowest is not always the cheapest. In this lesson you level three framing bids in OpenConstructionERP and pick the right one.",
+      "description": "On bid day, three quotes land for the same job, and none of them line up. The lowest is not always the cheapest. In this lesson you level three framing bids in PM Project Management and pick the right one.",
       "duration": 190,
       "cover": "https://i.ytimg.com/vi/6tic-wT9gkY/maxresdefault.jpg",
       "chapters": [
@@ -2304,7 +2304,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       "example": {
         "country": "US"
       },
-      "description": "Compare your construction budget with recorded commitments and payments in OpenConstructionERP. This lesson shows how to identify cost differences and build an estimate at completion for the example project.",
+      "description": "Compare your construction budget with recorded commitments and payments in PM Project Management. This lesson shows how to identify cost differences and build an estimate at completion for the example project.",
       "duration": 202,
       "cover": "https://i.ytimg.com/vi/-QkgVm0qljc/maxresdefault.jpg",
       "chapters": [
@@ -2355,7 +2355,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       "example": {
         "country": "US"
       },
-      "description": "A schedule answers two questions: when does the job finish, and what cannot slip. Build it right and both are in front of you. This lesson builds one for the duplex in OpenConstructionERP.",
+      "description": "A schedule answers two questions: when does the job finish, and what cannot slip. Build it right and both are in front of you. This lesson builds one for the duplex in PM Project Management.",
       "duration": 183,
       "cover": "https://i.ytimg.com/vi/HXskOZ9gT8I/maxresdefault.jpg",
       "chapters": [
@@ -2404,7 +2404,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "Manage Your Subs: Pay, Hold Back",
-      "description": "Follow the framing subcontract on the example duplex through its agreement, a change order, payment and retainage in OpenConstructionERP. Retainage terms and release requirements depend on the applicable contract and law.",
+      "description": "Follow the framing subcontract on the example duplex through its agreement, a change order, payment and retainage in PM Project Management. Retainage terms and release requirements depend on the applicable contract and law.",
       "duration": 193,
       "cover": "https://i.ytimg.com/vi/HIGkbWlYolU/maxresdefault.jpg",
       "chapters": [
@@ -2459,7 +2459,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       "example": {
         "country": "US"
       },
-      "description": "The site tells you what happened today: who was on, what got done, what went wrong. This lesson walks one issue on the duplex from the daily log to signed off in OpenConstructionERP.",
+      "description": "The site tells you what happened today: who was on, what got done, what went wrong. This lesson walks one issue on the duplex from the daily log to signed off in PM Project Management.",
       "duration": 178,
       "cover": "https://i.ytimg.com/vi/dYzCNLLfKBI/maxresdefault.jpg",
       "chapters": [
@@ -2506,7 +2506,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       "example": {
         "country": "US"
       },
-      "description": "When you run more than one job, you cannot watch them line by line. You need to see, at a glance, where to look today. This last lesson steps up from one job to the whole company in OpenConstructionERP.",
+      "description": "When you run more than one job, you cannot watch them line by line. You need to see, at a glance, where to look today. This last lesson steps up from one job to the whole company in PM Project Management.",
       "duration": 155,
       "cover": "https://i.ytimg.com/vi/lXj3jik1hfE/maxresdefault.jpg",
       "chapters": [
@@ -3248,7 +3248,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
         "/estimate-basis",
         "/reports"
       ],
-      "title": "Démarrer avec OpenConstructionERP en français",
+      "title": "Démarrer avec PM Project Management en français",
       "example": {
         "place": "Québec",
         "country": "CA"
@@ -3567,7 +3567,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "cost",
       "title": "Budget de chantier : justifier chaque coût",
-      "description": "240 000 USD de budget : pouvez-vous expliquer chaque poste ? Ce tutoriel montre comment relier les quantités, les prix et leurs sources dans OpenConstructionERP.",
+      "description": "240 000 USD de budget : pouvez-vous expliquer chaque poste ? Ce tutoriel montre comment relier les quantités, les prix et leurs sources dans PM Project Management.",
       "duration": 306,
       "cover": "https://i.ytimg.com/vi/L1DUikMF04Y/maxresdefault.jpg",
       "chapters": [
@@ -3617,7 +3617,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "order",
       "title": "Achats et stock : suivre les quantités",
-      "description": "1 000 sacs de ciment commandés, 600 encore en stock : comment expliquer l’écart ? Suivez une commande, une réception et une consommation dans OpenConstructionERP.",
+      "description": "1 000 sacs de ciment commandés, 600 encore en stock : comment expliquer l’écart ? Suivez une commande, une réception et une consommation dans PM Project Management.",
       "duration": 277,
       "cover": "https://i.ytimg.com/vi/ZXbWsG_Syuo/maxresdefault.jpg",
       "chapters": [
@@ -3679,7 +3679,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "site",
       "title": "Chantier : suivre les heures et le matériel",
-      "description": "64 heures-personnes : quel travail a été réalisé ? Ce tutoriel relie le pointage de l’équipe, un volume mesuré séparément et l’utilisation du matériel dans OpenConstructionERP.",
+      "description": "64 heures-personnes : quel travail a été réalisé ? Ce tutoriel relie le pointage de l’équipe, un volume mesuré séparément et l’utilisation du matériel dans PM Project Management.",
       "duration": 323,
       "cover": "https://i.ytimg.com/vi/5utorRM1fhY/maxresdefault.jpg",
       "chapters": [
@@ -3734,7 +3734,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "Facture et paiement : comprendre le solde",
-      "description": "30 000 USD facturés, 18 000 USD reçus : pourquoi reste-t-il 12 000 USD à recevoir ? Suivez les étapes du contrat au règlement dans OpenConstructionERP.",
+      "description": "30 000 USD facturés, 18 000 USD reçus : pourquoi reste-t-il 12 000 USD à recevoir ? Suivez les étapes du contrat au règlement dans PM Project Management.",
       "duration": 339,
       "cover": "https://i.ytimg.com/vi/ViuB-ONl5Lk/maxresdefault.jpg",
       "chapters": [
@@ -3790,7 +3790,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "Certificación de obra: del avance mensual al cobro",
-      "description": "¿Cuánto corresponde cobrar por la obra ejecutada este mes? En este tutorial de OpenConstructionERP registramos el avance, preparamos la certificación de obra y revisamos el importe antes de presentarla.",
+      "description": "¿Cuánto corresponde cobrar por la obra ejecutada este mes? En este tutorial de PM Project Management registramos el avance, preparamos la certificación de obra y revisamos el importe antes de presentarla.",
       "duration": 201,
       "cover": "https://i.ytimg.com/vi/6p-Fd4z8lJI/maxresdefault.jpg",
       "chapters": [
@@ -3839,7 +3839,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "bill",
       "title": "Importar BC3 y preparar una oferta de obra: PEM, gastos y baja",
-      "description": "¿El proyecto llega en BC3 y necesitas preparar una oferta? Importamos el presupuesto en OpenConstructionERP, revisamos el PEM y aplicamos gastos generales, beneficio industrial y una baja sin modificar el original.",
+      "description": "¿El proyecto llega en BC3 y necesitas preparar una oferta? Importamos el presupuesto en PM Project Management, revisamos el PEM y aplicamos gastos generales, beneficio industrial y una baja sin modificar el original.",
       "duration": 160,
       "cover": "https://i.ytimg.com/vi/7vpNLucFvRw/maxresdefault.jpg",
       "chapters": [
@@ -3939,7 +3939,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "change",
       "title": "Precio contradictorio: valorar y aprobar un cambio de obra",
-      "description": "Una unidad nueva necesita un precio acordado antes de ejecutarse. Preparamos un precio contradictorio, lo vinculamos a una orden de cambio y revisamos cómo afecta al importe del contrato en OpenConstructionERP.",
+      "description": "Una unidad nueva necesita un precio acordado antes de ejecutarse. Preparamos un precio contradictorio, lo vinculamos a una orden de cambio y revisamos cómo afecta al importe del contrato en PM Project Management.",
       "duration": 129,
       "cover": "https://i.ytimg.com/vi/_FpWJUShp_8/maxresdefault.jpg",
       "chapters": [
@@ -4093,7 +4093,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "Obra privada: certificación, retención del 5 % y factura",
-      "description": "¿Cómo cambia el cobro cuando el contrato privado retiene un 5 %? Seguimos una certificación de obra, calculamos la retención y revisamos la factura del ejemplo en OpenConstructionERP. La retención es un importe pendiente de recuperar, no un coste de ejecución.",
+      "description": "¿Cómo cambia el cobro cuando el contrato privado retiene un 5 %? Seguimos una certificación de obra, calculamos la retención y revisamos la factura del ejemplo en PM Project Management. La retención es un importe pendiente de recuperar, no un coste de ejecución.",
       "duration": 163,
       "cover": "https://i.ytimg.com/vi/zaBq-81hY2M/maxresdefault.jpg",
       "chapters": [
@@ -4195,7 +4195,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "bill",
       "title": "Come leggere il computo metrico prima di fare l'offerta",
-      "description": "Un computo da 2.625.000 euro, di cui 75.000 di oneri della sicurezza non ribassabili. In questa lezione apri il computo metrico estimativo di una palazzina in OpenConstructionERP, controlli una voce (descrizione, unità di misura, quantità, prezzo unitario), leggi i subtotali dei capitoli e controlli quali importi dell'esempio sono soggetti a ribasso e quali sono esclusi.",
+      "description": "Un computo da 2.625.000 euro, di cui 75.000 di oneri della sicurezza non ribassabili. In questa lezione apri il computo metrico estimativo di una palazzina in PM Project Management, controlli una voce (descrizione, unità di misura, quantità, prezzo unitario), leggi i subtotali dei capitoli e controlli quali importi dell'esempio sono soggetti a ribasso e quali sono esclusi.",
       "duration": 265,
       "cover": "https://i.ytimg.com/vi/mFqMUQyn5XE/maxresdefault.jpg",
       "chapters": [
@@ -4402,7 +4402,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "Stato di avanzamento lavori: dal certificato alla fattura",
-      "description": "Segui il secondo stato di avanzamento lavori del caso didattico: da 1.009.800 euro di importo progressivo a un certificato di pagamento di 459.990 euro. In OpenConstructionERP porti le misure di cantiere nelle righe del SAL, controlli la ritenuta di garanzia e gli importi già certificati, registri il certificato e prepari la fattura. La lezione distingue anche le diverse ritenute richiamate nell'esempio.",
+      "description": "Segui il secondo stato di avanzamento lavori del caso didattico: da 1.009.800 euro di importo progressivo a un certificato di pagamento di 459.990 euro. In PM Project Management porti le misure di cantiere nelle righe del SAL, controlli la ritenuta di garanzia e gli importi già certificati, registri il certificato e prepari la fattura. La lezione distingue anche le diverse ritenute richiamate nell'esempio.",
       "duration": 297,
       "cover": "https://i.ytimg.com/vi/1xuPD4FZmjM/maxresdefault.jpg",
       "chapters": [
@@ -4452,7 +4452,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "cost",
       "title": "Consuntivo di cantiere: dove è finito il margine",
-      "description": "Confronta, capitolo per capitolo, il valore dei lavori maturati, i costi sostenuti e il margine rispetto al preventivo interno. Segui il caso didattico in OpenConstructionERP per ricostruire uno scostamento di 46.000 euro tra strutture e scavi. La lezione affronta anche la revisione dei prezzi e un esempio di calcolo degli interessi di mora per un pagamento arrivato con 30 giorni di ritardo.",
+      "description": "Confronta, capitolo per capitolo, il valore dei lavori maturati, i costi sostenuti e il margine rispetto al preventivo interno. Segui il caso didattico in PM Project Management per ricostruire uno scostamento di 46.000 euro tra strutture e scavi. La lezione affronta anche la revisione dei prezzi e un esempio di calcolo degli interessi di mora per un pagamento arrivato con 30 giorni di ritardo.",
       "duration": 285,
       "cover": "https://i.ytimg.com/vi/nNtFb3V5sjI/maxresdefault.jpg",
       "chapters": [
@@ -4554,7 +4554,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "Акт 19: от изпълнените СМР до сумата за плащане",
-      "description": "Как отчитаме изпълнените строително-монтажни работи и стигаме до сумата за плащане по Акт 19? В този урок с OpenConstructionERP записваме напредъка, съставяме акта и проверяваме сумите преди подаване.",
+      "description": "Как отчитаме изпълнените строително-монтажни работи и стигаме до сумата за плащане по Акт 19? В този урок с PM Project Management записваме напредъка, съставяме акта и проверяваме сумите преди подаване.",
       "duration": 141,
       "cover": "https://i.ytimg.com/vi/Auk8aTmzvJI/maxresdefault.jpg",
       "chapters": [
@@ -4602,7 +4602,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "bill",
       "title": "КСС и оферта: импорт от Excel, проверка на цените и ДДС",
-      "description": "Количествената сметка е в Excel, а инвеститорът очаква оферта. В този урок импортираме КСС в OpenConstructionERP, проверяваме сигналите за цените и добавяме ДДС, за да получим ясна крайна сума.",
+      "description": "Количествената сметка е в Excel, а инвеститорът очаква оферта. В този урок импортираме КСС в PM Project Management, проверяваме сигналите за цените и добавяме ДДС, за да получим ясна крайна сума.",
       "duration": 117,
       "cover": "https://i.ytimg.com/vi/vJDdp-n1tqE/maxresdefault.jpg",
       "chapters": [
@@ -4703,7 +4703,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "programme",
       "title": "Договор и линеен график: срок, аванс и етапи на строителството",
-      "description": "Подписаният договор трябва да се превърне в работещ график. Свързваме срока, аванса и основните строителни етапи в OpenConstructionERP и проследяваме как началната дата определя планирания край.",
+      "description": "Подписаният договор трябва да се превърне в работещ график. Свързваме срока, аванса и основните строителни етапи в PM Project Management и проследяваме как началната дата определя планирания край.",
       "duration": 138,
       "cover": "https://i.ytimg.com/vi/0j-lgJBwemU/maxresdefault.jpg",
       "chapters": [
@@ -4960,7 +4960,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "site",
       "title": "Строителен дневник и проверки: забележки, срокове и проследяване",
-      "description": "Къде записваме какво е станало на обекта и кой трябва да отстрани забележката? Свързваме строителния дневник с проверките, сроковете и проследяването на отворените проблеми в OpenConstructionERP.",
+      "description": "Къде записваме какво е станало на обекта и кой трябва да отстрани забележката? Свързваме строителния дневник с проверките, сроковете и проследяването на отворените проблеми в PM Project Management.",
       "duration": 123,
       "cover": "https://i.ytimg.com/vi/evHdLJ2kHjo/maxresdefault.jpg",
       "chapters": [
@@ -5294,7 +5294,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "bill",
       "title": "工程量清单投标价怎么算：四大块与增值税陷阱",
-      "description": "按 GB/T 50500-2024 新标准，投标价只剩分部分项、措施项目、其他项目、增值税四大块。本课在 OpenConstructionERP 里搭好清单，找出已含税的专业工程暂估价被重复计税、多算76,500元的原因，再对照最高投标限价，留好答疑的书面回复，最后校验并锁定估价单。",
+      "description": "按 GB/T 50500-2024 新标准，投标价只剩分部分项、措施项目、其他项目、增值税四大块。本课在 PM Project Management 里搭好清单，找出已含税的专业工程暂估价被重复计税、多算76,500元的原因，再对照最高投标限价，留好答疑的书面回复，最后校验并锁定估价单。",
       "duration": 303,
       "cover": "https://i.ytimg.com/vi/T6S5qe1Zej0/maxresdefault.jpg",
       "chapters": [
@@ -5449,7 +5449,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "invoice",
       "title": "进度款怎么算：干了361万，为什么只到账252.7万",
-      "description": "以开工第六个月为例，按累计口径算进度款：已完成价款乘以80%，减去累计扣回的预付款和前五期已付。本课在 OpenConstructionERP 里新建第六期、跑提交检查，并讲清付款时钟、人工费单列和开票与纳税义务的先后。",
+      "description": "以开工第六个月为例，按累计口径算进度款：已完成价款乘以80%，减去累计扣回的预付款和前五期已付。本课在 PM Project Management 里新建第六期、跑提交检查，并讲清付款时钟、人工费单列和开票与纳税义务的先后。",
       "duration": 315,
       "cover": "https://i.ytimg.com/vi/RMkE083ld4g/maxresdefault.jpg",
       "chapters": [
@@ -5556,7 +5556,7 @@ export const ACADEMY_CATALOG: AcademyCatalog = {
       ],
       "result": "change",
       "title": "材料调差与费用索赔：钢筋涨价和停工7天怎么算",
-      "description": "按案例合同把两笔钱分开算：材料价差结合基准价格和约定的风险幅度计算；本案例对停工7天仅提出费用索赔。本课在 OpenConstructionERP 里提交调差和费用索赔，并演示按案例合同约定办理采购核对和28天索赔意向通知。实际项目是否涉及工期索赔，需结合停工原因、进度影响和适用合同判断。",
+      "description": "按案例合同把两笔钱分开算：材料价差结合基准价格和约定的风险幅度计算；本案例对停工7天仅提出费用索赔。本课在 PM Project Management 里提交调差和费用索赔，并演示按案例合同约定办理采购核对和28天索赔意向通知。实际项目是否涉及工期索赔，需结合停工原因、进度影响和适用合同判断。",
       "duration": 317,
       "cover": "https://i.ytimg.com/vi/CgDCn1FnyFA/maxresdefault.jpg",
       "chapters": [

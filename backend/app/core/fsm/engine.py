@@ -3,7 +3,7 @@
 """Declarative finite-state-machine helper for entity status transitions.
 
 This module supplies a tiny FSM toolkit used to enforce workflow integrity
-across core OpenConstructionERP entities (BOQ, Project, Invoice, NCR, RFQ,
+across core PM Project Management entities (BOQ, Project, Invoice, NCR, RFQ,
 Submittal, …). Each entity declares a list of :class:`StateTransition`
 objects describing legal moves between status nodes; the :class:`EntityFSM`
 object validates a proposed move, runs any business-logic guards, applies

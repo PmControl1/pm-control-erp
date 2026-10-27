@@ -11,7 +11,7 @@ manifest = ModuleManifest(
     description=(
         "Owned/rented equipment fleet with telemetry, maintenance scheduling, inspections, internal rental billing"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

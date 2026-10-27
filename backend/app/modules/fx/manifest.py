@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "per-project currency policy with pinning, and revaluation that separates scope movement "
         "from rate movement"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_costs"],
     auto_install=True,

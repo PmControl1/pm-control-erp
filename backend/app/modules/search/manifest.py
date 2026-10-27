@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "tasks, risks, BIM elements and chat history, then merges the "
         "results via Reciprocal Rank Fusion."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=[],
     auto_install=True,

@@ -272,10 +272,10 @@ def _document(buffer: io.BytesIO, title: str, *, letterhead_on_first_page: bool 
     if meta["author"] == DEFAULT_BRAND:
         # An unbranded workspace keeps the properties these letters always had.
         meta = {
-            "author": "OpenConstructionERP",
+            "author": "PM Project Management",
             "subject": "Tender decision · DDC-CWICR-OE",
-            "creator": "OpenConstructionERP · DataDrivenConstruction",
-            "producer": "OpenConstructionERP / reportlab · datadrivenconstruction.io",
+            "creator": "PM Project Management · DataDrivenConstruction",
+            "producer": "PM Project Management / reportlab · datadrivenconstruction.io",
             "keywords": "DDC-CWICR-OE-2026,OpenConstructionERP,Tendering,DataDrivenConstruction",
         }
     doc = BaseDocTemplate(

@@ -16,7 +16,7 @@ manifest = ModuleManifest(
         "UK construction standards: JCT/NEC4 contract forms, NRM2 measurement rules, "
         "CIS tax deductions, Interim Valuations, VAT rates, and GBP."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="regional",
     depends=[],
     auto_install=False,

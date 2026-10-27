@@ -731,7 +731,7 @@ export async function downloadMatrixXlsx(matrix: MatrixCell[][], filename: strin
   const mod = await import('exceljs');
   const Ctor = (mod.Workbook ?? mod.default.Workbook) as typeof import('exceljs').Workbook;
   const wb = new Ctor();
-  wb.creator = 'OpenConstructionERP';
+  wb.creator = 'PM Project Management';
   wb.created = new Date();
   const ws = wb.addWorksheet(sheetName.slice(0, 31) || 'Sheet1');
   for (const line of matrix) {

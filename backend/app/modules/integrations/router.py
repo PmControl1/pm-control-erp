@@ -217,7 +217,7 @@ async def _dispatch_integration_test(itype: str, cfg: dict) -> TestNotificationR
     are re-validated against the SSRF deny-list right before dispatch. Never
     raises - returns a TestNotificationResponse with the outcome.
     """
-    title = "OpenConstructionERP Test"
+    title = "PM Project Management Test"
     message = "This is a test notification. If you see this, the integration is working correctly."
     action_url = None
     cfg = cfg or {}
@@ -380,7 +380,7 @@ async def test_integration_config(
     if config is None or str(config.user_id) != str(user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Config not found")
 
-    title = "OpenConstructionERP Test"
+    title = "PM Project Management Test"
     message = "This is a test notification. If you see this, the integration is working correctly."
     action_url = None
     itype = config.integration_type

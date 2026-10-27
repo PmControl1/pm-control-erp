@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "current filter (kind, query, sort, extension, tags, date range, "
         "custom keys) under a name and re-apply it with one click."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

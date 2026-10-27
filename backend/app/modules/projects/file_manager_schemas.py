@@ -191,7 +191,7 @@ class BundleManifest(BaseModel):
     record_counts: dict[str, int]
     attachment_count: int = 0
     attachment_total_bytes: int = 0
-    engine_name: str = "OpenConstructionERP"
+    engine_name: str = "PM Project Management"
     engine_version: str = "2.9.4"
     # Origin provenance stamped on every exported .ocep bundle. Default
     # bytes XOR-decode (key 0x55) to the project authorship marker. Purely

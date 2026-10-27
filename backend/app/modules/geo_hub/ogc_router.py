@@ -212,9 +212,9 @@ async def ogc_landing_page(
             ),
         )
     body = {
-        "title": "OpenConstructionERP Geo Hub",
+        "title": "PM Project Management Geo Hub",
         "description": (
-            "Project locations, vector overlays and saved viewpoints from OpenConstructionERP, "
+            "Project locations, vector overlays and saved viewpoints from PM Project Management, "
             "served as OGC API - Features. Everything is scoped to the projects your account "
             "can read; nothing here is public."
         ),

@@ -57,7 +57,7 @@ from app.modules.boq.units import to_gaeb_unit_code
 
 CONTAINER_VERSION = "1.0"
 SPEC_ID = "DIN SPEC 91350"
-GENERATOR = "OpenConstructionERP"
+GENERATOR = "PM Project Management"
 
 MANIFEST_NAME = "bimlv-container.xml"
 LV_NAME = "lv/lv.gaeb.xml"

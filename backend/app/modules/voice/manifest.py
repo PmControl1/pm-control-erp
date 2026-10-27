@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "defect, or a task - that the worker reviews and confirms before it is saved. Records "
         "in the browser, transcribes and translates, and degrades gracefully with no AI keys."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_users", "oe_projects", "oe_phonelog"],
     auto_install=True,

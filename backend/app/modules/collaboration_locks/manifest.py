@@ -19,7 +19,7 @@ manifest = ModuleManifest(
         "Pessimistic soft locks with live presence broadcast. "
         "Prevents two estimators from overwriting each other on the same BOQ row."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_users"],
     auto_install=True,

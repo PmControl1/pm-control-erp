@@ -55,7 +55,7 @@ async def send_discord_notification(
             for f in fields[:25]  # Discord allows max 25 fields
         ]
 
-    embed["footer"] = {"text": "OpenConstructionERP"}
+    embed["footer"] = {"text": "PM Project Management"}
 
     payload: dict[str, Any] = {
         "embeds": [embed],

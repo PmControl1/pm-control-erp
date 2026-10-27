@@ -2218,3 +2218,12 @@ html[data-menu-active='pill'] aside.oe-sidebar [data-active] .oe-nav-icon {
   background: transparent;
 }
 html[data-menu-active='pill'] aside.oe-sidebar .oe-nav-row[data-active] .oe-nav-trail { color: inherit; opacity: 0.85; }
+
+/* pmpm-branding: hide upstream links */
+/* Links to the upstream project's website, repository and community chats are
+   hidden in this distribution. The credit on the About page carries
+   data-upstream-credit and stays visible. */
+a[href*="datadrivenconstruction" i]:not([data-upstream-credit]),
+a[href*="openconstructionerp" i]:not([data-upstream-credit]) {
+  display: none !important;
+}

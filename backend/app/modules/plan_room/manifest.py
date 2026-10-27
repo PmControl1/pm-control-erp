@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Read-only overlay compositor for a document page - defect pins, "
         "markups, measurements and photos - plus positioned photo / note pins"
     ),
-    author="OpenConstructionERP",
+    author="PM Project Management",
     category="business",
     # Hard needs: project access + document resolution.
     depends=["oe_projects", "oe_users", "oe_documents"],

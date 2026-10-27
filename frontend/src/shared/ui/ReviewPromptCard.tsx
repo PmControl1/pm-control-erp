@@ -24,13 +24,14 @@ import { Star, Github, Linkedin, MessageSquareQuote, X, ExternalLink } from 'luc
 import clsx from 'clsx';
 
 import { useReviewPromptStore } from '@/stores/useReviewPromptStore';
+import { UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
 
 /* ── review destinations ──────────────────────────────────────────────── */
 
 const REPO_URL = 'https://github.com/datadrivenconstruction/OpenConstructionERP';
 
 const SHARE_TEXT =
-  'OpenConstructionERP - free open-source construction cost estimation platform (BOQ, BIM takeoff, AI). Self-hosted. AGPL-3.0.';
+  'PM Project Management - free open-source construction cost estimation platform (BOQ, BIM takeoff, AI). Self-hosted. AGPL-3.0.';
 
 const LINKEDIN_URL = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
   REPO_URL,
@@ -56,6 +57,7 @@ const G2_REVIEW_URL: string | null = 'https://www.g2.com/products/openconstructi
 /* ── component ────────────────────────────────────────────────────────── */
 
 export function ReviewPromptCard() {
+  if (!UPSTREAM_PROMPTS_ENABLED) return null;
   const { t } = useTranslation();
   const visible = useReviewPromptStore((s) => s.visible);
   const evaluate = useReviewPromptStore((s) => s.evaluate);
@@ -86,7 +88,7 @@ export function ReviewPromptCard() {
   return (
     <div
       role="region"
-      aria-label={t('review_ask.aria_label', { defaultValue: 'Rate OpenConstructionERP' })}
+      aria-label={t('review_ask.aria_label', { defaultValue: 'Rate PM Project Management' })}
       data-testid="review-prompt-card"
       className={clsx(
         'oe-dock-aware fixed bottom-4 right-4 z-[60] w-[min(22rem,calc(100vw-2rem))]',
@@ -110,7 +112,7 @@ export function ReviewPromptCard() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-content-primary">
-            {t('review_ask.title', { defaultValue: 'Enjoying OpenConstructionERP?' })}
+            {t('review_ask.title', { defaultValue: 'Enjoying PM Project Management?' })}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-content-secondary">
             {t('review_ask.body', {

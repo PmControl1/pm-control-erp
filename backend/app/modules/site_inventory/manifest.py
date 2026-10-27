@@ -16,7 +16,7 @@ manifest = ModuleManifest(
         "Closes the loop between procurement goods receipts and what is actually "
         "held and consumed on site."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     # Hard deps supply the tables this module foreign-keys into: projects (scope),
     # BoQ (consumption + budget), procurement (goods receipts + requisition lines).

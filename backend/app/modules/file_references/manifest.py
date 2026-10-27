@@ -20,7 +20,7 @@ manifest = ModuleManifest(
         "ISO 19650 filename validation + generic cross-entity references "
         "linking files to RFIs, issues, tasks, and submittals."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

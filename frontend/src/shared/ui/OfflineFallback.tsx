@@ -79,7 +79,7 @@ export function OfflineFallback() {
       <p className="max-w-md text-sm text-content-secondary">
         {t('pwa.offline_body', {
           defaultValue:
-            'OCERP can\'t reach the server right now. Cached pages remain available; any changes you make will need to be re-saved once you reconnect.',
+            'PM Project Management can\'t reach the server right now. Cached pages remain available; any changes you make will need to be re-saved once you reconnect.',
         })}
       </p>
       {lastSyncLabel && (

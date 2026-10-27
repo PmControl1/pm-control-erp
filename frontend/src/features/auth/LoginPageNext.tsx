@@ -37,6 +37,7 @@ import { loginFailureKindFromResponse } from './loginError';
 import { AuthBackground } from './AuthBackground';
 import { SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
+import { BRAND_NAME } from '@/shared/brand';
 
 interface ModuleTile {
   icon: LucideIcon;
@@ -578,7 +579,7 @@ export function LoginPageNext() {
             >
               Artem Boiko
             </a>{' '}
-            · OpenConstructionERP
+            · PM Project Management
             · <a href="mailto:info@datadrivenconstruction.io" className="hover:text-content-secondary transition-colors">info@datadrivenconstruction.io</a>
           </div>
         </div>
@@ -594,7 +595,7 @@ export function LoginPageNext() {
                   className="mt-2.5 text-xl font-medium tracking-[-0.02em] text-content-primary dark:text-white"
                   style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
                 >
-                  Open<span className="text-oe-blue">Construction</span><span className="text-content-quaternary">ERP</span>
+                  {BRAND_NAME}
                 </span>
               </div>
 
@@ -605,7 +606,7 @@ export function LoginPageNext() {
                   className="text-[15px] font-medium tracking-[-0.02em] text-content-primary dark:text-white"
                   style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
                 >
-                  Open<span className="text-oe-blue">Construction</span><span className="text-content-quaternary dark:text-white/50">ERP</span>
+                  {BRAND_NAME}
                 </span>
               </div>
 

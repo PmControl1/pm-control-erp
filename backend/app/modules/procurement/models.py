@@ -607,7 +607,7 @@ class ProcurementProjectSettings(Base):
 
     ``order_owner`` says where orders for this project's requisitions are
     placed: ``ocerp`` (purchase orders are raised here) or ``external`` (an
-    outside purchasing system orders, and OCERP only reconciles what it
+    outside purchasing system orders, and PM Project Management only reconciles what it
     reports). Award subscribers read it and draft no order when it is
     ``external``. ``default_approval_chain`` is copied onto new requisitions.
     """
@@ -627,7 +627,7 @@ class RequisitionExternalOrderLine(Base):
     """An order line placed in an external purchasing system against a requisition line.
 
     No purchase order and no commitment is created for it: the external system
-    owns the order, OCERP keeps what it reported so requested, ordered and
+    owns the order, PM Project Management keeps what it reported so requested, ordered and
     received quantities reconcile. One row per (requisition line, system,
     order number, line reference); a repeated report updates the row.
     """

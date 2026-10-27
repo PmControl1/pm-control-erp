@@ -544,7 +544,7 @@ function OfflineReadyBadge({
       })
     : t('dwg_takeoff.offline_ready_tooltip_server', {
         defaultValue:
-          'Conversions run on your OpenConstructionERP server and are never sent to third parties.',
+          'Conversions run on your PM Project Management server and are never sent to third parties.',
       });
 
   return (
@@ -3446,7 +3446,7 @@ export function DwgTakeoffPage() {
                         <span className="text-xs text-emerald-300/90 font-medium">
                           {offlineReadiness?.local_only
                             ? t('common.local_processing', { defaultValue: '100% Local Processing · Your files never leave your computer' })
-                            : t('dwg_takeoff.processed_on_your_server', { defaultValue: 'Processed on your OpenConstructionERP server · never sent to third parties' })}
+                            : t('dwg_takeoff.processed_on_your_server', { defaultValue: 'Processed on your PM Project Management server · never sent to third parties' })}
                         </span>
                         <span className="text-[10px] text-emerald-500/30">|</span>
                         <a
@@ -6861,7 +6861,7 @@ function ConversionErrorCard({
               {isMissingConverter
                 ? t('dwg_takeoff.conv_missing_message', {
                     defaultValue:
-                      'OpenConstructionERP needs the DDC DWG converter to read DWG files. Install it once - works for every DWG you upload after.',
+                      'PM Project Management needs the DDC DWG converter to read DWG files. Install it once - works for every DWG you upload after.',
                   })
                 : shownMessage ||
                   t('dwg_takeoff.conv_error_default', {

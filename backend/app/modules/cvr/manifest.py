@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "cost head, forecast final cost, value and margin, and forecast project "
         "cashflow as a cumulative S-curve, with interim payment applications."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

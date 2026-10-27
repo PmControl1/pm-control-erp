@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "LPS: phase plans, look-ahead, constraints, weekly work plans, "
         "commitments, PPC + RNC, baselines + delta tracking"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

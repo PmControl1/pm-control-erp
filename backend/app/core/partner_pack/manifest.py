@@ -60,7 +60,7 @@ class PartnerBranding(BaseModel):
         default=None,
         description=(
             "Co-branding line shown next to the partner logo. "
-            "Defaults to 'Powered by OpenConstructionERP · In partnership with {partner_name}'."
+            "Defaults to 'Powered by PM Project Management · In partnership with {partner_name}'."
         ),
     )
 
@@ -469,8 +469,8 @@ class PartnerPackManifest(BaseModel):
         if self.branding.powered_by_text:
             return self.branding.powered_by_text
         if self.type == "partner":
-            return f"Powered by OpenConstructionERP · In partnership with {self.partner_name}"
-        return "Powered by OpenConstructionERP"
+            return f"Powered by PM Project Management · In partnership with {self.partner_name}"
+        return "Powered by PM Project Management"
 
     def _carries(self, relpath: str | None) -> bool:
         """Whether the pack actually ships the file it names at ``relpath``.

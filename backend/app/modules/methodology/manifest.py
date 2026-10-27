@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "hierarchies, analytical dimensions, cascading markups and country / "
         "industry templates that coexist with the international method."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_boq"],
     auto_install=True,

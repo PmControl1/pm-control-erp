@@ -17,7 +17,7 @@ manifest = ModuleManifest(
         "and this module assembles the reconciled timeline for one event and "
         "persists a reviewer's confirm / reject decisions on each suggested link."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="controls",
     depends=["oe_users", "oe_projects"],
     optional_depends=[

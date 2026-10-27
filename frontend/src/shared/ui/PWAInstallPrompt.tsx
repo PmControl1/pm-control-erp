@@ -181,7 +181,7 @@ export function PWAInstallPrompt() {
       <div
         role="dialog"
         aria-live="polite"
-        aria-label={t('pwa.install_prompt_title', { defaultValue: 'Install OCERP' })}
+        aria-label={t('pwa.install_prompt_title', { defaultValue: 'Install PM Project Management' })}
         data-testid="pwa-install-prompt-ios"
         className="oe-dock-aware fixed bottom-4 right-4 z-[60] flex max-w-sm items-start gap-3 rounded-xl border border-border-light bg-surface-elevated p-3 shadow-lg backdrop-blur-sm"
       >
@@ -190,7 +190,7 @@ export function PWAInstallPrompt() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-content-primary">
-            {t('pwa.install_prompt_title', { defaultValue: 'Install OCERP for offline access' })}
+            {t('pwa.install_prompt_title', { defaultValue: 'Install PM Project Management for offline access' })}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-content-secondary">
             {t('pwa.ios_hint_body', {
@@ -226,7 +226,7 @@ export function PWAInstallPrompt() {
     <div
       role="dialog"
       aria-live="polite"
-      aria-label={t('pwa.install_prompt_title', { defaultValue: 'Install OCERP' })}
+      aria-label={t('pwa.install_prompt_title', { defaultValue: 'Install PM Project Management' })}
       data-testid="pwa-install-prompt"
       className="oe-dock-aware fixed bottom-4 right-4 z-[60] flex max-w-sm items-start gap-3 rounded-xl border border-border-light bg-surface-elevated p-3 shadow-lg backdrop-blur-sm"
     >
@@ -235,12 +235,12 @@ export function PWAInstallPrompt() {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-content-primary">
-          {t('pwa.install_prompt_title', { defaultValue: 'Install OCERP for offline access' })}
+          {t('pwa.install_prompt_title', { defaultValue: 'Install PM Project Management for offline access' })}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-content-secondary">
           {t('pwa.install_prompt_body', {
             defaultValue:
-              'Add OCERP to your device for a faster launch, offline app shell and a native-feel field experience.',
+              'Add PM Project Management to your device for a faster launch, offline app shell and a native-feel field experience.',
           })}
         </p>
         <div className="mt-2.5 flex justify-end gap-2">

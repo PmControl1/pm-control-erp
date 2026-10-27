@@ -87,7 +87,7 @@ export async function buildQuantifyWorkbook(
   const mod = await import('exceljs');
   const Ctor = (mod.Workbook ?? mod.default.Workbook) as typeof ExcelJS.Workbook;
   const wb = new Ctor();
-  wb.creator = 'OpenConstructionERP';
+  wb.creator = 'PM Project Management';
   wb.created = ctx.exportDate ?? new Date();
 
   // Display measurement system for this written sheet. Storage is always

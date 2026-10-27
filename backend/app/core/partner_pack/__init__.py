@@ -12,7 +12,7 @@ CWICR region preloads, validation rule packs, onboarding script.
 Packs cannot ship new Python modules (that needs Shape B / multi-tenancy
 refactor). They are pure *configuration* layered on top of the existing
 core. Co-branding is the contract: every UI surface shows
-``Powered by OpenConstructionERP · In partnership with <Partner>``.
+``Powered by PM Project Management · In partnership with <Partner>``.
 
 Public API:
     discover_packs() -> list[PartnerPackManifest]

@@ -85,7 +85,7 @@ const resource = {
     "schedule.no_parent": "Top level (no parent)",
     "schedule.parent_section": "Parent section",
     "about.dev_model_title": "Development and Contribution Model",
-    "about.dev_model_p1": "OpenConstructionERP has been under continuous development for more than six years and has benefited from contributions, feedback, testing, and domain expertise from many different people.",
+    "about.dev_model_p1": "PM Project Management has been under continuous development for more than six years and has benefited from contributions, feedback, testing, and domain expertise from many different people.",
     "about.dev_model_p2": "To maintain a consistent architecture and reduce security, dependency, and integration risks, the project follows a centralised integration model. Most production code is ultimately reviewed, consolidated, tested, and published through a single maintainer account. As a result, the GitHub contributor history does not necessarily reflect the actual number of people who have contributed to the project.",
     "about.dev_model_p3": "Rather than allowing the codebase to evolve into a collection of loosely connected components, changes are integrated into one coherent development line and undergo review and testing before being merged into the main project. A single publishing account represents a controlled integration and release process designed to preserve stability, security, and architectural consistency.",
     "about.team_name": "DataDrivenConstruction",

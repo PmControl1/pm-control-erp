@@ -1,6 +1,6 @@
 # DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-"""SARIF v2.1.0 exporter for OpenConstructionERP validation reports.
+"""SARIF v2.1.0 exporter for PM Project Management validation reports.
 
 Translates a :class:`ValidationReport` (from :mod:`app.core.validation.engine`
 OR the persisted :class:`app.modules.validation.models.ValidationReport` ORM
@@ -10,7 +10,7 @@ Why SARIF?
     SARIF is the OASIS-standard JSON schema for static-analysis tool output.
     GitHub Code Scanning, Azure DevOps, GitLab, VS Code's "Problems" panel
     and many enterprise security stacks consume SARIF directly.  Exporting
-    validation reports as SARIF lets users plug OpenConstructionERP into the
+    validation reports as SARIF lets users plug PM Project Management into the
     same pipelines they already use for code analysis.
 
 Spec reference: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 SARIF_VERSION = "2.1.0"
 SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
 
-TOOL_NAME = "OpenConstructionERP"
+TOOL_NAME = "PM Project Management"
 TOOL_INFORMATION_URI = "https://datadrivenconstruction.io/openconstructionerp"
 TOOL_ORG = "DataDrivenConstruction"
 
@@ -322,7 +322,7 @@ def report_to_sarif(report: Any) -> dict[str, Any]:
         "originalUriBaseIds": {
             "%SRCROOT%": {
                 "uri": f"openconstructionerp://{norm['target_type']}/{norm['target_id']}/",
-                "description": {"text": f"OpenConstructionERP {norm['target_type']} {norm['target_id']}"},
+                "description": {"text": f"PM Project Management {norm['target_type']} {norm['target_id']}"},
             }
         },
         "properties": {

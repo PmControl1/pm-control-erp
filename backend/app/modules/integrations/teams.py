@@ -3,7 +3,7 @@
 """Microsoft Teams incoming webhook connector.
 
 Setup: User creates an Incoming Webhook in their Teams channel,
-copies the webhook URL, pastes it in OpenConstructionERP settings.
+copies the webhook URL, pastes it in PM Project Management settings.
 Legal: Uses official MS Teams webhook API. No OAuth, no app review.
 """
 

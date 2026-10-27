@@ -3,7 +3,7 @@
 """Shared company branding for every reportlab-generated PDF (issue #284).
 
 Every PDF generator in the platform used to hard-code the literal
-``"OpenConstructionERP"`` brand string, the ``#1a1a2e`` accent and the
+``"PM Project Management"`` brand string, the ``#1a1a2e`` accent and the
 author / creator document metadata. A workspace that white-labels the app
 (see :mod:`app.core.app_branding` - the persisted logo / company name set by
 the admin) therefore still printed the default brand on every exported
@@ -68,7 +68,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 #: The brand shown when no workspace branding is set (or it cannot be read).
-DEFAULT_BRAND = "OpenConstructionERP"
+DEFAULT_BRAND = "PM Project Management"
 
 #: Footer text colour and header brand colour - the platform default accent.
 #: Kept module-level (not configurable in this MVP) so every PDF stays

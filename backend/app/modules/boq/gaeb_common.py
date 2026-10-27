@@ -50,7 +50,7 @@ from app.modules.boq.importers.gaeb_xml import (
 #: enumeration in the 3.3 schema and only accepts this value.
 GAEB_VERSION = "3.3"
 GAEB_VERS_DATE = "2021-05"
-PROGRAM_NAME = "OpenConstructionERP"
+PROGRAM_NAME = "PM Project Management"
 
 #: ``tgRNoPart``: letters, digits and underscore, one to fourteen of them.
 _RNOPART_RE = re.compile(r"^[A-Za-z0-9_]{1,14}$")

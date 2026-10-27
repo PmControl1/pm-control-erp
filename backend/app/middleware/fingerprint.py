@@ -49,7 +49,7 @@ class DDCFingerprintMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
         response = await call_next(request)
-        response.headers["X-Powered-By"] = "OpenConstructionERP"
+        response.headers["X-Powered-By"] = "PM Project Management"
         response.headers["X-DDC-Engine"] = "CWICR/1.0"
         # Authorship markers - always present, production-safe.
         # Useful when investigating an unauthorised deployment: a

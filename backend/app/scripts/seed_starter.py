@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 """Starter seed for cost items + assemblies.
 
-Goal: a freshly-installed OpenConstructionERP (no CWICR import yet) should
+Goal: a freshly-installed PM Project Management (no CWICR import yet) should
 not show "0 cost items / 0 assemblies" in the BOQ editor and Resource
 Catalog. We ship ~50 universal baseline cost items and ~10 universal
 assembly templates so the UI is never empty before the user picks a

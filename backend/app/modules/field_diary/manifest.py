@@ -11,7 +11,7 @@ manifest = ModuleManifest(
         "Field-worker MVP daily diary with PIN-gated magic-link auth and "
         "a dedicated per-project module-grant permission table."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

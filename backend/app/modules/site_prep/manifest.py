@@ -20,7 +20,7 @@ manifest = ModuleManifest(
         "lists so a site manager can see at a glance whether the site is ready to "
         "start."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     # Hard dep supplies the project scope every table foreign-keys into.
     depends=["oe_projects"],

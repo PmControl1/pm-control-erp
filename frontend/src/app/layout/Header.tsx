@@ -760,7 +760,7 @@ export function BugReportMenu() {
     setOpen(false);
     setDescription('');
     const { body, title } = buildBugReportUrl(trimmedDescription);
-    const subject = `OpenConstructionERP Issue - ${title}`;
+    const subject = `PM Project Management Issue - ${title}`;
     // mailto bodies are also length-limited (~2000 chars in Chrome),
     // so we trim aggressively. The downloaded log JSON is the long form.
     const safeBody = body.length > 1500 ? `${body.slice(0, 1500)}\n\n_[truncated - attach the JSON log if needed]_` : body;

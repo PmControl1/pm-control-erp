@@ -5,7 +5,7 @@
 Used by BIM geometry files, CAD uploads, takeoff PDFs, and generated
 reports - anything that today lives under ``data/`` on the local
 filesystem should eventually flow through this abstraction so operators
-can point OpenConstructionERP at an S3-compatible bucket instead.
+can point PM Project Management at an S3-compatible bucket instead.
 
 Two implementations ship in-tree:
 

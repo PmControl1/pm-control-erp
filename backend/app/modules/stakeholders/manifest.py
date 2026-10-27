@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Stakeholder register with assessments, communication plan, engagement events and commitments "
         "to stakeholders; project roles, governance bodies and the mandate matrix of who decides what"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     # oe_project_governance owns the catalogue store the frameworks live in and
     # the gate readiness this module feeds; oe_approval_routes runs commitment

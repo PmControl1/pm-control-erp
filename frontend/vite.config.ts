@@ -238,8 +238,8 @@ export default defineConfig({
       devOptions: { enabled: false },
       includeAssets: ['favicon.svg', 'pwa/*.svg'],
       manifest: {
-        name: 'OpenConstructionERP',
-        short_name: 'OCERP',
+        name: 'PM Project Management',
+        short_name: 'PM Project Management',
         description:
           'Open-source construction cost estimation, BIM takeoff, BOQ, tendering and field operations.',
         theme_color: '#0284c7',

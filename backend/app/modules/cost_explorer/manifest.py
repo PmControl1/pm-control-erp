@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "test the effect on a rate. Built on a resource to work reverse index "
         "over each cost item's resource composition."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     # Reads the cost items (oe_costs) and the resource catalog (oe_catalog).
     # Declared as hard dependencies so the load order is correct and neither can

@@ -24,7 +24,7 @@ At boot, ``discover_packs()`` enumerates every source. ``get_active_pack()``
 picks one based on the precedence:
 
   1. env var ``OE_PARTNER_PACK`` (matches manifest.slug)
-  2. None  - the platform runs in vanilla OCERP mode
+  2. None  - the platform runs in vanilla PM Project Management mode
 """
 
 from __future__ import annotations

@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "name within a project flips the old row to superseded and "
         "promotes the new row to current."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

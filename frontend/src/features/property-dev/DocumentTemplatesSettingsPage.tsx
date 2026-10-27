@@ -286,7 +286,7 @@ export function DocumentTemplatesSettingsPage() {
         })}
         subtitle={t('property_dev.doc_templates.intro', {
           defaultValue:
-            'Document templates power the PDF documents OpenConstructionERP generates for buyer journeys, reservation receipts, SPA contracts, handover protocols, warranty certificates. Pick a built-in template, preview it for your country or regulator, or upload your own .docx / .html / .pdf template.',
+            'Document templates power the PDF documents PM Project Management generates for buyer journeys, reservation receipts, SPA contracts, handover protocols, warranty certificates. Pick a built-in template, preview it for your country or regulator, or upload your own .docx / .html / .pdf template.',
         })}
         actions={
           <Button

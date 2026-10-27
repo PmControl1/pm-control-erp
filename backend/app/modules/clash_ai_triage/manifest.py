@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "response for audit, exposes a category + suggested action + "
         "confidence, and supports replay against a new prompt version."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_clash", "oe_projects", "oe_ai"],
     auto_install=True,

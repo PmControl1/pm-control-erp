@@ -100,7 +100,7 @@ _ALLOWED_RESOURCE_TYPES = {"material", "labor", "equipment", "operator", "subcon
 
 COPILOT_SYSTEM_PROMPT = (
     "You are a construction cost-estimating copilot embedded in the "
-    "OpenConstructionERP BOQ editor. You help refine ONE Bill-of-Quantities "
+    "PM Project Management BOQ editor. You help refine ONE Bill-of-Quantities "
     "position at a time. You propose concrete, conservative edits and explain "
     "them briefly. You NEVER invent prices or resource rates: every price, unit "
     "rate, or resource you propose MUST come from a catalogue item provided to "

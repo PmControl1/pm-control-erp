@@ -198,7 +198,7 @@ const NOTES_CAP = 500;
  * update notice off for a deployment that does not want one - a demo, a
  * recording, a managed install upgraded by its own pipeline.
  */
-const UPDATE_CHECK_DISABLED = Boolean(import.meta.env.VITE_DISABLE_UPDATE_CHECK);
+const UPDATE_CHECK_DISABLED = true; // PM Project Management: no upstream update check
 
 /** The answer from ``GET /api/system/version-check``.
  *

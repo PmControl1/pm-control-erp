@@ -422,7 +422,7 @@ def generate_demo_ifc(
     lines.append("HEADER;")
     lines.append("FILE_DESCRIPTION(('ViewDefinition [CoordinationView_V2.0]'),'2;1');")
     lines.append(
-        f"FILE_NAME('{project_name}.ifc','{datetime.now(UTC).strftime('%Y-%m-%d')}',('OpenConstructionERP'),('DDC'),'','OpenConstructionERP v1.5.0','');"
+        f"FILE_NAME('{project_name}.ifc','{datetime.now(UTC).strftime('%Y-%m-%d')}',('PM Project Management'),('DDC'),'','PM Project Management v1.5.0','');"
     )
     lines.append("FILE_SCHEMA(('IFC2X3'));")
     lines.append("ENDSEC;")
@@ -445,9 +445,9 @@ def generate_demo_ifc(
     building_id = _next_id()
 
     lines.append(f"#{person_id}= IFCPERSON($,'Elena','Marchetti',$,$,$,$,$);")
-    lines.append(f"#{org_id}= IFCORGANIZATION($,'OpenConstructionERP',$,$,$);")
+    lines.append(f"#{org_id}= IFCORGANIZATION($,'PM Project Management',$,$,$);")
     lines.append(f"#{po_id}= IFCPERSONANDORGANIZATION(#{person_id},#{org_id},$);")
-    lines.append(f"#{app_id}= IFCAPPLICATION(#{org_id},'1.5.0','OpenConstructionERP','OE');")
+    lines.append(f"#{app_id}= IFCAPPLICATION(#{org_id},'1.5.0','PM Project Management','OE');")
     lines.append(f"#{owner_id}= IFCOWNERHISTORY(#{po_id},#{app_id},$,.NOCHANGE.,$,$,$,0);")
     lines.append(f"#{si_length_id}= IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);")
     lines.append(f"#{si_area_id}= IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);")

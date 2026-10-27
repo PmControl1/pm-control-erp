@@ -836,7 +836,7 @@ def _start_embedding_pool_warmup():
 def _init_vector_db() -> None:
     """Initialize vector database on startup (non-blocking, never fatal).
 
-    Vector search is an important feature of OpenConstructionERP -
+    Vector search is an important feature of PM Project Management -
     it powers semantic cost-item matching, BOQ auto-classification,
     and assembly suggestions. We support two backends:
 
@@ -1998,7 +1998,7 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description="Open-source modular platform for construction cost estimation",
         contact={
-            "name": "DataDrivenConstruction · OpenConstructionERP",
+            "name": "DataDrivenConstruction · PM Project Management",
             "url": "https://openconstructionerp.com",
             "email": "info@datadrivenconstruction.io",
         },
@@ -2271,7 +2271,7 @@ def create_app() -> FastAPI:
                 b ^ 0x55 for b in b"\x11\x11\x16\x78\x16\x02\x1c\x16\x07\x78\x1a\x10\x78\x67\x65\x67\x63"
             ).decode("ascii")
             schema.setdefault("info", {})
-            schema["info"]["x-ddc-origin"] = "OpenConstructionERP · DataDrivenConstruction · " + _oa_tok
+            schema["info"]["x-ddc-origin"] = "PM Project Management · DataDrivenConstruction · " + _oa_tok
             schema["info"]["x-ddc-author"] = "Artem Boiko <info@datadrivenconstruction.io>"
             app.openapi_schema = schema
             app._openapi_routes_version = version
@@ -4336,7 +4336,7 @@ def create_app() -> FastAPI:
             raise
 
     async def _startup_impl() -> None:
-        _section("OpenConstructionERP")
+        _section("PM Project Management")
         logger.info(
             "Starting %s v%s (env=%s)",
             settings.app_name,
@@ -5314,7 +5314,7 @@ def create_app() -> FastAPI:
         _cli_data_dir = os.environ.get("OE_CLI_DATA_DIR")
         if _cli_host and _cli_port:
             _url = f"http://{_cli_host}:{_cli_port}"
-            logger.info("OpenConstructionERP is ready at %s", _url)
+            logger.info("PM Project Management is ready at %s", _url)
             # Demo passwords are now per-installation (BUG-D01 fix). The
             # actual values were either supplied via DEMO_*_PASSWORD env
             # vars or generated in ``_seed_demo_account`` and persisted to

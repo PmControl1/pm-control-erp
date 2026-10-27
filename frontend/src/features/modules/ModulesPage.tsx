@@ -1234,11 +1234,11 @@ function DataPackagesTab() {
                 </h2>
               </div>
               <p className="text-sm text-content-secondary leading-relaxed mb-4">
-                {t('modules.community_desc', { defaultValue: 'OpenConstructionERP has a modular plugin architecture. Anyone can create custom modules - cost databases, regional standards, CAD converters, analytics dashboards, integrations with external systems, or any other functionality.' })}
+                {t('modules.community_desc', { defaultValue: 'PM Project Management has a modular plugin architecture. Anyone can create custom modules - cost databases, regional standards, CAD converters, analytics dashboards, integrations with external systems, or any other functionality.' })}
               </p>
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="mailto:info@datadrivenconstruction.io?subject=OpenConstructionERP%20Module%20Proposal"
+                  href="mailto:info@datadrivenconstruction.io?subject=PM Project Management%20Module%20Proposal"
                   className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors"
                 >
                   <Package size={16} />

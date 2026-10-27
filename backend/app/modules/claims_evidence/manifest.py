@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "parties can independently reproduce and verify it. Assembled on "
         "demand with no tables of its own and no migration"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="controls",
     depends=[
         "oe_users",

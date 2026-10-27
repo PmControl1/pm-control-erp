@@ -206,7 +206,7 @@ class Fa3Input:
     contracts: tuple[Contract, ...] = ()
     due_date: str = ""
     bank_account: str = ""
-    system_info: str = "OpenConstructionERP"
+    system_info: str = "PM Project Management"
     generated_at: datetime | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 

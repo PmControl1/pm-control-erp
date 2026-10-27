@@ -514,7 +514,7 @@ def _try_patterns(
 
 
 _AI_SYSTEM_PROMPT = """\
-You are a Compliance DSL author for OpenConstructionERP. Convert the
+You are a Compliance DSL author for PM Project Management. Convert the
 user's plain-English construction validation rule into a YAML document
 that matches this schema:
 

@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "an ordered production lifecycle from design to installation, with a "
         "hard quality gate before anything is dispatched, delivered or installed."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

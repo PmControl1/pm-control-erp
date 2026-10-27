@@ -16,7 +16,7 @@ manifest = ModuleManifest(
         "schedule activities for the forensic-delay workflow. File import only, "
         "not a live mailbox; nothing is persisted, so no migration"
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="controls",
     depends=["oe_users"],
     auto_install=True,

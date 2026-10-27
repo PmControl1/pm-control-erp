@@ -16,7 +16,7 @@ manifest = ModuleManifest(
         "the buyer accounts for the VAT so the invoice must carry the "
         "statutory wording and no VAT amount."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

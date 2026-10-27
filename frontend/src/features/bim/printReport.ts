@@ -117,7 +117,7 @@ export function buildReportHtml(params: BuildReportHtmlParams): string {
   <h1>${escapeHtml(params.title)}</h1>
   <p class="meta">${escapeHtml(params.scopeLabel)} &middot; ${escapeHtml(params.generatedOn)}</p>
   ${body}
-  <p class="brand">OpenConstructionERP</p>
+  <p class="brand">PM Project Management</p>
 </body>
 </html>`;
 }

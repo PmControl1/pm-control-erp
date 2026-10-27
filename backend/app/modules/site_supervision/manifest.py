@@ -20,7 +20,7 @@ manifest = ModuleManifest(
         "(author supervision / contract administration / construction "
         "administration / Objektüberwachung)."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

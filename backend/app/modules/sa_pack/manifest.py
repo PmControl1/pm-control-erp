@@ -18,7 +18,7 @@ manifest = ModuleManifest(
         "preferential procurement scoring, National Treasury infrastructure "
         "delivery gates, ZAR and 15 percent VAT."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="regional",
     depends=[],
     auto_install=False,

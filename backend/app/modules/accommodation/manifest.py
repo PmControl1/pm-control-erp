@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "Rooms, bookings, charges. Optional one-click bootstrap from a PropDev "
         "block and HR-driven room suggestion."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     depends=["oe_projects", "oe_contacts"],
     auto_install=True,

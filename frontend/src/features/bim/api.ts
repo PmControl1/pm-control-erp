@@ -318,7 +318,7 @@ export function converterInstallMessage(result: {
   if (result.error_code === 'converter_package_missing') {
     return i18next.t('bim.converter_package_missing', {
       defaultValue:
-        'This version expects {{asset}} from {{tag}}, which the converter release no longer offers. Update OpenConstructionERP.',
+        'This version expects {{asset}} from {{tag}}, which the converter release no longer offers. Update PM Project Management.',
       asset: result.asset ?? '',
       tag: result.tag ?? '',
     });

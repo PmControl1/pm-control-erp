@@ -5,7 +5,7 @@
 The in-app branding editor used to keep the customisation in the browser's
 localStorage only, so it never followed the workspace: a teammate opening the
 app from another browser, or an invited user landing on the login page, saw the
-default OpenConstructionERP brand instead of the workspace's own (issue #272).
+default PM Project Management brand instead of the workspace's own (issue #272).
 
 This stores the workspace branding once on the server, in a small JSON file in
 the data dir::

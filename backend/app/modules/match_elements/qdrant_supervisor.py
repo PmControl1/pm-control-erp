@@ -11,7 +11,7 @@ plain subprocess whenever a feature that needs it (currently only
 Why no Docker?
 --------------
 
-Every other heavy dependency in OpenConstructionERP degrades gracefully
+Every other heavy dependency in PM Project Management degrades gracefully
 to a local-only path: PostgreSQL → SQLite, Redis → in-memory cache,
 MinIO → local filesystem. Qdrant used to require a docker-compose
 profile (``--profile ai up -d qdrant``) which made it the only thing

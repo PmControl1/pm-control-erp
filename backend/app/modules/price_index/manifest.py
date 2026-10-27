@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "region using stored construction cost index series and regional "
         "factors, without rewriting the source estimate."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="core",
     depends=["oe_costs"],
     auto_install=True,

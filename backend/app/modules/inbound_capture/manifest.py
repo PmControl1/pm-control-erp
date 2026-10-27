@@ -17,7 +17,7 @@ manifest = ModuleManifest(
         "delivery never doubles up, and provider webhooks are authenticated "
         "through a per-provider signature-verification seam."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="integration",
     depends=["oe_correspondence", "oe_projects"],
     auto_install=True,

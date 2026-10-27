@@ -6,7 +6,7 @@ WHY THIS FILE IS IN THE REPO
 ============================
 Competitive BIM coordination tools ship "AI clash triage"
 as a paid black box - you cannot see the prompt, you cannot tune it,
-you cannot reason about why a verdict was produced. OpenConstructionERP
+you cannot reason about why a verdict was produced. PM Project Management
 takes the opposite stance: the prompt lives HERE, in version control,
 and a coordinator who reads English can audit every word the LLM is
 asked to consider.

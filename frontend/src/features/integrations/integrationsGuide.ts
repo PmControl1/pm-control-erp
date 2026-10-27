@@ -57,7 +57,7 @@ export const integrationsGuide: ModuleGuideContent = {
       titleDefault: 'Automation and webhooks',
       bodyKey: 'guide.integrations.automation.body',
       bodyDefault:
-        'A signed webhook sends events to any URL as an HTTP POST with optional HMAC signing. Point n8n, Zapier or Make at that endpoint to wire OpenConstructionERP into thousands of other apps through a single trigger node.',
+        'A signed webhook sends events to any URL as an HTTP POST with optional HMAC signing. Point n8n, Zapier or Make at that endpoint to wire PM Project Management into thousands of other apps through a single trigger node.',
     },
     {
       icon: 'Database',

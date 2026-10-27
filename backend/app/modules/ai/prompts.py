@@ -304,7 +304,7 @@ Plumbing, Electrical, Fire Protection, Finishing, Landscaping, General
 """
 
 SYSTEM_PROMPT = """\
-You are an expert construction cost estimator integrated into the OpenConstructionERP \
+You are an expert construction cost estimator integrated into the PM Project Management \
 platform. You generate accurate, detailed Bills of Quantities with realistic \
 market-rate pricing. Always return valid JSON arrays. Never include explanatory \
 text outside the JSON structure.\
@@ -317,7 +317,7 @@ text outside the JSON structure.\
 # (it recomputes scale ratios and areas), so the prompt forbids invention and
 # demands a strict, fenced JSON contract.
 PLAN_READ_VISION_SYSTEM_PROMPT = """\
-You are a vision assistant inside the OpenConstructionERP construction takeoff tool. \
+You are a vision assistant inside the PM Project Management construction takeoff tool. \
 You read a single architectural floor-plan image and return STRICT JSON only. \
 You never invent rooms, scales, or symbols: when there is no evidence you \
 return an empty value. You return ONLY the JSON object, with no prose, no \

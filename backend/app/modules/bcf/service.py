@@ -700,7 +700,7 @@ class BCFExportService:
         project_id: uuid.UUID,
         filter_dict: dict | None = None,
         *,
-        author: str = "OpenConstructionERP",
+        author: str = "PM Project Management",
         project_name: str | None = None,
     ) -> bytes:
         """Export clashes for ``project_id`` as a BCF 3.0 ``.bcfzip``.

@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "flagged by the coverage check, drafts editable inclusions, exclusions "
         "and assumptions, and exports them with the proposal."
     ),
-    author="OpenConstructionERP Core Team",
+    author="PM Project Management Core Team",
     category="business",
     # Reads BOQ positions and verifies project access; also reads the sibling
     # estimating modules (allowances / contingency, preliminaries and the cost

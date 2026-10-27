@@ -195,7 +195,7 @@ export function RequestCustomModuleDialog({ open, onClose }: Props) {
             <p className="mt-3 mx-auto max-w-[640px] text-sm sm:text-base text-content-secondary leading-relaxed">
               {t('modules.request_hero_subtitle', {
                 defaultValue:
-                  'OpenConstructionERP runs on a plug-in architecture - every report, integration, regional catalogue and AI tool is its own module. If the one you need is missing, we will build it. Choose the path that fits your situation.',
+                  'PM Project Management runs on a plug-in architecture - every report, integration, regional catalogue and AI tool is its own module. If the one you need is missing, we will build it. Choose the path that fits your situation.',
               })}
             </p>
           </div>
@@ -239,7 +239,7 @@ export function RequestCustomModuleDialog({ open, onClose }: Props) {
             <p className="text-sm text-content-secondary leading-relaxed">
               {t('modules.request_card_community_body', {
                 defaultValue:
-                  'We add your idea to the public roadmap. If it has broad demand we ship it in a future release of OpenConstructionERP - included in every user’s install, including yours, at no cost.',
+                  'We add your idea to the public roadmap. If it has broad demand we ship it in a future release of PM Project Management - included in every user’s install, including yours, at no cost.',
               })}
             </p>
             <ul className="space-y-1.5 text-xs text-content-secondary">

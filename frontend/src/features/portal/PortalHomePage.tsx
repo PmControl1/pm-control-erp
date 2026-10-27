@@ -203,7 +203,7 @@ export function PortalHomePage() {
           className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-oe-blue transition-colors hover:underline"
         >
           <ArrowLeft size={14} />
-          {t('homeportal.back_to_app', { defaultValue: 'Back to OpenConstructionERP' })}
+          {t('homeportal.back_to_app', { defaultValue: 'Back to PM Project Management' })}
         </Link>
       </CenteredShell>
     );
