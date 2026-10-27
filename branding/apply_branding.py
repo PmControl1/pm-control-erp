@@ -57,7 +57,7 @@ PROVENANCE_TOKENS = ("DDC-CWICR", "DDC_ORIGIN", "ddc:", "·CWICR·", "CWICR·Ope
 # so existing installs keep finding their data.
 PATH_TOKENS = ("Path(", "path.join", "os.path", '/ "OpenConstructionERP"', "\\OpenConstructionERP", "LOCALAPPDATA", "APPDATA", "XDG_")
 
-TEXT_SUFFIXES = {".ts", ".tsx", ".json", ".py", ".html", ".j2", ".jinja", ".jinja2", ".txt", ".webmanifest"}
+TEXT_SUFFIXES = {".ts", ".tsx", ".json", ".md", ".py", ".html", ".j2", ".jinja", ".jinja2", ".txt", ".webmanifest"}
 
 SKIP_PARTS = ("node_modules", "__tests__", "/tests/", "/e2e", "/legal", "license", "LICENSE")
 SKIP_FILES = {
