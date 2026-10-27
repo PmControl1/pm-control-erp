@@ -33,6 +33,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useI18nReady } from '@/shared/lib/useI18nReady';
 import { isTauri, openAppInBrowser, openLink } from '@/shared/lib/desktop';
 import { SupportUsButton } from './SupportUsButton';
+import { BRAND_NAME, BRAND_SUPPORT_EMAIL } from '@/shared/brand';
 import { SubscribeButton } from './SubscribeButton';
 import { ProjectJourneyButton } from './ProjectJourney';
 import { PresenceAvatarStack } from '@/features/global_presence';
@@ -767,7 +768,7 @@ export function BugReportMenu() {
     // not hand a navigation to mailto: to the mail client, so assigning it
     // there did nothing at all. openLink sends it to the OS opener instead.
     openLink(
-      `mailto:info@datadrivenconstruction.io?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`,
+      `mailto:${BRAND_SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`,
     );
   };
 
@@ -1192,7 +1193,7 @@ function HelpMenu() {
               gives bug reporting a single, obvious home. */}
           <a
             role="menuitem"
-            href="mailto:info@datadrivenconstruction.io?subject=OpenConstructionERP%20Issue%20Report"
+            href={`mailto:${BRAND_SUPPORT_EMAIL}?subject=${encodeURIComponent(`${BRAND_NAME} issue report`)}`}
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
           >
@@ -1286,7 +1287,8 @@ function LanguageSwitcher({
 /* ── User Menu ─────────────────────────────────────────────────────────── */
 
 /** GitHub repo slug for "Report a bug". Empty string = clipboard fallback. */
-const GITHUB_REPO = 'datadrivenconstruction/OpenConstructionERP';
+// PM Project Management: bug reports must not go to the upstream tracker.
+const GITHUB_REPO = '';
 /** Hard ceiling for the GitHub issue body inside a URL. ~8KB is safe across browsers. */
 const MAX_BODY_BYTES = 7800;
 

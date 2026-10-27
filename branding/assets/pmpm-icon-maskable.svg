@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PM Project Management">
+  <!-- PLACEHOLDER maskable icon: full-bleed background, mark inside the safe zone. -->
+  <rect width="512" height="512" fill="#12355B"/>
+  <rect x="136" y="356" width="240" height="16" rx="8" fill="#F2A541"/>
+  <text x="256" y="304" text-anchor="middle"
+        font-family="'Plus Jakarta Sans','Segoe UI',Arial,sans-serif"
+        font-size="168" font-weight="800" letter-spacing="-6" fill="#FFFFFF">PM</text>
+</svg>

@@ -33,6 +33,7 @@ import { Pencil, Upload, Trash2, X, Building2, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Logo } from '@/shared/ui';
+import { BRAND_NAME } from '@/shared/brand';
 import { useToastStore } from '@/stores/useToastStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {
@@ -118,15 +119,9 @@ export function CustomBranding({ iconified }: CustomBrandingProps) {
       );
     }
     return (
-      <a
-        href="https://openconstructionerp.com/?utm_source=app"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:opacity-80 transition-opacity"
-        title="OpenConstructionERP"
-      >
+      <span className="inline-flex" title={BRAND_NAME}>
         <Logo size="sm" />
-      </a>
+      </span>
     );
   }
 
@@ -189,12 +184,9 @@ export function CustomBranding({ iconified }: CustomBrandingProps) {
               </span>
             </button>
           ) : (
-            <a
-              href="https://openconstructionerp.com/?utm_source=app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
-              title="OpenConstructionERP"
+            <div
+              className="flex items-center gap-1"
+              title={BRAND_NAME}
             >
               {/* Compact wordmark — 13px text + smaller gap to fit
                   the 248px sidebar minus the 32px edit button without
@@ -211,7 +203,7 @@ export function CustomBranding({ iconified }: CustomBrandingProps) {
                 Open<span className="text-oe-blue">Construction</span>
                 <span className="text-content-quaternary">ERP</span>
               </span>
-            </a>
+            </div>
           )}
         </div>
 

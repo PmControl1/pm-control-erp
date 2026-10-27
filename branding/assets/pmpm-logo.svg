@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PM Project Management">
+  <!-- PLACEHOLDER mark for PM Project Management. Replace this file with the
+       company logo (square SVG works best) and re-run branding/apply_branding.py. -->
+  <title>PM Project Management</title>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="#12355B"/>
+  <rect x="96" y="388" width="320" height="20" rx="10" fill="#F2A541"/>
+  <text x="256" y="318" text-anchor="middle"
+        font-family="'Plus Jakarta Sans','Segoe UI',Arial,sans-serif"
+        font-size="216" font-weight="800" letter-spacing="-8" fill="#FFFFFF">PM</text>
+</svg>
