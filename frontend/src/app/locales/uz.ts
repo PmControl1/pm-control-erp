@@ -31944,7 +31944,7 @@ const resource = {
     "dwg_takeoff.conv_install_ok_message": "Chizmangiz hozir qayta yuklanmoqda.",
     "dwg_takeoff.conv_install_ok_title": "DWG konvertori oʻrnatildi",
     "dwg_takeoff.conv_install_unsupported": "Ushbu serverning operatsion tizimi yoki protsessori uchun DDC DWG konverteri build’i mavjud emas. Buning oʻrniga DXF fayl yuklang.",
-    "dwg_takeoff.conv_missing_message": "OpenConstructionERPʼga DWG fayllarini oʻqish uchun DDC DWG to Excel kerak. Uni bir marta oʻrnating - keyin yuklaydigan har bir DWG uchun ishlaydi.",
+    "dwg_takeoff.conv_missing_message": "PM Project Managementʼga DWG fayllarini oʻqish uchun DDC DWG to Excel kerak. Uni bir marta oʻrnating - keyin yuklaydigan har bir DWG uchun ishlaydi.",
     "dwg_takeoff.conv_missing_title": "DWG konvertori oʻrnatilmagan",
     "dwg_takeoff.conv_note": "Boshqa sahifalarga xavfsiz oʻtishingiz mumkin - konvertatsiya serverda ishlaydi. Qaytganingizda chizma shu yerda tayyor boʻladi.",
     "dwg_takeoff.conv_open_settings": "Konvertorlar sozlamalarini ochish →",

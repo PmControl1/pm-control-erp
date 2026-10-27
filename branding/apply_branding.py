@@ -38,8 +38,13 @@ SRC = FRONT / "src"
 # ── 1. product-name text pass ──────────────────────────────────────────────
 
 # Not part of a URL, path, e-mail, domain or identifier.
-NAME_RE = re.compile(r"(?<![\w./@:#-])OpenConstructionERP(?![\w/-])(?!\.(?:com|io)\b)")
-SHORT_RE = re.compile(r"(?<![\w./@:#-])OCERP(?![\w/-])(?!\.\w)")
+# ASCII classes on purpose: in Korean, Japanese, Hungarian, Hebrew... the name is
+# glued to the surrounding word ("OpenConstructionERPへ", "ל-OpenConstructionERP").
+NAME_RE = re.compile(r"(?<![A-Za-z0-9_./@:#])OpenConstructionERP(?![A-Za-z0-9_/])(?!\.(?:com|io)\b)")
+SHORT_RE = re.compile(r"(?<![A-Za-z0-9_./@:#])OCERP(?![A-Za-z0-9_/])(?!\.\w)")
+# Outside the translation files a trailing hyphen means an identifier, file name
+# or user agent ("OpenConstructionERP-pg-", "...-converter-installer"): keep those.
+NAME_RE_CODE = re.compile(r"(?<![A-Za-z0-9_./@:#-])OpenConstructionERP(?![A-Za-z0-9_/-])(?!\.(?:com|io)\b)")
 
 COMMENT_PREFIXES = ("//", "*", "/*", "#", "<!--", "{/*")
 # Lines carrying upstream provenance markers are kept verbatim.
@@ -83,11 +88,11 @@ def text_targets() -> list[Path]:
     return [f for f in files if f.exists()]
 
 
-def rename_in_line(line: str, name: str, short: bool = True) -> str:
+def rename_in_line(line: str, name: str, short: bool = True, locale: bool = False) -> str:
     stripped = line.lstrip()
     if stripped.startswith(COMMENT_PREFIXES) or any(t in line for t in PROVENANCE_TOKENS + PATH_TOKENS):
         return line
-    line = NAME_RE.sub(name, line)
+    line = (NAME_RE if locale else NAME_RE_CODE).sub(name, line)
     if short:  # "OCERP" is also a Python identifier (procurement order owner)
         line = SHORT_RE.sub(name, line)
     # French/Italian elision before a vowel-initial name ("d'OpenConstructionERP").
@@ -104,7 +109,8 @@ def text_pass(name: str) -> tuple[int, int]:
         if "OpenConstructionERP" not in original and "OCERP" not in original:
             continue
         lines = original.splitlines(keepends=True)
-        out = [rename_in_line(ln, name, short=f.suffix != ".py") for ln in lines]
+        is_locale = "/locales/" in f.as_posix()
+        out = [rename_in_line(ln, name, short=f.suffix != ".py", locale=is_locale) for ln in lines]
         new = "".join(out)
         if new != original:
             hits += sum(a != b for a, b in zip(lines, out))
