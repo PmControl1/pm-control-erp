@@ -20352,7 +20352,7 @@ const resource = {
     "pwa.install_button": "Installa",
     "pwa.install_prompt_body": "Aggiungi PM Project Management al tuo dispositivo per un avvio più rapido, shell offline e un'esperienza da campo nativa.",
     "pwa.install_prompt_title": "Installa PM Project Management per l'accesso offline",
-    "pwa.ios_hint_body": "Tocca l'icona Condividi in Safari, quindi scegli \"Aggiungi a schermata Home\" per installare OCERP.",
+    "pwa.ios_hint_body": "Tocca l'icona Condividi in Safari, quindi scegli \"Aggiungi a schermata Home\" per installare PM Project Management.",
     "pwa.last_synced": "Ultima sincronizzazione {{when}}",
     "pwa.not_now_button": "Non ora",
     "pwa.offline_body": "PM Project Management non riesce a raggiungere il server al momento. Le pagine in cache rimangono disponibili; le modifiche apportate dovranno essere risalvate una volta riconnessi.",

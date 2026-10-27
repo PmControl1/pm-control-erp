@@ -19308,7 +19308,7 @@ const resource = {
     "pwa.install_prompt_body": "Dodaj PM Project Management na vaš device za faster launch, offline aplikacija shell i native-feel polje experience.",
     "pwa.install_button": "Instaliraj",
     "pwa.not_now_button": "Ne sada",
-    "pwa.ios_hint_body": "Dodirnite ikonu Dijeli u Safariju, zatim odaberite \"Dodaj na početni zaslon\" da biste instalirali OCERP.",
+    "pwa.ios_hint_body": "Dodirnite ikonu Dijeli u Safariju, zatim odaberite \"Dodaj na početni zaslon\" da biste instalirali PM Project Management.",
     "pwa.offline_body": "PM Project Management trenutačno ne može doći do poslužitelja. Stranice iz predmemorije ostaju dostupne; sve promjene koje napravite trebat će ponovno spremiti nakon ponovnog povezivanja.",
     "pwa.last_synced": "Posljednji synced {{when}}",
     "users.roles.admin": "Administrator",

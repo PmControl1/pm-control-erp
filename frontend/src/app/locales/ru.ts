@@ -12010,7 +12010,7 @@ const resource = {
     "pwa.install_prompt_body": "Добавьте PM Project Management на устройство, быстрый запуск, офлайн-оболочка приложения и удобный полевой опыт.",
     "pwa.install_button": "Установить",
     "pwa.not_now_button": "Позже",
-    "pwa.ios_hint_body": "В Safari нажмите значок «Поделиться» и выберите «На экран Домой», чтобы установить OCERP.",
+    "pwa.ios_hint_body": "В Safari нажмите значок «Поделиться» и выберите «На экран Домой», чтобы установить PM Project Management.",
     "pwa.offline_title": "Вы офлайн",
     "pwa.offline_body": "PM Project Management не может связаться с сервером. Кэшированные страницы остаются доступны; внесённые изменения нужно будет сохранить заново после восстановления связи.",
     "pwa.last_synced": "Последняя синхронизация: {{when}}",

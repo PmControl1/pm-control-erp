@@ -20089,7 +20089,7 @@ const resource = {
     "pwa.install_button": "Инсталирай",
     "pwa.install_prompt_body": "Добавете PM Project Management на устройството си за по-бързо стартиране, офлайн обвивка и нативно усещане на терен.",
     "pwa.install_prompt_title": "Инсталирайте PM Project Management за офлайн достъп",
-    "pwa.ios_hint_body": "Натиснете иконата Споделяне в Safari, след което изберете «Добави към началния екран» за инсталиране на OCERP.",
+    "pwa.ios_hint_body": "Натиснете иконата Споделяне в Safari, след което изберете «Добави към началния екран» за инсталиране на PM Project Management.",
     "pwa.last_synced": "Последна синхронизация: {{when}}",
     "pwa.not_now_button": "Не сега",
     "pwa.offline_body": "PM Project Management не може да достигне сървъра в момента. Кешираните страници остават достъпни; всички направени промени ще трябва да бъдат записани отново след свързване.",

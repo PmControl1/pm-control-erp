@@ -13763,7 +13763,7 @@ const resource = {
     "pwa.install_prompt_body": "Legg til PM Project Management på enheten din for raskere oppstart, offline app-skall og en feltopplevelse lik en innebygd app.",
     "pwa.install_button": "Installer",
     "pwa.not_now_button": "Ikke nå",
-    "pwa.ios_hint_body": "Trykk på Del-ikonet i Safari, velg deretter «Legg til på Hjem-skjerm» for å installere OCERP.",
+    "pwa.ios_hint_body": "Trykk på Del-ikonet i Safari, velg deretter «Legg til på Hjem-skjerm» for å installere PM Project Management.",
     "pwa.offline_title": "Du er frakoblet",
     "pwa.offline_body": "PM Project Management kan ikke nå serveren akkurat nå. Hurtigbufrede sider er fortsatt tilgjengelige; endringer du gjør må lagres på nytt når du kobler til igjen.",
     "pwa.last_synced": "Sist synkronisert {{when}}",

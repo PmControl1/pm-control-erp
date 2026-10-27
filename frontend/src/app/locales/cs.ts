@@ -19444,7 +19444,7 @@ const resource = {
     "pwa.install_prompt_body": "Přidat PM Project Management na váš device pro faster launch, offline aplikace shell a native-feel pole experience.",
     "pwa.install_button": "Nainstalovat",
     "pwa.not_now_button": "Ne nyní",
-    "pwa.ios_hint_body": "Tap Sdílet ikona v Safari, pak zvolit \"Přidat na Domů Screen\" na nainstalovat OCERP.",
+    "pwa.ios_hint_body": "Tap Sdílet ikona v Safari, pak zvolit \"Přidat na Domů Screen\" na nainstalovat PM Project Management.",
     "pwa.offline_body": "PM Project Management se právě teď nemůže připojit k serveru. Stránky uložené v mezipaměti zůstávají dostupné; veškeré provedené změny bude nutné po obnovení připojení uložit znovu.",
     "pwa.last_synced": "Poslední synced {{when}}",
     "users.roles.admin": "Administrátor",

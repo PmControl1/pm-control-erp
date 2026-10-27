@@ -19523,7 +19523,7 @@ const resource = {
     "pwa.install_prompt_body": "Adaugă PM Project Management la al tău device pentru un faster launch, offline aplicație shell și un native-feel câmp experience.",
     "pwa.install_button": "Instalează",
     "pwa.not_now_button": "Nu acum",
-    "pwa.ios_hint_body": "Tap Partajează pictogramă în Safari, apoi alege \"Adaugă la Acasă Screen\" la instalează OCERP.",
+    "pwa.ios_hint_body": "Tap Partajează pictogramă în Safari, apoi alege \"Adaugă la Acasă Screen\" la instalează PM Project Management.",
     "pwa.offline_body": "PM Project Management nu poate contacta serverul în acest moment. Paginile din cache rămân disponibile; orice modificare făcută va trebui salvată din nou după reconectare.",
     "pwa.last_synced": "Ultimul synced {{when}}",
     "users.roles.admin": "Administrator",

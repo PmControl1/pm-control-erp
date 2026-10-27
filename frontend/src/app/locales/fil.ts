@@ -20117,7 +20117,7 @@ const resource = {
     "pwa.install_button": "I-install",
     "pwa.install_prompt_body": "Idagdag ang PM Project Management sa iyong device para sa mas mabilis na launch, offline app shell, at native-feel na karanasan sa field.",
     "pwa.install_prompt_title": "I-install ang PM Project Management para sa offline access",
-    "pwa.ios_hint_body": "I-tap ang Share icon sa Safari, pagkatapos piliin ang \"Add to Home Screen\" para i-install ang OCERP.",
+    "pwa.ios_hint_body": "I-tap ang Share icon sa Safari, pagkatapos piliin ang \"Add to Home Screen\" para i-install ang PM Project Management.",
     "pwa.last_synced": "Huling na-sync {{when}}",
     "pwa.not_now_button": "Huwag muna",
     "pwa.offline_body": "Hindi ma-reach ng PM Project Management ang server ngayon. Available pa rin ang mga naka-cache na pahina; kailangang i-save ulit ang mga pagbabago mo pagkatapos kumonekta ulit.",

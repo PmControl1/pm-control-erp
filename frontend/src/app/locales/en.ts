@@ -8703,7 +8703,7 @@ const resource = {
     "pwa.install_prompt_body": "Add PM Project Management to your device for a faster launch, offline app shell and a native-feel field experience.",
     "pwa.install_button": "Install",
     "pwa.not_now_button": "Not now",
-    "pwa.ios_hint_body": "Tap the Share icon in Safari, then choose \"Add to Home Screen\" to install OCERP.",
+    "pwa.ios_hint_body": "Tap the Share icon in Safari, then choose \"Add to Home Screen\" to install PM Project Management.",
     "pwa.offline_title": "You're offline",
     "pwa.offline_body": "PM Project Management can't reach the server right now. Cached pages remain available; any changes you make will need to be re-saved once you reconnect.",
     "pwa.last_synced": "Last synced {{when}}",

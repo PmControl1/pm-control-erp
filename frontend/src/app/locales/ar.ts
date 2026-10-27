@@ -21953,7 +21953,7 @@ const resource = {
     "pwa.install_button": "تثبيت",
     "pwa.install_prompt_body": "أضف PM Project Management إلى جهازك للحصول على إطلاق أسرع وقشرة تطبيق دون اتصال وتجربة ميدانية احترافية.",
     "pwa.install_prompt_title": "ثبّت PM Project Management للوصول دون اتصال",
-    "pwa.ios_hint_body": "انقر على أيقونة المشاركة في Safari، ثم اختر «إضافة إلى الشاشة الرئيسية» لتثبيت OCERP.",
+    "pwa.ios_hint_body": "انقر على أيقونة المشاركة في Safari، ثم اختر «إضافة إلى الشاشة الرئيسية» لتثبيت PM Project Management.",
     "pwa.last_synced": "آخر مزامنة {{when}}",
     "pwa.not_now_button": "ليس الآن",
     "pwa.offline_body": "لا يستطيع PM Project Management الوصول إلى الخادم حالياً. الصفحات المحفوظة في الذاكرة المؤقتة لا تزال متاحة؛ ستحتاج إلى إعادة حفظ أي تغييرات أجريتها بعد استعادة الاتصال.",

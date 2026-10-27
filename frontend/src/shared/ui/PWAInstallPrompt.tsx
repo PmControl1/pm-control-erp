@@ -195,7 +195,7 @@ export function PWAInstallPrompt() {
           <p className="mt-1 text-xs leading-relaxed text-content-secondary">
             {t('pwa.ios_hint_body', {
               defaultValue:
-                'Tap the Share icon in Safari, then choose "Add to Home Screen" to install OCERP.',
+                'Tap the Share icon in Safari, then choose "Add to Home Screen" to install PM Project Management.',
             })}
           </p>
           <div className="mt-2.5 flex justify-end gap-2">

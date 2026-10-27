@@ -20596,7 +20596,7 @@ const resource = {
     "pwa.install_button": "התקנה",
     "pwa.install_prompt_body": "הוסיפו את PM Project Management למכשיר שלכם להפעלה מהירה יותר, מעטפת אפליקציה לא מקוונת וחוויית שטח שמרגישה טבעית.",
     "pwa.install_prompt_title": "התקינו את PM Project Management לגישה לא מקוונת",
-    "pwa.ios_hint_body": "הקישו על סמל השיתוף ב-Safari, ואז בחרו \"הוספה למסך הבית\" כדי להתקין את OCERP.",
+    "pwa.ios_hint_body": "הקישו על סמל השיתוף ב-Safari, ואז בחרו \"הוספה למסך הבית\" כדי להתקין את PM Project Management.",
     "pwa.last_synced": "סונכרן לאחרונה {{when}}",
     "pwa.not_now_button": "לא עכשיו",
     "pwa.offline_body": "PM Project Management אינו יכול להגיע לשרת כרגע. דפים שמורים במטמון עדיין זמינים; כל שינוי שתבצעו יצטרך להישמר מחדש לאחר החיבור מחדש.",

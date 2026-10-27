@@ -20417,7 +20417,7 @@ const resource = {
     "pwa.install_button": "Cài đặt",
     "pwa.install_prompt_body": "Thêm PM Project Management vào thiết bị của bạn để khởi động nhanh hơn, sử dụng ngoại tuyến và trải nghiệm thực địa như ứng dụng gốc.",
     "pwa.install_prompt_title": "Cài đặt PM Project Management để truy cập ngoại tuyến",
-    "pwa.ios_hint_body": "Nhấn biểu tượng Chia sẻ trong Safari, sau đó chọn \"Thêm vào Màn hình chính\" để cài đặt OCERP.",
+    "pwa.ios_hint_body": "Nhấn biểu tượng Chia sẻ trong Safari, sau đó chọn \"Thêm vào Màn hình chính\" để cài đặt PM Project Management.",
     "pwa.last_synced": "Đồng bộ lần cuối {{when}}",
     "pwa.not_now_button": "Để sau",
     "pwa.offline_body": "PM Project Management không thể kết nối máy chủ lúc này. Các trang đã lưu cache vẫn khả dụng; mọi thay đổi sẽ cần lưu lại sau khi kết nối.",

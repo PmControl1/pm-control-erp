@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import { apiPost } from '@/shared/lib/api';
 import { openLink } from '@/shared/lib/desktop';
 import { useToastStore } from '@/stores/useToastStore';
+import { UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ const GITHUB_ISSUES_URL =
   'https://github.com/datadrivenconstruction/OpenConstructionERP/issues/new';
 
 export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
+  if (!UPSTREAM_PROMPTS_ENABLED) return null;
   const { t } = useTranslation();
   const location = useLocation();
   const dialogRef = useRef<HTMLDivElement>(null);

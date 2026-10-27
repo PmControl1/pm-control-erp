@@ -19386,7 +19386,7 @@ const resource = {
     "propdev.tax.vat_rate_class": "Clase de IVA / GST",
     "pwa.install_button": "Instalar",
     "pwa.install_prompt_body": "Añade PM Project Management a tu dispositivo para un inicio más rápido, shell offline y una experiencia de campo nativa.",
-    "pwa.ios_hint_body": "Toca el icono Compartir en Safari y elige «Añadir a pantalla de inicio» para instalar OCERP.",
+    "pwa.ios_hint_body": "Toca el icono Compartir en Safari y elige «Añadir a pantalla de inicio» para instalar PM Project Management.",
     "pwa.last_synced": "Última sincronización {{when}}",
     "pwa.not_now_button": "Ahora no",
     "pwa.offline_body": "PM Project Management no puede conectar con el servidor ahora mismo. Las páginas en caché siguen disponibles; los cambios que realices deberán guardarse de nuevo al reconectarte.",

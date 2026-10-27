@@ -39,7 +39,7 @@ SRC = FRONT / "src"
 
 # Not part of a URL, path, e-mail, domain or identifier.
 NAME_RE = re.compile(r"(?<![\w./@:#-])OpenConstructionERP(?![\w/-])(?!\.(?:com|io)\b)")
-SHORT_RE = re.compile(r"(?<![\w./@:#-])OCERP(?![\w/.-])")
+SHORT_RE = re.compile(r"(?<![\w./@:#-])OCERP(?![\w/-])(?!\.\w)")
 
 COMMENT_PREFIXES = ("//", "*", "/*", "#", "<!--", "{/*")
 # Lines carrying upstream provenance markers are kept verbatim.
@@ -156,6 +156,8 @@ GATES = [
     (SRC / "app" / "layout" / "SupportUsButton.tsx", "export function SupportUsButton("),
     (SRC / "shared" / "ui" / "HeaderNewsButton.tsx", "export function HeaderNewsButton("),
     (SRC / "shared" / "ui" / "ReviewPromptCard.tsx", "export function ReviewPromptCard("),
+    # Its form files issues on upstream's GitHub tracker.
+    (SRC / "shared" / "ui" / "FeedbackDialog.tsx", "export function FeedbackDialog("),
 ]
 GUARD = "  if (!UPSTREAM_PROMPTS_ENABLED) return null;\n"
 GATE_IMPORT = "import { UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';\n"
@@ -183,7 +185,7 @@ def gate_pass() -> int:
     if upd.exists():
         s = upd.read_text(encoding="utf-8")
         new = re.sub(
-            r"const UPDATE_CHECK_DISABLED = [^;]+;",
+            r"const UPDATE_CHECK_DISABLED = (?!true;)[^;]+;",
             "const UPDATE_CHECK_DISABLED = true; // PM Project Management: no upstream update check",
             s,
         )

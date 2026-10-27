@@ -20183,7 +20183,7 @@ const resource = {
     "pwa.install_prompt_body": "Dodaj PM Project Management do twój device dla faster launch, offline aplikacja shell i native-feel pole experience.",
     "pwa.install_button": "Zainstaluj",
     "pwa.not_now_button": "Nie teraz",
-    "pwa.ios_hint_body": "Tap Udostępnij ikona w Safari, następnie wybierz \"Dodaj do Strona główna Screen\" do zainstaluj OCERP.",
+    "pwa.ios_hint_body": "Tap Udostępnij ikona w Safari, następnie wybierz \"Dodaj do Strona główna Screen\" do zainstaluj PM Project Management.",
     "pwa.offline_body": "PM Project Management nie może teraz połączyć się z serwerem. Strony z pamięci podręcznej pozostają dostępne; wprowadzone zmiany trzeba będzie zapisać ponownie po odzyskaniu połączenia.",
     "pwa.last_synced": "Ostatni synced {{when}}",
     "users.roles.admin": "Administrator",
