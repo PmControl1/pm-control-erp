@@ -17,7 +17,7 @@ manifest = ModuleManifest(
         "A plugin of the e-invoice clearance module: it registers an adapter, a document builder and "
         "validation rules into that module's registries."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="integration",
     depends=["oe_einvoice_clearance"],
     auto_install=True,

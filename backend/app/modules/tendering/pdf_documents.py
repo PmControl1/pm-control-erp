@@ -274,7 +274,7 @@ def _document(buffer: io.BytesIO, title: str, *, letterhead_on_first_page: bool 
         meta = {
             "author": "PM Project Management",
             "subject": "Tender decision · DDC-CWICR-OE",
-            "creator": "PM Project Management · DataDrivenConstruction",
+            "creator": "OpenConstructionERP · DataDrivenConstruction",
             "producer": "PM Project Management / reportlab · datadrivenconstruction.io",
             "keywords": "DDC-CWICR-OE-2026,OpenConstructionERP,Tendering,DataDrivenConstruction",
         }

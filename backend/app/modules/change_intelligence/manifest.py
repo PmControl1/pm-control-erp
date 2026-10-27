@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "long (cycle-time telemetry), with no tables of its own and no "
         "migration - it queries the existing change records"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="controls",
     depends=[
         "oe_users",

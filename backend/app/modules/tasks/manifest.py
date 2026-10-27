@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Project task management - tasks, topics, decisions,"
         " and personal items with checklists and assignment workflows"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

@@ -24,7 +24,7 @@ manifest = ModuleManifest(
         "alerts. Reads the BIM-sourced asset register; persists nothing of "
         "its own (state rides the existing asset_info JSON)."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_projects", "oe_bim_hub"],
     optional_depends=["oe_notifications"],

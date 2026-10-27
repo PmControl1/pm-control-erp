@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "open-impact rollup - the unique-to-AGPL-ERP move competitors "
         "cannot match, since they ship coordination without a BOQ side."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_clash", "oe_boq", "oe_projects"],
     auto_install=True,

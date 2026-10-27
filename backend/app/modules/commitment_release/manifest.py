@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "preconditions, latest decision date and the residual loss on abort, under a "
         "delegation-of-authority schedule"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # oe_project_governance owns the catalogue store this module's schedules
     # live in and the gate readiness it feeds; oe_approval_routes decides who

@@ -2156,8 +2156,8 @@ def _clear_incomplete_cluster(pgdata: Path) -> None:
 
 #: Delimits the settings this module owns inside ``postgresql.conf``, so the
 #: block can be rewritten in place instead of appended to on every boot.
-_SETTINGS_BEGIN = "# BEGIN PM Project Management settings (managed, do not edit)"
-_SETTINGS_END = "# END PM Project Management settings"
+_SETTINGS_BEGIN = "# BEGIN OpenConstructionERP settings (managed, do not edit)"
+_SETTINGS_END = "# END OpenConstructionERP settings"
 
 #: Lock slots are a shared pool sized ``max_locks_per_transaction`` times
 #: ``max_connections``, not a per-transaction allowance. The platform's schema

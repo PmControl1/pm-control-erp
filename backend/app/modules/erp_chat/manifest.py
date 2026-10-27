@@ -9,7 +9,7 @@ manifest = ModuleManifest(
     version="0.1.0",
     display_name="ERP Chat",
     description="AI chat over construction ERP data: reads through tools, proposes changes a person applies",
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # No hard dependency on the modules a proposal writes to (BOQ, tasks, ...):
     # the action registry offers a propose_* tool only while its module is

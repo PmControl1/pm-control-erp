@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "and per-currency recovery ledger showing what is chargeable, what has "
         "been recovered and what is still outstanding against whom."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="controls",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

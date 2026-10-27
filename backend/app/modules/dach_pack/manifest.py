@@ -16,7 +16,7 @@ manifest = ModuleManifest(
         "DACH construction standards: GAEB XML exchange formats, VOB/B contract terms, "
         "DIN 276 cost groups, HOAI fee schedules, MwSt, and Abschlagsrechnung templates."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="regional",
     depends=[],
     auto_install=False,

@@ -18,7 +18,7 @@ manifest = ModuleManifest(
         "field timesheets, progress readings and the site material ledger; a "
         "stateless analysis layer that adds no table."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="business",
     # The estimate side (BoQ positions and their stored resource split) is
     # required. The per-norm rollup reads its measured side through the cost

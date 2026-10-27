@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "implies they must procure. Reads the existing per-position splits; adds "
         "no new estimating data."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # Reads BoQ positions (their stored resource split) read-only.
     depends=["oe_boq"],

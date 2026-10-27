@@ -20,7 +20,7 @@ manifest = ModuleManifest(
         "format-agnostic model linking and a failed check automatically raising "
         "a non-conformance report."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_projects", "oe_bim_hub", "oe_ncr"],
     optional_depends=["oe_pointcloud", "oe_approval_routes", "oe_closeout"],

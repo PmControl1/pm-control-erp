@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Main components and long-lead items: lead time with the date of enquiry, latest order date, "
         "capacity reservation, procurement route, delivery limits and the spares concept"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # oe_project_governance owns the catalogue store, the plant area owner and
     # the gate readiness this register feeds; oe_approval_routes approves the

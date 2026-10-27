@@ -22,7 +22,7 @@ manifest = ModuleManifest(
         "with one-click drill-down to the owning module. Pure read-only "
         "consumer over the shared KPI registry."
     ),
-    author="PM Project Management",
+    author="OpenConstructionERP",
     category="extension",
     depends=["oe_projects", "oe_users", "oe_bi_dashboards"],
     auto_install=True,

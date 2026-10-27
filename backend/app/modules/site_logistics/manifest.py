@@ -19,7 +19,7 @@ manifest = ModuleManifest(
         "an area balance, gate load limits, utility connections, the logistics "
         "concept, transports with permits, customs data and the neighbourhood."
     ),
-    author="PM Project Management",
+    author="OpenConstructionERP",
     category="business",
     # oe_boq: a delivery line points at the BOQ position it delivers, and the
     # bill-coverage table reads the estimate directly.

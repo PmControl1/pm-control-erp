@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "review the suggestions: every line lands in one of four tiers by "
         "confidence, and a person confirms, overrides or rejects each one."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_projects", "oe_costs", "oe_dashboards"],
     optional_depends=["oe_ai"],

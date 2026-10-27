@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "so the wizard never makes a new user wait, exposing a progress feed the "
         "UI polls and a banner that keeps working after the user has moved on."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_costs", "oe_projects"],
     auto_install=True,

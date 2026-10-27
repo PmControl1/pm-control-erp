@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "requirements, the technical concept, the area and quantity programme and the framework schedule "
         "whose milestones are bound to the gates of the project's governance model"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # oe_project_governance owns the catalogue store, the gate that approves the brief and the frame
     # document that carries it; oe_requirements holds the requirements themselves; oe_schedule holds the

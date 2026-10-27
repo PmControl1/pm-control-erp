@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "stages from delivery limit to proof of operation, acceptance plan with legal effects, "
         "documentation requirements and evidence preservation; coverage read from linked evidence"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # Evidence stays in its owning modules and is only linked and read; the
     # governance store holds this module's catalogues and reads its readiness.

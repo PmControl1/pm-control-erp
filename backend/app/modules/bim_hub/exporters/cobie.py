@@ -298,7 +298,7 @@ def build_cobie_workbook(
     # localised away. Sits in docProps/core.xml (visible in Excel's File
     # Info pane) and docProps/custom.xml (rarely surfaced in the UI).
     try:
-        wb.properties.creator = "PM Project Management · DataDrivenConstruction"
+        wb.properties.creator = "OpenConstructionERP · DataDrivenConstruction"
         wb.properties.lastModifiedBy = "PM Project Management"
         wb.properties.title = f"COBie UK 2.4 - {getattr(model, 'name', 'Model')}"
         wb.properties.description = (

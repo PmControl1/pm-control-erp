@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "Python. Persists rule definitions and registers them with the "
         "global validation rule registry at startup."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users"],
     auto_install=True,

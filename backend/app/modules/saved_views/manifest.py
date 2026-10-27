@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "registered entity, share it with a team or a project, and reuse it as "
         "a list, count, tile, or export."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # oe_teams owns team membership; a team share resolves through it and the
     # saved-view table carries a foreign key into its team table.

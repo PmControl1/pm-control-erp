@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "labor-hours, machine-hours and material quantities - from a library of "
         "production-norm coefficients, before any pricing is applied."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=[],
     auto_install=True,

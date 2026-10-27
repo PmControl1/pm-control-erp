@@ -73,7 +73,7 @@ SUPPORTED_VERSIONS: tuple[str, ...] = ("2.1", "3.0")
 # ``.bcfzip`` members, which every conformant XML parser (incl. this
 # module's own ElementTree-based reader) discards - so it is purely an
 # at-rest provenance stamp with zero effect on parsed/round-tripped data.
-_BCF_ORIGIN = "PM Project Management · DataDrivenConstruction · " + bytes(
+_BCF_ORIGIN = "OpenConstructionERP · DataDrivenConstruction · " + bytes(
     b ^ 0x55 for b in b"\x11\x11\x16\x78\x16\x02\x1c\x16\x07\x78\x1a\x10\x78\x67\x65\x67\x63"
 ).decode("ascii")
 

@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "which BOQ cost code - the authoritative source of actual labour and plant "
         "hours for payroll and the cost / EVM model."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="business",
     # Real foreign keys into projects (owner), resources (labour), equipment
     # (plant) and variations (daywork order). Declaring them as hard

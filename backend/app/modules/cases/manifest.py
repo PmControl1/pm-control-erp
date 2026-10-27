@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "playbook, and pin a curated set to a project so the selection belongs "
         "to the account rather than to one browser."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

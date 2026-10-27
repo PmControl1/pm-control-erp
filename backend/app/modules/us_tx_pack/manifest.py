@@ -17,7 +17,7 @@ manifest = ModuleManifest(
         "split the sales tax on materials, the locally determined prevailing wage, the public works retainage "
         "caps and their contract-value threshold, and the statutory payment and lien clocks."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="regional",
     depends=["oe_us_pack"],
     auto_install=False,

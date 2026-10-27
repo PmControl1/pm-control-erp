@@ -43,7 +43,11 @@ SHORT_RE = re.compile(r"(?<![\w./@:#-])OCERP(?![\w/-])(?!\.\w)")
 
 COMMENT_PREFIXES = ("//", "*", "/*", "#", "<!--", "{/*")
 # Lines carrying upstream provenance markers are kept verbatim.
-PROVENANCE_TOKENS = ("DDC-CWICR", "DDC_ORIGIN", "ddc:", "·CWICR·", "CWICR·OpenConstructionERP", "provenance")
+PROVENANCE_TOKENS = ("DDC-CWICR", "DDC_ORIGIN", "ddc:", "·CWICR·", "CWICR·OpenConstructionERP", "provenance",
+                     # authorship credits and upstream origin strings stay upstream's
+                     "DataDrivenConstruction", "Core Team", "author=", "_ORIGIN", "x-ddc",
+                     # file markers written into existing settings files
+                     "_SETTINGS_BEGIN", "_SETTINGS_END")
 # Lines that build file-system paths or data-dir names keep the upstream name,
 # so existing installs keep finding their data.
 PATH_TOKENS = ("Path(", "path.join", "os.path", '/ "OpenConstructionERP"', "\\OpenConstructionERP", "LOCALAPPDATA", "APPDATA", "XDG_")

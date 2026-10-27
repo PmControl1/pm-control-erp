@@ -133,7 +133,7 @@ def build_boq_workbook(
     # Stamp authorship into docProps so a downloaded BOQ carries its origin
     # even when the UI strings are localised away (mirrors cobie.py).
     try:
-        wb.properties.creator = "PM Project Management · DataDrivenConstruction"
+        wb.properties.creator = "OpenConstructionERP · DataDrivenConstruction"
         wb.properties.lastModifiedBy = "PM Project Management"
         wb.properties.title = f"Bill of Quantities - {getattr(model, 'name', 'Model')}"
         wb.properties.description = (

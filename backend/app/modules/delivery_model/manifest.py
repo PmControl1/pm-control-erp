@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "category to a party, record the decision for the governance gate, and plan the contract packages "
         "and owner-furnished items that procurement and contracts apply"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # oe_project_governance owns the catalogue store, the gate that approves the
     # decision and the frame document that carries it; risk holds the register

@@ -16,7 +16,7 @@ manifest = ModuleManifest(
         "Indian construction standards: IS codes, CPWD/MES rate references, "
         "multi-rate GST (28/18/12/5/0%), INR, and Indian contract forms."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="regional",
     depends=[],
     auto_install=False,

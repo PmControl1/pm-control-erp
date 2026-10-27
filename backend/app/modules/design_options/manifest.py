@@ -21,7 +21,7 @@ manifest = ModuleManifest(
         "cost per m2, pick a baseline and get a fairness-checked recommendation before "
         "committing to one."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_projects", "oe_boq"],
     optional_depends=[

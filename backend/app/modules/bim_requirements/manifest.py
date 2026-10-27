@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Universal import/export for BIM requirement formats: "
         "IDS XML, COBie, Excel/CSV, Revit Shared Parameters, BIMQ JSON"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_projects"],
     auto_install=True,

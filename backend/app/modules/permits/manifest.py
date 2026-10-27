@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Permit roadmap (which authority approvals, who applies, when, in what order, statutory clocks) "
         "and the consolidated register of every permit condition with owner, trigger, evidence and discharge"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     # oe_project_governance owns the catalogue store the permit types live in and the
     # gate readiness this module feeds; oe_approval_routes runs the optional internal

@@ -1998,7 +1998,7 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description="Open-source modular platform for construction cost estimation",
         contact={
-            "name": "DataDrivenConstruction · PM Project Management",
+            "name": "DataDrivenConstruction · OpenConstructionERP",
             "url": "https://openconstructionerp.com",
             "email": "info@datadrivenconstruction.io",
         },
@@ -2271,7 +2271,7 @@ def create_app() -> FastAPI:
                 b ^ 0x55 for b in b"\x11\x11\x16\x78\x16\x02\x1c\x16\x07\x78\x1a\x10\x78\x67\x65\x67\x63"
             ).decode("ascii")
             schema.setdefault("info", {})
-            schema["info"]["x-ddc-origin"] = "PM Project Management · DataDrivenConstruction · " + _oa_tok
+            schema["info"]["x-ddc-origin"] = "OpenConstructionERP · DataDrivenConstruction · " + _oa_tok
             schema["info"]["x-ddc-author"] = "Artem Boiko <info@datadrivenconstruction.io>"
             app.openapi_schema = schema
             app._openapi_routes_version = version

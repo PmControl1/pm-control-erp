@@ -13,7 +13,7 @@ manifest = ModuleManifest(
         "rollup with BOQ-impact totals. No new tables - pure aggregator over "
         "the sibling BIM modules."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_projects", "oe_users"],
     auto_install=True,

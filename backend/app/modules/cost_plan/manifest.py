@@ -15,7 +15,7 @@ manifest = ModuleManifest(
         "cost per m2 of GIFA and share of total on every line, unallocated positions listed "
         "rather than dropped, and an Excel export with the same structure. Read-only."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="business",
     # Reads the bill, its markups and the project's floor area. Owns no tables,
     # so no migration is authored here.

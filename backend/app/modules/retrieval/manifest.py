@@ -14,7 +14,7 @@ manifest = ModuleManifest(
         "the provenance you need to reconstruct what happened, and pin the searches worth "
         "coming back to"
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users", "oe_projects", "oe_documents", "oe_correspondence", "oe_changeorders"],
     auto_install=True,

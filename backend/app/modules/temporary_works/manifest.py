@@ -20,7 +20,7 @@ manifest = ModuleManifest(
         "and the single most important safety signal: any item bearing load with "
         "no valid permit to load in force."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="business",
     # Hard dep supplies the project scope every table foreign-keys into.
     depends=["oe_projects"],

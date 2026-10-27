@@ -12,7 +12,7 @@ manifest = ModuleManifest(
         "Real-time awareness of who is online and which page they are viewing. "
         "Ephemeral, in-memory state broadcast over a single global WebSocket room."
     ),
-    author="PM Project Management Core Team",
+    author="OpenConstructionERP Core Team",
     category="core",
     depends=["oe_users"],
     auto_install=True,
