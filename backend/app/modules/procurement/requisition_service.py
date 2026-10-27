@@ -76,7 +76,7 @@ from app.modules.procurement.models import (
 )
 from app.modules.procurement.order_owner import (
     EXTERNAL,
-    PM Project Management,
+    OCERP,
     effective_owner,
     load_settings,
 )
@@ -1175,7 +1175,7 @@ class RequisitionWorkflowService(MaterialRequisitionService):
 
         Every requisition must belong to ``data.project_id`` (404 otherwise, so a
         foreign id is not confirmed to exist), be ``approved`` (409 naming the
-        ones that are not) and have its orders placed in PM Project Management (409 for one an
+        ones that are not) and have its orders placed in OCERP (409 for one an
         external purchasing system orders). The supplier is ``data.vendor_id``
         or the one the requisitions agree on; requisitions naming different
         suppliers, or a stated supplier another requisition contradicts, are a
@@ -1612,7 +1612,7 @@ class RequisitionWorkflowService(MaterialRequisitionService):
         """
         row = await load_settings(self.session, project_id)
         if row is None:
-            row = ProcurementProjectSettings(project_id=project_id, order_owner=PM Project Management, default_approval_chain=[])
+            row = ProcurementProjectSettings(project_id=project_id, order_owner=OCERP, default_approval_chain=[])
             self.session.add(row)
         before = {"order_owner": row.order_owner, "default_approval_chain": list(row.default_approval_chain or [])}
         if data.order_owner is not None:

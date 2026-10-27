@@ -83,12 +83,13 @@ def text_targets() -> list[Path]:
     return [f for f in files if f.exists()]
 
 
-def rename_in_line(line: str, name: str) -> str:
+def rename_in_line(line: str, name: str, short: bool = True) -> str:
     stripped = line.lstrip()
     if stripped.startswith(COMMENT_PREFIXES) or any(t in line for t in PROVENANCE_TOKENS + PATH_TOKENS):
         return line
     line = NAME_RE.sub(name, line)
-    line = SHORT_RE.sub(name, line)
+    if short:  # "OCERP" is also a Python identifier (procurement order owner)
+        line = SHORT_RE.sub(name, line)
     # French/Italian elision before a vowel-initial name ("d'OpenConstructionERP").
     return re.sub(rf"\b([dDlL])'{re.escape(name)}", lambda m: ("de " if m.group(1) in "dD" else "") + name, line)
 
@@ -103,7 +104,7 @@ def text_pass(name: str) -> tuple[int, int]:
         if "OpenConstructionERP" not in original and "OCERP" not in original:
             continue
         lines = original.splitlines(keepends=True)
-        out = [rename_in_line(ln, name) for ln in lines]
+        out = [rename_in_line(ln, name, short=f.suffix != ".py") for ln in lines]
         new = "".join(out)
         if new != original:
             hits += sum(a != b for a, b in zip(lines, out))
