@@ -52,10 +52,12 @@ def main() -> int:
     changed = subprocess.check_output(
         ["git", "-C", str(repo), "diff", "--name-only", tag, "HEAD", "--", "backend/app"], text=True
     ).split()
+    copied = 0
     for rel in changed:
         src = repo / rel
         if not src.is_file():
             continue
+        copied += 1
         dst = be_out / Path(rel).relative_to("backend/app")
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
@@ -75,7 +77,7 @@ def main() -> int:
         removals.add(top.as_posix())
     (out / "remove_from_upstream.txt").write_text("\n".join(sorted(removals)) + "\n", encoding="utf-8")
     print(f"frontend: {shipped} files ({shipped_bytes / 1e6:.1f} MB) shipped, {len(keep)} kept from upstream")
-    print(f"backend: {len(changed)} files changed, {len(removals)} paths removed")
+    print(f"backend: {copied} files changed, {len(removals)} paths removed")
     return 0
 
 
