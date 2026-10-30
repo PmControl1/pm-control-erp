@@ -4070,7 +4070,11 @@ def create_app() -> FastAPI:
     async def demo_catalog() -> list[dict[str, Any]]:
         """Return the list of available demo project templates."""
         from app.core.demo_projects import DEMO_CATALOG
+        from app.core.demo_seed import seed_demo_enabled
 
+        # PM Project Management: offer no demo projects while demo data is off.
+        if not seed_demo_enabled():
+            return []
         return DEMO_CATALOG
 
     @app.post("/api/demo/install/{demo_id}", tags=["System"])
@@ -4086,7 +4090,13 @@ def create_app() -> FastAPI:
         in which case the old demo is deleted and recreated.
         """
         from app.core.demo_projects import DEMO_TEMPLATES, install_demo_project
+        from app.core.demo_seed import seed_demo_enabled
         from app.database import async_session_factory
+
+        if not seed_demo_enabled():
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=404, detail="Demo projects are turned off on this installation.")
 
         if demo_id not in DEMO_TEMPLATES:
             from fastapi import HTTPException
