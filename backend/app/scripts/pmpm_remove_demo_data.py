@@ -65,7 +65,10 @@ async def _run(email: str, dry_run: bool) -> int:
             )
             return 1
         if dry_run:
-            print(f"[dry run] Would make {me.email} an active admin.")
+            if me.role == "admin" and me.is_active:
+                print(f"{me.email} is already an active admin.")
+            else:
+                print(f"[dry run] Would make {me.email} an active admin.")
         else:
             print(await _promote_user_to_admin(session, email))
             await session.commit()
