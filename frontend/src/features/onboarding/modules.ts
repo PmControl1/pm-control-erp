@@ -194,18 +194,6 @@ export const ALL_MODULES: ModuleDef[] = [
   { key: 'rfq_bidding', labelKey: 'onboarding.mod_rfq_bidding', descriptionKey: 'onboarding.mod_rfq_bidding_desc', group: 'enterprise' },
   { key: 'integrations', labelKey: 'onboarding.mod_integrations', descriptionKey: 'onboarding.mod_integrations_desc', group: 'enterprise' },
 
-  // ── Regional Packs ──────────────────────────────────────────────────
-  { key: 'dach_pack', labelKey: 'onboarding.mod_dach_pack', descriptionKey: 'onboarding.mod_dach_pack_desc', group: 'regional' },
-  { key: 'uk_pack', labelKey: 'onboarding.mod_uk_pack', descriptionKey: 'onboarding.mod_uk_pack_desc', group: 'regional' },
-  { key: 'us_pack', labelKey: 'onboarding.mod_us_pack', descriptionKey: 'onboarding.mod_us_pack_desc', group: 'regional' },
-  { key: 'us_tx_pack', labelKey: 'onboarding.mod_us_tx_pack', descriptionKey: 'onboarding.mod_us_tx_pack_desc', group: 'regional' },
-  { key: 'us_ca_pack', labelKey: 'onboarding.mod_us_ca_pack', descriptionKey: 'onboarding.mod_us_ca_pack_desc', group: 'regional' },
-  { key: 'india_pack', labelKey: 'onboarding.mod_india_pack', descriptionKey: 'onboarding.mod_india_pack_desc', group: 'regional' },
-  { key: 'middle_east_pack', labelKey: 'onboarding.mod_middle_east_pack', descriptionKey: 'onboarding.mod_middle_east_pack_desc', group: 'regional' },
-  { key: 'latam_pack', labelKey: 'onboarding.mod_latam_pack', descriptionKey: 'onboarding.mod_latam_pack_desc', group: 'regional' },
-  { key: 'asia_pac_pack', labelKey: 'onboarding.mod_asia_pac_pack', descriptionKey: 'onboarding.mod_asia_pac_pack_desc', group: 'regional' },
-  { key: 'russia_pack', labelKey: 'onboarding.mod_russia_pack', descriptionKey: 'onboarding.mod_russia_pack_desc', group: 'regional' },
-
   // ── Platform (infrastructure — always on) ───────────────────────────
   { key: 'users', labelKey: 'onboarding.mod_users', descriptionKey: 'onboarding.mod_users_desc', group: 'platform', core: true },
   { key: 'teams', labelKey: 'onboarding.mod_teams', descriptionKey: 'onboarding.mod_teams_desc', group: 'platform', core: true },
@@ -280,18 +268,8 @@ export const ALL_MODULES: ModuleDef[] = [
   { key: 'site_supervision', labelKey: 'onboarding.mod_site_supervision', descriptionKey: 'onboarding.mod_site_supervision_desc', group: 'field' },
   { key: 'temporary_works', labelKey: 'onboarding.mod_temporary_works', descriptionKey: 'onboarding.mod_temporary_works_desc', group: 'field' },
 
-  // ── Regional Packs (extended) ────────────────────────────────────────
-  { key: 'mexico_pack', labelKey: 'onboarding.mod_mexico_pack', descriptionKey: 'onboarding.mod_mexico_pack_desc', group: 'regional' },
-  { key: 'sa_pack', labelKey: 'onboarding.mod_sa_pack', descriptionKey: 'onboarding.mod_sa_pack_desc', group: 'regional' },
-  // backend/app/modules/china_pack has shipped since before this list was
-  // written and was the only one of the thirteen regional modules with no
-  // line here, so the picker offered twelve and China could not be chosen at
-  // the one moment a new user is asked what they work on.
-  { key: 'china_pack', labelKey: 'onboarding.mod_china_pack', descriptionKey: 'onboarding.mod_china_pack_desc', group: 'regional' },
-  // The fourteenth regional module, and the last one that had no line here.
-  // It does not carry the ``_pack`` suffix the other thirteen share, which is
-  // why a sweep for the country packs kept missing it, so the gate that now
-  // guards this list keys on the backend manifest's own ``category`` instead.
+  // PM Project Management: the thirteen country packs were removed; the
+  // statutory payment clock is the one regional module left.
   { key: 'payment_clock', labelKey: 'onboarding.mod_payment_clock', descriptionKey: 'onboarding.mod_payment_clock_desc', group: 'regional' },
 ];
 

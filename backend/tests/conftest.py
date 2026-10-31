@@ -1141,3 +1141,21 @@ def sample_cad_elements():
             "quantities": {"area": 85.0, "volume": 17.0},
         },
     ]
+
+
+# ── PM Project Management ────────────────────────────────────────────────
+# Tests that assert on the other countries' packs, regional modules and demo
+# projects removed from this fork are listed in pmpm_removed_features.txt and
+# skipped here with the reason, so the rest of each file keeps running.
+_PMPM_REMOVED_FEATURE_TESTS = frozenset(
+    line.strip()
+    for line in (Path(__file__).parent / "pmpm_removed_features.txt").read_text(encoding="utf-8").splitlines()
+    if line.strip() and not line.startswith("#")
+)
+
+
+def pytest_collection_modifyitems(config, items):  # noqa: ARG001 - pytest hook signature
+    marker = pytest.mark.skip(reason="Covers another country's pack, module or demo removed from PM Project Management")
+    for item in items:
+        if item.nodeid in _PMPM_REMOVED_FEATURE_TESTS:
+            item.add_marker(marker)

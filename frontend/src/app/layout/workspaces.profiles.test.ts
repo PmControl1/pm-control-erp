@@ -218,7 +218,12 @@ describe('every row of every workspace', () => {
   });
 });
 
-describe('a workspace row and the modules behind it', () => {
+// PM Project Management: this block compares the workspaces with the Turkish MEP
+// contractor pack's hidden modules. That pack was removed, so the block is
+// skipped while the pack is absent.
+const TURKEY_MEP_MANIFEST = '../packs/turkey-tr-mep/src/openconstructionerp_turkey_tr_mep/manifest.py';
+
+describe.skipIf(!existsSync(resolve(__dirname, '..', '..', '..', TURKEY_MEP_MANIFEST)))('a workspace row and the modules behind it', () => {
   const sidebar = readRepoFile('src/app/layout/Sidebar.tsx');
   const routeMapSource = sidebar.slice(
     sidebar.indexOf('const ROUTE_BACKEND_MODULE'),
@@ -229,9 +234,9 @@ describe('a workspace row and the modules behind it', () => {
     [...routeMapSource.matchAll(/'([^']+)':\s*'(oe_[a-z0-9_]+)'/g)].map((m) => [m[1]!, m[2]!]),
   );
 
-  const packManifest = readRepoFile(
-    '../packs/turkey-tr-mep/src/openconstructionerp_turkey_tr_mep/manifest.py',
-  );
+  const packManifest = existsSync(resolve(__dirname, '..', '..', '..', TURKEY_MEP_MANIFEST))
+    ? readRepoFile(TURKEY_MEP_MANIFEST)
+    : '';
   const hiddenBlock = /hidden_modules=\[([\s\S]*?)\n {4}\],/.exec(packManifest)?.[1] ?? '';
   const hiddenModules = [...hiddenBlock.matchAll(/"(oe_[a-z0-9_]+)"/g)].map((m) => m[1]!);
 
