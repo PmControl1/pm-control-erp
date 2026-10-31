@@ -50,6 +50,12 @@ BACKEND = Path(__file__).resolve().parents[2]
 TESTS = BACKEND / "tests"
 WORKFLOWS = BACKEND.parent / ".github" / "workflows"
 
+# PM fork: this map records which of the original project's workflows gate
+# each test tree. Those workflows are switched off here (.github/upstream-
+# workflows/); this fork's CI (pmpm-ci.yml) runs tests/unit only, so the map
+# describes nothing that runs and is not checked.
+pytestmark = pytest.mark.skip(reason="PM fork: the original project's CI lanes are switched off")
+
 # Trees the release and tag workflows own are out of scope here: this is
 # about what gates a commit to main, not about what publishes an artifact.
 RELEASE_WORKFLOWS = frozenset(
