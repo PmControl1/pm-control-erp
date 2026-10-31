@@ -1,0 +1,266 @@
+name: PM CI
+
+# This fork's own CI. The original project's workflows are switched off in
+# .github/upstream-workflows/ (see the README there for why).
+#
+#   backend   ruff, then the backend unit tests in 6 shards against PostgreSQL 16
+#   frontend  ESLint, the full TypeScript type check, then the Vitest suite
+#   image     builds the Docker image and pushes it to GitHub Container Registry
+#             (pushes to main only; this is the image deploy/pmpm/ runs)
+#
+# The `changes` job skips the backend or frontend half when a change does not
+# touch it, so a frontend-only fix does not pay for six backend shards. That
+# matters while the repository is private: GitHub's free plan gives a private
+# repository a fixed number of Actions minutes a month, and one full run costs
+# a few hours of runner time across the shards.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pmpm-ci-${{ github.ref }}
+  # A newer push to the same pull request makes the older run worthless.
+  # On main every push gets its own verdict and its own image.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.diff.outputs.backend }}
+      frontend: ${{ steps.diff.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          base=""
+          if [ "$EVENT" = "pull_request" ]; then
+            base="$PR_BASE"
+          elif [ "$EVENT" = "push" ] && [ "${PUSH_BEFORE:-0000000000000000000000000000000000000000}" != "0000000000000000000000000000000000000000" ]; then
+            base="$PUSH_BEFORE"
+          fi
+
+          backend=true
+          frontend=true
+          if [ -n "$base" ] && git rev-parse -q --verify "${base}^{commit}" >/dev/null; then
+            files="$(git diff --name-only "$base" "$GITHUB_SHA")"
+            echo "Changed files:"; echo "$files" | head -50
+            backend=false
+            frontend=false
+            if echo "$files" | grep -qE '^(backend|packs|data|scripts)/'; then backend=true; fi
+            if echo "$files" | grep -qE '^(frontend|packages)/'; then frontend=true; fi
+            # A change to this workflow runs everything, so the change proves itself.
+            if echo "$files" | grep -qxF '.github/workflows/pmpm-ci.yml'; then backend=true; frontend=true; fi
+          else
+            echo "No usable base commit (manual run or new branch): running everything."
+          fi
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "backend=$backend frontend=$frontend"
+
+  backend:
+    name: Backend (shard ${{ matrix.shard }}/6)
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: oe
+          POSTGRES_PASSWORD: oe
+          POSTGRES_DB: openconstructionerp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U oe -d openconstructionerp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # A few tests rebuild older versions of files from git history.
+          # blob:none keeps the full history cheap to fetch.
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Empty frontend dist (the backend package force-includes it)
+        run: |
+          mkdir -p ../frontend/dist
+          touch ../frontend/dist/.gitkeep
+
+      - name: Install
+        id: install
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Unit tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          DATABASE_URL: postgresql+asyncpg://oe:oe@localhost:5432/openconstructionerp_test
+          DATABASE_SYNC_URL: postgresql+psycopg2://oe:oe@localhost:5432/openconstructionerp_test
+        run: >-
+          pytest tests/unit -q -ra --durations=15
+          --timeout=300 --timeout-method=signal
+          --splits 6 --group ${{ matrix.shard }}
+
+  backend-result:
+    # One check name for branch protection, whatever the shard count.
+    name: Backend
+    needs: [changes, backend]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          r="${{ needs.backend.result }}"
+          if [ "$r" = "success" ] || [ "$r" = "skipped" ]; then
+            echo "Backend: $r"
+          else
+            echo "::error::Backend shards: $r"
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: More swap for the type check
+        # The full type check needs about 9 GB. A private repository's runner
+        # has less memory than that, so give it swap rather than fail. On a
+        # public repository's runner this is harmless.
+        working-directory: .
+        run: |
+          free -h
+          sudo fallocate -l 10G /pmpm-swapfile
+          sudo chmod 600 /pmpm-swapfile
+          sudo mkswap /pmpm-swapfile
+          sudo swapon /pmpm-swapfile
+          free -h
+
+      - name: Install
+        id: install
+        run: npm ci
+
+      - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+
+      - name: Type check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+
+      - name: Tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        # tests/pwa reads the production build, which this job does not make
+        # (the image job does).
+        run: npm run test -- --run --maxWorkers=2 --exclude "tests/pwa/**"
+
+  image:
+    name: Docker image
+    needs: [backend-result, frontend]
+    # Only from main, and only when the checks that ran passed (a skipped half
+    # counts as passed: it had nothing to check).
+    if: >-
+      ${{ !cancelled()
+          && github.event_name != 'pull_request'
+          && github.ref == 'refs/heads/main'
+          && needs.backend-result.result == 'success'
+          && (needs.frontend.result == 'success' || needs.frontend.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image name (GHCR names must be lower case)
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.unified
+          push: true
+          tags: |
+            ${{ steps.name.outputs.image }}:main
+            ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          {
+            echo "### Image pushed"
+            echo ""
+            echo "- \`${{ steps.name.outputs.image }}:main\`"
+            echo "- \`${{ steps.name.outputs.image }}:sha-${{ github.sha }}\`"
+            echo ""
+            echo "On the server: \`cd /opt/pmpm && ./deploy.sh\`"
+          } >> "$GITHUB_STEP_SUMMARY"
