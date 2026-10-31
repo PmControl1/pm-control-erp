@@ -1,0 +1,90 @@
+# PM Project Management - production stack.
+#
+#   postgres  the database (PostgreSQL 16)
+#   app       the platform, from the image CI pushes to GitHub Container Registry
+#   caddy     HTTPS in front of the app, with a free Let's Encrypt certificate
+#
+# Runs on any Linux server with Docker. Everything is configured in .env next
+# to this file (copy .env.example). README.md is the step-by-step runbook.
+#
+# The project name pins the volume names (pmpm_pg_data, pmpm_app_data) that
+# backup.sh and restore.sh read, whatever folder this file is copied to.
+name: pmpm
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: openestimate
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oe -d openestimate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Not published: only the app reaches the database, over the stack's
+    # private network.
+
+  app:
+    image: ${PMPM_IMAGE:-ghcr.io/pmcontrol1/pm-control-erp}:${PMPM_IMAGE_TAG:-main}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      OE_DB_HOST: postgres
+      OE_DB_PORT: "5432"
+      OE_DB_USER: oe
+      OE_DB_NAME: openestimate
+      OE_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      APP_ENV: production
+      APP_DEBUG: "false"
+      SERVE_FRONTEND: "true"
+      OE_DATA_DIR: /data
+      ALLOWED_ORIGINS: https://${PMPM_DOMAIN:?Set PMPM_DOMAIN in .env}
+      # Bulgaria is the default: Bulgarian interface, EUR, ДДС 20 %, ЕИК in
+      # the company profile and ЗУТ categories on every project. A pack
+      # applied in the app (Modules > Partner Packs) still takes precedence.
+      OE_PACK: bulgaria-bg
+      # No demo projects or demo logins on the real instance, ever. This also
+      # keeps the Sofia sample project out.
+      SEED_DEMO: "false"
+      # Only the first account can sign itself up (it becomes the admin).
+      # After that, the admin creates everyone else's account.
+      REGISTRATION_MODE: ${PMPM_REGISTRATION_MODE:-closed}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Uploaded documents, drawings, generated PDFs and search indexes.
+      # backup.sh backs this up together with the database.
+      - app_data:/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PMPM_DOMAIN: ${PMPM_DOMAIN:?Set PMPM_DOMAIN in .env}
+      PMPM_ACME_EMAIL: ${PMPM_ACME_EMAIL:?Set PMPM_ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pg_data:
+  app_data:
+  caddy_data:
+  caddy_config:

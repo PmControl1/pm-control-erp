@@ -1,0 +1,12 @@
+[Unit]
+Description=PM Project Management nightly backup
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# Assumes the stack lives in /opt/pmpm (README.md). Change both paths if not.
+WorkingDirectory=/opt/pmpm
+ExecStart=/opt/pmpm/backup.sh
+Nice=10
+IOSchedulingClass=idle
