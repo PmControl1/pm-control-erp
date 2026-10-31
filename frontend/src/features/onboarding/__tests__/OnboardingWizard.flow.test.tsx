@@ -146,7 +146,7 @@ function moduleSwitch(key: string): HTMLElement {
 
 /** Welcome -> start choice -> the profile step, catalogue loaded. */
 async function toProfileStep() {
-  await heading('Welcome to OpenConstructionERP');
+  await heading('Welcome to PM Project Management');
   click(/Get Started/);
   await heading('How would you like to start?');
   click(/Choose Your Profile/);
@@ -222,7 +222,7 @@ describe('the onboarding wizard, first screen to the app', () => {
   it('walks every step as a general contractor and saves exactly what was picked', async () => {
     const client = renderWizard();
 
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     expect(stepLabel()).toBe('Step 1 of 7');
     click(/Get Started/);
     await heading('How would you like to start?');
@@ -309,7 +309,7 @@ describe('the onboarding wizard, first screen to the app', () => {
     click('Back');
     await heading('How would you like to start?');
     click('Back');
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
 
     // And forward again to the end, where the pick made at the start is saved.
     click(/Get Started/);
@@ -344,7 +344,7 @@ describe('the onboarding wizard, first screen to the app', () => {
 describe('the ways out of the wizard', () => {
   it('Skip setup in the header goes to the summary and saves the whole platform', async () => {
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     // Not offered on the first screen, where there is nothing to skip past.
     expect(screen.queryByRole('button', { name: 'Skip setup' })).toBeNull();
     click(/Get Started/);
@@ -363,7 +363,7 @@ describe('the ways out of the wizard', () => {
 
   it('the English escape hatch leaves at once, marks the wizard done and saves no profile', async () => {
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     click('Skip setup - open in English');
 
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/dashboard'));
@@ -376,7 +376,7 @@ describe('the ways out of the wizard', () => {
 
   it('Quick Start skips the profile and module steps, Back returns to the start', async () => {
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     click(/Get Started/);
     await heading('How would you like to start?');
     click(/Quick Start/);
@@ -401,7 +401,7 @@ describe('the ways out of the wizard', () => {
     localStorage.setItem('oe_onboarding_completed', 'true');
     renderWizard();
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/'));
-    expect(screen.queryByRole('heading', { name: 'Welcome to OpenConstructionERP' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Welcome to PM Project Management' })).toBeNull();
   });
 });
 
@@ -478,7 +478,7 @@ describe('the ready-made pack is offered to those who can install it', () => {
 
   it('an editor sees no Ready-made Pack card and no pack installer', async () => {
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     click(/Get Started/);
     await heading('How would you like to start?');
     expect(screen.getByRole('button', { name: /Quick Start/ })).toBeTruthy();
@@ -492,7 +492,7 @@ describe('the ready-made pack is offered to those who can install it', () => {
   it('an admin sees the Ready-made Pack card and the pack installer', async () => {
     useAuthStore.setState({ userRole: 'admin' });
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     click(/Get Started/);
     await heading('How would you like to start?');
     expect(screen.getByRole('button', { name: /Ready-made Pack/ })).toBeTruthy();
@@ -507,10 +507,10 @@ describe('the ready-made pack is offered to those who can install it', () => {
 // everywhere else, so the tab used to keep the previous page's title.
 describe('the browser tab on the wizard', () => {
   it('names the wizard, not the page before it', async () => {
-    document.title = 'Dashboard | OpenConstructionERP';
+    document.title = 'Dashboard | PM Project Management';
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
-    expect(document.title).toBe('Getting started | OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
+    expect(document.title).toBe('Getting started | PM Project Management');
   });
 });
 
@@ -548,7 +548,7 @@ describe('loading a cost base by hand on the data step', () => {
 
     try {
       renderWizard();
-      await heading('Welcome to OpenConstructionERP');
+      await heading('Welcome to PM Project Management');
       click(/Get Started/);
       await heading('How would you like to start?');
       click(/Quick Start/);
@@ -607,7 +607,7 @@ describe('installing a country pack on the data step', () => {
     useToastStore.setState({ toasts: [] });
 
     renderWizard();
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     click(/Get Started/);
     await heading('How would you like to start?');
     click(/Quick Start/);
@@ -667,7 +667,7 @@ describe('on an installation whose pack names a company profile', () => {
     useAuthStore.setState({ userRole: 'admin' });
     renderWizard();
 
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     await waitFor(() =>
       expect(api.apiGet.mock.calls.some(([path]) => path === '/v1/partner-pack/current')).toBe(true),
     );
@@ -680,7 +680,7 @@ describe('on an installation whose pack names a company profile', () => {
     packNames(null);
     renderWizard();
 
-    await heading('Welcome to OpenConstructionERP');
+    await heading('Welcome to PM Project Management');
     await waitFor(() =>
       expect(api.apiGet.mock.calls.some(([path]) => path === '/v1/partner-pack/current')).toBe(true),
     );

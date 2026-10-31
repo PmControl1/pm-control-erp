@@ -119,27 +119,29 @@ def text_pass(name: str) -> tuple[int, int]:
     return changed_files, hits
 
 
-# Backend tests that check what a user is shown: the product name in emails,
+# Tests that check what a user is shown: the product name in emails,
 # reports, the CLI banner and the settings default. They assert the upstream
 # name, so they are renamed along with the app; the rest of the test tree is
 # left as upstream wrote it (see SKIP_PARTS).
 BRAND_TESTS = [
-    ROOT / "backend" / "tests" / "unit" / name
-    for name in (
-        "test_every_email_carries_the_brand.py",
-        "test_email_service.py",
-        "test_config.py",
-        "test_cli_version_flag_matches_the_version_command.py",
-        "test_a_generated_report_is_written_in_the_readers_language.py",
-        "test_converter_install_integrity.py",
-        "test_notification_email_links.py",
-        "test_notification_email_locale.py",
-        "test_portal_login_email.py",
-        "test_pdf_letterhead.py",
-        "test_pdf_appearance_reaches_the_renderer.py",
-        "test_outgoing_documents_print_the_company_letterhead.py",
-        "test_version_fallback_names_a_version.py",
-        "test_pack_install_says_what_it_did.py",
+    ROOT / path
+    for path in (
+        "backend/tests/unit/test_every_email_carries_the_brand.py",
+        "backend/tests/unit/test_email_service.py",
+        "backend/tests/unit/test_config.py",
+        "backend/tests/unit/test_cli_version_flag_matches_the_version_command.py",
+        "backend/tests/unit/test_a_generated_report_is_written_in_the_readers_language.py",
+        "backend/tests/unit/test_converter_install_integrity.py",
+        "backend/tests/unit/test_notification_email_links.py",
+        "backend/tests/unit/test_notification_email_locale.py",
+        "backend/tests/unit/test_portal_login_email.py",
+        "backend/tests/unit/test_pdf_letterhead.py",
+        "backend/tests/unit/test_pdf_appearance_reaches_the_renderer.py",
+        "backend/tests/unit/test_outgoing_documents_print_the_company_letterhead.py",
+        "backend/tests/unit/test_version_fallback_names_a_version.py",
+        "backend/tests/unit/test_pack_install_says_what_it_did.py",
+        "frontend/src/features/onboarding/__tests__/OnboardingWizard.flow.test.tsx",
+        "frontend/src/modules/gaeb-exchange/GAEBExchangeModule.test.tsx",
     )
 ]
 

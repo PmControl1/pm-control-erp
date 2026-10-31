@@ -5,7 +5,7 @@
 // type; it stopped doing that in 1.0 and we are on 4.1.9, so the reference had
 // been a declaration with no reader for a long time and the `test` block was
 // unchecked. Runtime was never affected - vitest reads this file either way.
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -619,6 +619,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
+    // PM Project Management: the update check against the original project's
+    // releases is switched off (branding/apply_branding.py), so its tests have
+    // nothing to test.
+    exclude: [...configDefaults.exclude, 'src/shared/ui/__tests__/updateNotice.test.tsx'],
     css: false,
     // The default 5s per-test timeout is too tight for the few tests that
     // build a real xlsx/PDF artifact (the first one pays a one-time lazy
