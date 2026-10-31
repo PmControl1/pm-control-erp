@@ -34371,6 +34371,8 @@ const resource = {
     "boq.import_issue.header_needs_quantity": "Редът със заглавия не посочва колона за количество, мярка или цена",
     "boq.import_issue.header_unrecognised": "Непознати заглавия: {{headings}}",
     "boq.import_issue.dot_thousands": "{{text}} беше прочетено като {{value}}: точката тук разделя хилядите",
+    "boq.import_issue.currency_converted_to_euro": "Сметката е в лева: {{count}} единични цени са превърнати в евро по фиксирания курс {{rate}}. Всеки ред пази и цената си в лева",
+    "boq.import_issue.currency_not_stated": "Заглавията на цените не казват дали са в лева или в евро, затова цените са импортирани както са записани, във валутата на проекта. Проверете ги спрямо файла",
     "boq.import_issue.comma_thousands": "{{text}} беше прочетено като {{value}}: запетаята тук разделя хилядите",
     "import.nothing_imported": "От този файл не беше импортирано нищо",
     "import.unsupported_type": "{{name}} не е тип файл, който този импорт чете. Поддържани: {{types}}",

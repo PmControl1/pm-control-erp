@@ -33552,6 +33552,8 @@ const resource = {
     "boq.import_issue.header_needs_quantity": "The header row names no quantity, unit or rate column",
     "boq.import_issue.header_unrecognised": "Headings not recognised: {{headings}}",
     "boq.import_issue.dot_thousands": "{{text}} was read as {{value}}: the dot separates thousands",
+    "boq.import_issue.currency_converted_to_euro": "The bill is priced in leva: {{count}} rates were converted to euro at the fixed rate {{rate}}. Each line keeps its lev rate",
+    "boq.import_issue.currency_not_stated": "The price headings do not say leva or euro, so the rates were imported as written, in the project's currency. Check them against the file",
     "boq.import_issue.comma_thousands": "{{text}} was read as {{value}}: the comma separates thousands",
     "import.nothing_imported": "Nothing was imported from this file",
     "import.unsupported_type": "{{name}} is not a file type this import reads. Supported: {{types}}",

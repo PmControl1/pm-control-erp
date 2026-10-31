@@ -5,6 +5,7 @@ import { importIssueText } from './importIssueText';
 import hr from '@/app/locales/hr';
 import hu from '@/app/locales/hu';
 import en from '@/app/locales/en';
+import bg from '@/app/locales/bg';
 
 /** A `t` that reads one locale's flat table and interpolates like i18next. */
 function tFrom(table: Record<string, string>) {
@@ -200,5 +201,32 @@ describe('importIssueText for a column mapping the import could not use', () => 
     it('keeps the ordinal of another importer out of its message', () => {
       expect(importIssueText({ ordinal: '01.02', error: 'Quantity out of range: -1' }, t)).toBe('Quantity out of range: -1');
     });
+  });
+});
+
+describe('importIssueText: a Bulgarian КСС', () => {
+  const lev = {
+    code: 'currency_converted_to_euro',
+    text: '1.95583',
+    count: 12,
+    message: 'The bill is priced in BGN. 12 rates were converted to euro at the fixed 1.95583.',
+  };
+
+  it('says in Bulgarian that a lev bill was converted to euro, with the rate and the count', () => {
+    expect(importIssueText(lev, tFrom(bg.translation))).toBe(
+      'Сметката е в лева: 12 единични цени са превърнати в евро по фиксирания курс 1.95583. Всеки ред пази и цената си в лева',
+    );
+  });
+
+  it('says it in English for an English reader', () => {
+    expect(importIssueText(lev, tFrom(en.translation))).toBe(
+      'The bill is priced in leva: 12 rates were converted to euro at the fixed rate 1.95583. Each line keeps its lev rate',
+    );
+  });
+
+  it('asks the reader to check rates whose currency the headings do not name', () => {
+    const text = importIssueText({ code: 'currency_not_stated', message: 'server wording' }, tFrom(bg.translation));
+    expect(text).toContain('Проверете ги спрямо файла');
+    expect(text).not.toContain('server wording');
   });
 });

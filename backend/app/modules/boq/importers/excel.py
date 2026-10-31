@@ -49,6 +49,8 @@ from app.modules.boq.importers._encoding import (
     wide_bom_codec,
 )
 from app.modules.boq.importers._workbook import open_workbook
+from app.modules.boq.importers.bulgaria_kss import canonical_unit as bg_canonical_unit
+from app.modules.boq.importers.bulgaria_kss import money_currency as bg_money_currency
 from app.modules.boq.importers.hungary_workbook import parse_hungarian_workbook
 from app.modules.boq.roundtrip import ID_COLUMN_ALIASES, normalise_id
 from app.modules.boq.units import is_lump_sum_unit
@@ -397,12 +399,45 @@ _HEADERS_BY_LANGUAGE: dict[str, dict[str, tuple[str, ...]]] = {
         "classification": ("simbol", "cod", "cod articol", "simbol articol"),
     },
     "bg": {
-        "ordinal": ("№", "поз", "поз."),
-        "description": ("описание", "вид работа", "видове работи"),
-        "unit": ("мярка", "ед. мярка", "единица мярка", "мерна единица"),
-        "quantity": ("количество",),
-        "unit_rate": ("ед. цена", "единична цена"),
-        "total": ("стойност", "обща стойност", "общо"),
+        # A КСС (количествено-стойностна сметка) is headed "№ по ред | Шифър |
+        # Наименование на видовете СМР | Ед. мярка | Количество | Ед. цена |
+        # Стойност", in many spellings; the шифър is the price-norm code the
+        # line was priced from, not a chapter.
+        "ordinal": ("№", "поз", "поз.", "№ по ред", "по ред", "№ по ред.", "пореден №", "№ п/р", "н-р"),
+        "description": (
+            "описание",
+            "вид работа",
+            "видове работи",
+            "наименование",
+            "наименование на смр",
+            "наименование на видовете смр",
+            "наименование на видовете работи",
+            "наименование на работите",
+            "наименование на строително-монтажните работи",
+            "наименование на видовете строително-монтажни работи",
+            "вид на работите",
+            "вид на работата",
+            "вид смр",
+            "видове смр",
+            "вид на смр",
+            "описание на работите",
+            "описание на смр",
+        ),
+        "unit": (
+            "мярка",
+            "ед. мярка",
+            "единица мярка",
+            "мерна единица",
+            "мерна ед.",
+            "ед. м.",
+            "ед.м",
+            "м-ка",
+            "ед. изм.",
+        ),
+        "quantity": ("количество", "к-во", "кол.", "кол-во"),
+        "unit_rate": ("ед. цена", "единична цена", "цена за единица", "единична стойност", "ед. ст-ст"),
+        "total": ("стойност", "обща стойност", "общо", "обща цена", "сума", "стойност общо"),
+        "classification": ("шифър", "шифър по усн", "шифър на работата", "код", "код на работата"),
     },
     "el": {
         "ordinal": ("α/α", "αα"),
@@ -1934,10 +1969,27 @@ _SUMMARY_WORDS_BY_LANGUAGE: dict[str, dict[str, tuple[str, ...]]] = {
         "recap": ("centralizator", "recapitulatie"),
     },
     "bg": {
-        "subtotal": ("общо", "междинна сума"),
-        "tax": ("ддс",),
-        "grand_total": ("общо с ддс", "всичко"),
-        "recap": ("рекапитулация", "обобщение"),
+        # A КСС closes each section "Общо за раздел I:", ends "ОБЩО:", "ДДС
+        # 20%" and "ВСИЧКО С ДДС:", and some carry a recap sheet.
+        "subtotal": (
+            "общо",
+            "междинна сума",
+            "общо за раздел",
+            "общо за част",
+            "общо без ддс",
+            "всичко без ддс",
+            "стойност без ддс",
+        ),
+        "tax": ("ддс", "данък добавена стойност"),
+        "grand_total": (
+            "общо с ддс",
+            "всичко",
+            "всичко с ддс",
+            "обща стойност с ддс",
+            "стойност с ддс",
+            "крайна стойност",
+        ),
+        "recap": ("рекапитулация", "обобщение", "обобщена сметка", "обобщена стойност"),
     },
     "el": {
         "subtotal": ("σύνολο", "μερικό σύνολο", "άθροισμα"),
@@ -2293,6 +2345,10 @@ _CONTINGENCY_PHRASES: frozenset[str] = frozenset(
         "tartalékkeret",
         "tartalék",
         "előre nem látható költségek",
+        # Bulgarian: "Непредвидени разходи 10%", "Непредвидени СМР 5 %"
+        "непредвидени разходи",
+        "непредвидени смр",
+        "непредвидени",
     )
 )
 
@@ -2443,6 +2499,28 @@ _IMPORT_MAX_QUANTITY = 1e9
 _IMPORT_MAX_UNIT_RATE = 1e8
 
 
+def _is_column_numbering_row(row: dict[str, Any]) -> bool:
+    """Whether ``row`` is the "1 | 2 | 3 | ..." row printed under a header.
+
+    Told apart from work by its description and unit both being plain whole
+    numbers: a line of work always names itself in words.
+    """
+
+    def whole(value: Any) -> int | None:
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        text = str(value or "").strip().rstrip(".")
+        return int(text) if text.isdigit() else None
+
+    description = whole(row.get("description"))
+    unit = whole(row.get("unit"))
+    return description is not None and unit is not None and 0 < description < 50 and 0 < unit < 50
+
+
 def _rows_to_positions(
     rows: list[dict[str, Any]],
     *,
@@ -2511,6 +2589,12 @@ def _rows_to_positions(
     # bill that numbers its lines but not its chapter headings ("Ssz." blank
     # on the heading row) used to give the first heading "1" beside line 1,
     # and duplicate ordinals fail validation.
+    # The row of column numbers many bills print under the header ("1 | 2 |
+    # 3 | 4 | 5 | 6 | 7"). It has a number where the description goes, which
+    # no line of work has, and imported as a line called "3" in unit "4".
+    while kept_rows and _is_column_numbering_row(kept_rows[0][1]):
+        kept_rows = kept_rows[1:]
+        result.skipped += 1
     explicit_ordinals = {fold_width(str(row.get("ordinal", ""))).strip() for _, row in kept_rows} - {""}
 
     for row_idx, row in _naming_the_sheet(kept_rows, result):
@@ -2608,6 +2692,9 @@ def _rows_to_positions(
                 )
                 continue
 
+            if header_language == "bg":
+                # "кв.м", "м²" and "m2" are one unit; see bulgaria_kss.
+                unit_raw = bg_canonical_unit(unit_raw)
             unit = unit_raw or "pcs"
 
             # Range guards - reject obvious tamper / typo errors.
@@ -2665,7 +2752,13 @@ def _rows_to_positions(
 
             # Heuristic classification (Epics I9 + I10).
             class_value = fold_width(str(row.get("classification", ""))).strip()
-            classification = _infer_classification(class_value, description)
+            if header_language == "bg":
+                # A КСС шифър ("02.01.01") is the price-norm code the line was
+                # priced from. Read as NRM or MasterFormat it named a UK or US
+                # work section the bill never meant.
+                classification = {"code": class_value} if class_value else {}
+            else:
+                classification = _infer_classification(class_value, description)
             if header_language == "hu" and "code" in classification:
                 # The Hungarian rules read the item code from ``tetelrend``,
                 # where the workbook profile writes it. A flat bill's code is
@@ -2816,4 +2909,20 @@ class ExcelImporter:
         for key in ("header_language", "item_sheet", "item_sheets", "encoding", "delimiter", "header_row"):
             if import_meta.get(key):
                 result.metadata[key] = import_meta[key]
+        if language == "bg" and not result.currency:
+            # "Ед. цена (лв. без ДДС)": the currency is in the bracket the
+            # column match drops. A lev bill is converted to euro on import
+            # into a euro project (router, bulgaria_kss.convert_to_euro).
+            result.currency = bg_money_currency(import_meta.get("original_columns") or [])
+            if not result.currency and result.positions:
+                result.warnings.append(
+                    {
+                        "code": "currency_not_stated",
+                        "params": {},
+                        "message": (
+                            "The price headings do not say лева or euro, so the rates were imported "
+                            "as written, in the project's currency. Check them against the file."
+                        ),
+                    }
+                )
         return result
