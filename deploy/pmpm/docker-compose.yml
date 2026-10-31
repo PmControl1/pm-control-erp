@@ -59,6 +59,15 @@ services:
       # After that, the admin creates everyone else's account.
       REGISTRATION_MODE: ${PMPM_REGISTRATION_MODE:-closed}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Email (password resets, invitations). "console" only logs them; set
+      # smtp and the SMTP_* lines in .env to really send.
+      EMAIL_BACKEND: ${PMPM_EMAIL_BACKEND:-console}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      # Without this the upstream project's own address would be the sender.
+      SMTP_FROM: ${SMTP_FROM:?Set SMTP_FROM in .env}
     volumes:
       # Uploaded documents, drawings, generated PDFs and search indexes.
       # backup.sh backs this up together with the database.

@@ -50,7 +50,7 @@ Back on the server:
 cd /opt/pmpm
 chmod +x *.sh
 cp .env.example .env && chmod 600 .env
-nano .env        # fill in domain, email, and two secrets: openssl rand -hex 32
+nano .env        # fill in domain, emails, and two secrets: openssl rand -hex 32
 ```
 
 The repository is private, so its images are too. Give the server read access
