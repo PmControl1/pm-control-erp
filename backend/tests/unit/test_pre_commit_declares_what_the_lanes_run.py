@@ -47,7 +47,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 import yaml
+
+# PM fork: this compares the pre-commit hooks with what the original project's
+# CI lanes run. Those lanes are switched off here (.github/upstream-workflows/);
+# this fork's CI is pmpm-ci.yml, so the comparison describes nothing that runs.
+pytestmark = pytest.mark.skip(reason="PM fork: the original project's CI lanes are switched off")
 
 BACKEND = Path(__file__).resolve().parents[2]
 ROOT = BACKEND.parent

@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-WORKFLOW = Path(__file__).resolve().parents[3] / ".github/workflows/repo-hygiene.yml"
+# PM fork: the original project's workflows live in .github/upstream-workflows/ (switched off).
+WORKFLOW = Path(__file__).resolve().parents[3] / ".github/upstream-workflows/repo-hygiene.yml"
 
 
 def _document():
