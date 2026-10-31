@@ -1,9 +1,8 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OpenConstructionERP",
-  "version": "12.2.0",
-  "identifier": "io.openconstructionerp.desktop",
-  "mainBinaryName": "OpenConstructionERP",
+  "$schema": "https://raw.githubusercontent.com/nicegui/nicegui/main/nicegui/templates/tauri-schema.json",
+  "productName": "OpenEstimator ERP",
+  "version": "2.7.0",
+  "identifier": "io.openestimator.desktop",
   "build": {
     "frontendDist": "../../frontend/dist",
     "beforeBuildCommand": "",
@@ -13,23 +12,20 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "label": "main",
-        "url": "splash.html",
-        "title": "OpenConstructionERP",
+        "title": "OpenEstimator ERP — Construction Cost Estimation",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,
-        "minHeight": 640,
+        "minHeight": 600,
         "resizable": true,
-        "center": true,
         "fullscreen": false,
-        "visible": true
+        "center": true
       }
     ],
     "trayIcon": {
       "iconPath": "icons/icon.png",
-      "iconAsTemplate": false,
-      "tooltip": "OpenConstructionERP"
+      "iconAsTemplate": true,
+      "tooltip": "OpenEstimate"
     },
     "security": {
       "csp": null
@@ -38,13 +34,6 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "createUpdaterArtifacts": false,
-    "publisher": "DataDrivenConstruction",
-    "copyright": "Copyright DataDrivenConstruction. Licensed under AGPL-3.0.",
-    "category": "Business",
-    "shortDescription": "Open-source construction cost estimation and BOQ platform.",
-    "longDescription": "OpenConstructionERP is an open-source platform for construction cost estimation, bills of quantities, and data validation, with CAD/BIM quantity takeoff and multi-currency support across 27 locales. It runs fully local on an embedded database, so there is no Python install or extra setup to manage. Import, validate, estimate, and report from a single desktop app that works offline.",
-    "licenseFile": "../../LICENSE",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -53,62 +42,34 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/openconstructionerp-server"
+      "binaries/openestimate-server/openestimate-server"
     ],
-    "resources": {
-      "resources/converters": "converters"
-    },
     "windows": {
-      "webviewInstallMode": {
-        "type": "embedBootstrapper"
-      },
       "nsis": {
-        "installerIcon": "icons/icon.ico",
-        "headerImage": "installer/header.bmp",
-        "sidebarImage": "installer/sidebar.bmp",
-        "installMode": "perMachine",
-        "installerHooks": "windows/hooks.nsh",
-        "displayLanguageSelector": true,
-        "languages": [
-          "English",
-          "German",
-          "French",
-          "Spanish",
-          "SpanishInternational",
-          "Italian",
-          "Portuguese",
-          "PortugueseBR",
-          "Dutch",
-          "Polish",
-          "Norwegian",
-          "Swedish",
-          "Bulgarian",
-          "Russian",
-          "Turkish",
-          "Arabic",
-          "SimpChinese",
-          "TradChinese",
-          "Japanese",
-          "Korean",
-          "Vietnamese"
-        ]
+        "installMode": "perMachine"
       }
     },
     "macOS": {
-      "minimumSystemVersion": "10.15",
-      "signingIdentity": "-"
+      "minimumSystemVersion": "10.15"
     },
     "linux": {
       "appimage": {
         "bundleMediaFramework": false
       },
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0"],
-        "section": "science"
+        "depends": [
+          "libwebkit2gtk-4.1-0"
+        ]
       }
     }
   },
   "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://releases.openestimate.io/{{target}}/{{arch}}/{{current_version}}"
+      ],
+      "pubkey": ""
+    },
     "shell": {
       "open": true
     }
