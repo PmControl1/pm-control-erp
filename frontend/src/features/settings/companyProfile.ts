@@ -37,6 +37,13 @@ export interface CompanyProfile {
   phone: string;
   email: string;
   website: string;
+  /**
+   * The statutory company number the active country pack asks for (Bulgaria's
+   * ЕИК), as the server checked and normalised it. `""` when unset.
+   */
+  company_id: string;
+  /** The name the number is printed under ("ЕИК"), written by the server from the pack. */
+  company_id_label: string;
 }
 
 /** The text fields the details form edits, in the order it shows them. */
@@ -44,6 +51,7 @@ export const COMPANY_TEXT_FIELDS = [
   'legal_name',
   'address',
   'registration_line',
+  'company_id',
   'phone',
   'email',
   'website',
@@ -61,6 +69,39 @@ export interface CompanyProfileOptions {
   max_address_lines: number;
   max_logo_data_url_chars: number;
   logo_mime_types: string[];
+  /**
+   * The company number the active country pack asks for, or `null` (also
+   * absent on older servers) when no active pack names one. The form shows
+   * the field only when this is set.
+   */
+  company_identifier?: CompanyIdentifierField | null;
+}
+
+/** What the active country pack says about its company number. */
+export interface CompanyIdentifierField {
+  scheme: string;
+  /** The number's name in the market's language, e.g. "ЕИК". */
+  label: string;
+  label_en: string | null;
+  placeholder: string | null;
+  help: string | null;
+  country: string;
+}
+
+/**
+ * The registration line a document prints, the way the server builds it:
+ * the company number under its name, then the firm's own line. A line that
+ * already carries the digits is printed alone, so the number never shows twice.
+ */
+export function registrationText(
+  profile: Pick<CompanyProfile, 'registration_line' | 'company_id'>,
+  label: string,
+): string {
+  const line = profile.registration_line.trim();
+  const number = profile.company_id.trim();
+  if (!number || line.replace(/[\s./-]/g, '').includes(number)) return line;
+  const head = label ? `${label} ${number}` : number;
+  return line ? `${head} · ${line}` : head;
 }
 
 export const COMPANY_PROFILE_KEY = ['company-profile'] as const;

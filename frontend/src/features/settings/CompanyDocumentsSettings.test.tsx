@@ -68,6 +68,7 @@ import * as appearanceApi from '@/features/property-dev/api';
 import * as templatesApi from './documentTemplates';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBrandingStore } from '@/stores/useBrandingStore';
+import { useToastStore } from '@/stores/useToastStore';
 import { ApiError } from '@/shared/lib/api';
 
 const getProfileMock = vi.mocked(profileApi.getCompanyProfile);
@@ -84,6 +85,8 @@ const BLANK: profileApi.CompanyProfile = {
   phone: '',
   email: '',
   website: '',
+  company_id: '',
+  company_id_label: '',
 };
 
 const OPTIONS: profileApi.CompanyProfileOptions = {
@@ -420,5 +423,66 @@ describe('CompanyDocumentsSettings', () => {
     const appearance = await screen.findByTestId('doc-appearance-panel');
     expect(appearance.compareDocumentPosition(types) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(types).getByText('Request for information')).toBeInTheDocument();
+  });
+  it('asks for the company number the active country pack names, and saves it', async () => {
+    getOptionsMock.mockResolvedValue({
+      ...OPTIONS,
+      company_identifier: {
+        scheme: 'eik',
+        label: 'ЕИК',
+        label_en: 'UIC',
+        placeholder: '123456786',
+        help: 'Nine digits, or thirteen for a branch.',
+        country: 'BG',
+      },
+    });
+    // A letterhead is drawn only under a name or a logo.
+    getProfileMock.mockResolvedValue({ ...BLANK, legal_name: 'Строй ЕООД' });
+    saveProfileMock.mockImplementation(async (patch) => ({
+      ...BLANK,
+      legal_name: 'Строй ЕООД',
+      ...patch,
+      company_id: '123456786',
+      company_id_label: 'ЕИК',
+    }));
+    renderPanel();
+
+    const field = await screen.findByLabelText('ЕИК');
+    expect(screen.getByText('Nine digits, or thirteen for a branch.')).toBeInTheDocument();
+    fireEvent.change(field, { target: { value: 'BG 123 456 786' } });
+    fireEvent.click(screen.getByTestId('company-save'));
+
+    await waitFor(() => expect(saveProfileMock).toHaveBeenCalledWith({ company_id: 'BG 123 456 786' }));
+    await waitFor(() => expect(screen.getByLabelText('ЕИК')).toHaveValue('123456786'));
+    // The preview prints the number under its name, the way the PDF does.
+    expect(screen.getByText('ЕИК 123456786')).toBeInTheDocument();
+  });
+
+  it('offers no company number field when no active pack names one', async () => {
+    renderPanel();
+    await screen.findByTestId('company-save');
+    expect(screen.queryByLabelText('ЕИК')).not.toBeInTheDocument();
+  });
+
+  it('says in words that a mistyped company number was refused', async () => {
+    getOptionsMock.mockResolvedValue({
+      ...OPTIONS,
+      company_identifier: { scheme: 'eik', label: 'ЕИК', label_en: null, placeholder: null, help: null, country: 'BG' },
+    });
+    saveProfileMock.mockRejectedValue(
+      new ApiError(422, 'Unprocessable', {
+        detail: { error: 'invalid_company_id', field: 'company_id', reason: 'checksum', label: 'ЕИК' },
+      }),
+    );
+    renderPanel();
+
+    fireEvent.change(await screen.findByLabelText('ЕИК'), { target: { value: '123456787' } });
+    fireEvent.click(screen.getByTestId('company-save'));
+
+    await waitFor(() =>
+      expect(useToastStore.getState().toasts.map((toast) => toast.title)).toContain(
+        'This ЕИК fails its check. Check the number and try again.',
+      ),
+    );
   });
 });

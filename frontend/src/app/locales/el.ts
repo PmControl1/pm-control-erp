@@ -49695,6 +49695,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Πακέτο Κατασκευών: Βέλγιο",
     "modules.pp_name_china_gbt50500": "Πακέτο Κατασκευών Κίνας",
     "modules.pp_name_croatia_hr": "Πακέτο Κατασκευών Κροατίας",
+    "modules.pp_name_bulgaria_bg": "Πακέτο Κατασκευών Βουλγαρίας",
     "modules.pp_name_canada_ca": "Πακέτο Κατασκευών: Καναδάς",
     "modules.pp_name_czechia_cz": "Πακέτο Κατασκευών: Τσεχία",
     "modules.pp_name_india_cpwd": "Πακέτο Κατασκευών Ινδίας",

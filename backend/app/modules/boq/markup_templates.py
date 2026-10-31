@@ -2337,6 +2337,42 @@ DEFAULT_MARKUP_TEMPLATES: dict[str, list[dict[str, object]]] = {
             "sort_order": 0,
         },
     ],
+    # ── Bulgaria ────────────────────────────────────────────────────────
+    # Количествено-стойностна сметка (КСС), the bill a Bulgarian tender and
+    # building contract is priced on. Every line carries an all-in единична
+    # цена: the contractor builds it in an анализ from labour, materials and
+    # plant, then adds its допълнителни разходи (on labour and on plant), its
+    # доставно-складови разходи on materials and its печалба, all inside the
+    # rate. Public tenders ask for those percentages as the bidder's
+    # ценообразуващи показатели precisely because they are not separate lines
+    # on the bill. The КСС then closes with "Общо без ДДС", "ДДС 20 %" and
+    # "Всичко с ДДС", so the only line it adds to the priced work is the tax.
+    #
+    # Bulgaria was the example of a country with no stack in
+    # ``test_a_country_without_a_stack_still_charges_its_vat``: its bill was
+    # seeded with ``DEFAULT``, English overhead, profit and contingency on top
+    # of rates that already hold them, and the 20 percent resolved from the
+    # tax seed was appended as a line named after the seed. This is that line
+    # stated where the market's stack lives. An allowance for непредвидени
+    # разходи, which public works often carry at a percentage the contracting
+    # authority sets per tender, is a per-project line and not part of the
+    # convention.
+    #
+    # ДДС 20 is the standard rate (ЗДДС чл. 66, ал. 1) and the dated tax
+    # seed's default for BG under the code DDS, which a bill reads first; this
+    # figure is the same number and defers to it. The 9 percent rate of
+    # чл. 66, ал. 2 covers hotel accommodation and does not reach construction
+    # works.
+    "BG": [
+        {
+            "name": "ДДС",
+            "category": "tax",
+            "percentage": "20.0",
+            # On the direct cost, because nothing precedes it; see the HR block.
+            "apply_to": "direct_cost",
+            "sort_order": 0,
+        },
+    ],
     # ── Ukraine ─────────────────────────────────────────────────────────
     # Настанова з визначення вартості будівництва, approved by наказ
     # Мінрегіону №281 of 01.11.2021 and amended by Зміни №2, №5 and №6. The
@@ -2844,6 +2880,8 @@ REGION_BY_COUNTRY: dict[str, str] = {
     # Croatia prices on all-in rates, so its stack is the tax line alone; the
     # HR block above says why.
     "HR": "HR",
+    # Bulgaria prices its КСС on all-in rates too; the BG block above says why.
+    "BG": "BG",
     # Ukraine joined with its country pack; the UA block above says which of
     # its numbers are statutory and which are starting points under a ceiling.
     "UA": "UA",

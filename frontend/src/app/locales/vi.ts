@@ -49501,6 +49501,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Gói Xây dựng Bỉ",
     "modules.pp_name_china_gbt50500": "Gói Xây dựng Trung Quốc",
     "modules.pp_name_croatia_hr": "Gói Xây dựng Croatia",
+    "modules.pp_name_bulgaria_bg": "Gói Xây dựng Bulgaria",
     "modules.pp_name_canada_ca": "Gói Xây dựng Canada",
     "modules.pp_name_czechia_cz": "Gói Xây dựng Séc",
     "modules.pp_name_india_cpwd": "Gói Xây dựng Ấn Độ",

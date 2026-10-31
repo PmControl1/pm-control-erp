@@ -534,6 +534,27 @@ def _plan(
             f"Estimating methodology '{m.default_methodology}' will be activated on the pack's demo "
             "project and seeded on new projects created while the pack is active."
         )
+    if m.company_identifier is not None:
+        from app.core.party_identifiers import schemes_for
+
+        country = m.market_country_code or ""
+        if m.company_identifier.scheme in schemes_for(country):
+            warnings.append(
+                f"The company profile asks for the {m.company_identifier.label} and checks it as a "
+                f"{country} '{m.company_identifier.scheme}' number; it is printed on every letterhead."
+            )
+        else:
+            warnings.append(
+                f"The company profile would ask for the {m.company_identifier.label}, but no "
+                f"'{m.company_identifier.scheme}' check is registered for {country}, so the number is "
+                "stored as typed and not checked."
+            )
+    if m.project_classifications:
+        warnings.append(
+            "New and existing projects in "
+            f"{m.market_country_code} are filed under {', '.join(spec.label for spec in m.project_classifications)}, "
+            "offered on the project form and kept to the pack's list."
+        )
     if m.default_company_profile:
         warnings.append(
             f"Company profile '{m.default_company_profile}' becomes the starting menu of every user who "

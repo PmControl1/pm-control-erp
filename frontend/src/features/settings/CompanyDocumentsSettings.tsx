@@ -55,6 +55,7 @@ import {
   getCompanyProfile,
   getCompanyProfileOptions,
   hasLetterhead,
+  registrationText,
   saveCompanyProfile,
   type CompanyProfile,
   type CompanyTextField,
@@ -66,6 +67,7 @@ const EMPTY_FORM: CompanyForm = {
   legal_name: '',
   address: '',
   registration_line: '',
+  company_id: '',
   phone: '',
   email: '',
   website: '',
@@ -161,6 +163,25 @@ function describeLogoRefusal(
   return typeof detail.message === 'string' ? detail.message : getErrorMessage(err);
 }
 
+/**
+ * Say why the server refused the details, in the reader's language.
+ *
+ * The one refusal of the details is a company number that fails its check
+ * (a mistyped ЕИК): the stored number is kept and the form keeps what was
+ * typed, so the message only has to name the number.
+ */
+function describeDetailsRefusal(t: Translate, err: unknown, label: string): string {
+  const detail = err instanceof ApiError && isRecord(err.body) ? err.body.detail : null;
+  if (isRecord(detail) && detail.error === 'invalid_company_id') {
+    const name = typeof detail.label === 'string' && detail.label ? detail.label : label;
+    return t('company_profile.company_id_invalid', {
+      defaultValue: 'This {{label}} fails its check. Check the number and try again.',
+      label: name,
+    });
+  }
+  return getErrorMessage(err);
+}
+
 function formFrom(profile: CompanyProfile): CompanyForm {
   return COMPANY_TEXT_FIELDS.reduce(
     (acc, f) => ({ ...acc, [f]: profile[f] ?? '' }),
@@ -237,6 +258,11 @@ export function CompanyDocumentsSettings() {
 
   const profile = profileQ.data;
   const options = optionsQ.data;
+  // The statutory company number the active country pack asks for (the ЕИК
+  // under the Bulgaria pack). Without one the field is not offered: the
+  // registration line stays the place for whatever the firm prints.
+  const companyIdentifier = options?.company_identifier ?? null;
+  const companyIdLabel = companyIdentifier?.label ?? profile?.company_id_label ?? '';
 
   // Seeded while rendering rather than from an effect, and only once per
   // answer, for the reason EInvoiceSettings records: an effect runs after the
@@ -270,7 +296,7 @@ export function CompanyDocumentsSettings() {
         }),
       });
     },
-    onError: (e) => addToast({ type: 'error', title: getErrorMessage(e) }),
+    onError: (e) => addToast({ type: 'error', title: describeDetailsRefusal(t, e, companyIdLabel) }),
   });
 
   // Saved in a PUT of its own, never with the details: the server refuses a
@@ -585,6 +611,28 @@ export function CompanyDocumentsSettings() {
                   />
                 </div>
 
+                {companyIdentifier && (
+                  <div className="sm:col-span-2">
+                    <Input
+                      id="company-company-id"
+                      label={companyIdentifier.label}
+                      value={form.company_id}
+                      maxLength={maxLen('company_id')}
+                      readOnly={!canEdit}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      onChange={(e) => setField('company_id', e.target.value)}
+                      placeholder={companyIdentifier.placeholder ?? undefined}
+                      hint={
+                        companyIdentifier.help ??
+                        t('company_profile.company_id_help', {
+                          defaultValue: 'Checked against its check digit and printed on every letterhead.',
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
                 <Input
                   id="company-phone"
                   type="tel"
@@ -626,6 +674,7 @@ export function CompanyDocumentsSettings() {
                   documentLogo={docLogo}
                   appLogo={appLogo}
                   appearance={appearance}
+                  companyIdLabel={companyIdLabel}
                 />
                 <Button
                   variant="secondary"
@@ -971,11 +1020,14 @@ function LetterheadPreview({
   documentLogo,
   appLogo,
   appearance,
+  companyIdLabel,
 }: {
   form: CompanyForm;
   documentLogo: string;
   appLogo: string | null;
   appearance: DocumentAppearance | null;
+  /** The name the company number prints under ("ЕИК"), or `""`. */
+  companyIdLabel: string;
 }) {
   const { t } = useTranslation();
   const pageSize = appearance?.page_size ?? 'A4';
@@ -1088,9 +1140,9 @@ function LetterheadPreview({
                     {line}
                   </div>
                 ))}
-                {form.registration_line.trim() && (
+                {registrationText(form, companyIdLabel) && (
                   <div className="text-[9px] leading-snug text-[#666666]">
-                    {form.registration_line}
+                    {registrationText(form, companyIdLabel)}
                   </div>
                 )}
                 {contact && <div className="text-[9px] leading-snug text-[#666666]">{contact}</div>}

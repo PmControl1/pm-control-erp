@@ -50808,6 +50808,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Pacchetto Costruzioni Belgio",
     "modules.pp_name_china_gbt50500": "Pacchetto Costruzioni Cina",
     "modules.pp_name_croatia_hr": "Pacchetto Costruzioni Croazia",
+    "modules.pp_name_bulgaria_bg": "Pacchetto Costruzioni Bulgaria",
     "modules.pp_name_canada_ca": "Pacchetto Costruzioni Canada",
     "modules.pp_name_czechia_cz": "Pacchetto Costruzioni Cechia",
     "modules.pp_name_india_cpwd": "Pacchetto Costruzioni India",

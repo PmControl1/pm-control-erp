@@ -50916,6 +50916,7 @@ const resource = {
     "modules.pp_name_belgium_be": "ベルギー建設パック",
     "modules.pp_name_china_gbt50500": "中国建設パック",
     "modules.pp_name_croatia_hr": "クロアチア建設パック",
+    "modules.pp_name_bulgaria_bg": "ブルガリア建設パック",
     "modules.pp_name_canada_ca": "カナダ建設パック",
     "modules.pp_name_czechia_cz": "チェコ建設パック",
     "modules.pp_name_india_cpwd": "インド建設パック",

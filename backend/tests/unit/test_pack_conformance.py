@@ -668,9 +668,15 @@ def test_every_declared_cost_region_loads_a_base_of_the_packs_market(slug: str) 
                 f"{_base_country(entry['db_id'])}"
             )
         if entry["currency"]:
-            assert entry["currency"] == manifest.default_currency, (
-                f"{slug} prices in {manifest.default_currency} and loads {entry['db_id']} in {entry['currency']}"
-            )
+            # A base published in a currency the euro replaced is in the
+            # pack's currency at a rate fixed by law, not at a market rate:
+            # BG_SOFIA's lev is 1/1.95583 euro on every date it can hold.
+            from app.core.euro_conversion import fixed_rate_between
+
+            assert (
+                entry["currency"] == manifest.default_currency
+                or fixed_rate_between(entry["currency"], manifest.default_currency) is not None
+            ), f"{slug} prices in {manifest.default_currency} and loads {entry['db_id']} in {entry['currency']}"
 
 
 @pytest.mark.parametrize("slug", COUNTRY_SLUGS)

@@ -49932,6 +49932,7 @@ const resource = {
     "modules.pp_name_belgium_be": "חבילת בנייה לבלגיה",
     "modules.pp_name_china_gbt50500": "חבילת בנייה לסין",
     "modules.pp_name_croatia_hr": "חבילת בנייה לקרואטיה",
+    "modules.pp_name_bulgaria_bg": "חבילת בנייה לבולגריה",
     "modules.pp_name_canada_ca": "חבילת בנייה לקנדה",
     "modules.pp_name_czechia_cz": "חבילת בנייה לצ׳כיה",
     "modules.pp_name_india_cpwd": "חבילת בנייה להודו",

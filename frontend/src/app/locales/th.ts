@@ -49493,6 +49493,7 @@ const resource = {
     "modules.pp_name_belgium_be": "แพ็กก่อสร้างเบลเยียม",
     "modules.pp_name_china_gbt50500": "แพ็กก่อสร้างจีน",
     "modules.pp_name_croatia_hr": "แพ็กก่อสร้างโครเอเชีย",
+    "modules.pp_name_bulgaria_bg": "แพ็กก่อสร้างบัลแกเรีย",
     "modules.pp_name_canada_ca": "แพ็กก่อสร้างแคนาดา",
     "modules.pp_name_czechia_cz": "แพ็กก่อสร้างเช็ก",
     "modules.pp_name_india_cpwd": "แพ็กก่อสร้างอินเดีย",

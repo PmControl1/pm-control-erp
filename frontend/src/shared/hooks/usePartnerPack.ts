@@ -27,6 +27,40 @@ export interface PartnerPackBranding {
  *  resolves to ``country``. */
 export type PackType = 'country' | 'industry' | 'partner' | 'showcase';
 
+/** The statutory company number a country pack asks the company profile for. */
+export interface CompanyIdentifierSpec {
+  /** Scheme id in the server's party_identifiers registry, e.g. `eik`. */
+  scheme: string;
+  /** The number's name as the market writes it, e.g. "ЕИК". */
+  label: string;
+  label_en: string | null;
+  placeholder: string | null;
+  help: string | null;
+}
+
+/** One value of a project classification, e.g. Bulgaria's category III. */
+export interface ClassificationOption {
+  value: string;
+  label: string;
+  label_en: string | null;
+  hint: string | null;
+  hint_en: string | null;
+}
+
+/**
+ * A closed list a project in the pack's market is filed under (Bulgaria's six
+ * ЗУТ categories). The value lives in `project.custom_fields[key]`.
+ */
+export interface ProjectClassificationSpec {
+  key: string;
+  label: string;
+  label_en: string | null;
+  statute: string | null;
+  help: string | null;
+  help_en: string | null;
+  options: ClassificationOption[];
+}
+
 export interface PartnerPackManifest {
   slug: string;
   /** Absent on older backends; callers treat that as ``partner``. */
@@ -55,6 +89,10 @@ export interface PartnerPackManifest {
    *  backends. Read by the sidebar as the profile of a user who has chosen
    *  none (`effectiveCompanyPresetKey`). */
   default_company_profile?: string | null;
+  /** The company number the pack asks for; absent on older backends. */
+  company_identifier?: CompanyIdentifierSpec | null;
+  /** Classifications its market's projects are filed under; absent on older backends. */
+  project_classifications?: ProjectClassificationSpec[];
   branding: PartnerPackBranding;
   has_onboarding_script: boolean;
   metadata: Record<string, unknown>;

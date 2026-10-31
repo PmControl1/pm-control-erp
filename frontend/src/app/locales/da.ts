@@ -49741,6 +49741,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Byggepakke Belgien",
     "modules.pp_name_china_gbt50500": "Byggepakke Kina",
     "modules.pp_name_croatia_hr": "Byggepakke Kroatien",
+    "modules.pp_name_bulgaria_bg": "Byggepakke Bulgarien",
     "modules.pp_name_canada_ca": "Byggepakke Canada",
     "modules.pp_name_czechia_cz": "Byggepakke Tjekkiet",
     "modules.pp_name_india_cpwd": "Byggepakke Indien",

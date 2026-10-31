@@ -32,6 +32,8 @@ from app.core.company_profile import (
     LOGO_IMAGE_TYPES,
     MAX_ADDRESS_CHARS,
     MAX_ADDRESS_LINES,
+    MAX_COMPANY_ID,
+    MAX_COMPANY_ID_LABEL,
     MAX_EMAIL,
     MAX_LEGAL_NAME,
     MAX_PHONE,
@@ -55,6 +57,8 @@ _LINE_CAPS = {
     "phone": MAX_PHONE,
     "email": MAX_EMAIL,
     "website": MAX_WEBSITE,
+    "company_id": MAX_COMPANY_ID,
+    "company_id_label": MAX_COMPANY_ID_LABEL,
 }
 
 _FULL_PROFILE = {
@@ -66,6 +70,8 @@ _FULL_PROFILE = {
     "phone": "+49 30 1234567",
     "email": "office@acme.example",
     "website": "acme.example",
+    "company_id": "",
+    "company_id_label": "",
 }
 
 

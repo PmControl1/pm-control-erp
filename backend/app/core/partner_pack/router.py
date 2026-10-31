@@ -417,6 +417,31 @@ def partner_onboarding_script() -> Response:
     return Response(content=data, media_type=media_type)
 
 
+@router.get(
+    "/project-classifications",
+    summary="Classifications a project in this country is filed under",
+    dependencies=[Depends(get_current_user_payload)],
+)
+def project_classifications(region: str | None = None, country: str | None = None) -> dict[str, Any]:
+    """The closed lists the project form offers for a project in ``region``/``country``.
+
+    Answered by the pack that fits out that country, the one the project's
+    rule sets and methodology come from, so the form and the project service
+    can never disagree about which list applies. Never 404s: a country no pack
+    speaks for answers with an empty list.
+    """
+    from app.core.partner_pack.classifications import classifications_payload
+    from app.modules.projects.country_configuration import configuration_pack, validated_country
+
+    pack, source = configuration_pack(
+        region=region,
+        country_code=country,
+        active_pack=get_active_pack(),
+        shipped=discover_packs,
+    )
+    return classifications_payload(pack, country=validated_country(region, country), source=source)
+
+
 @router.get("/locale/{code}", summary="Partner-shipped locale JSON")
 def partner_locale(code: str) -> Response:
     """Stream an additional locale file shipped by the active pack."""

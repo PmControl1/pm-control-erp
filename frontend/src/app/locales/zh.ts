@@ -51962,6 +51962,7 @@ const resource = {
     "modules.pp_name_belgium_be": "比利时建筑数据包",
     "modules.pp_name_china_gbt50500": "中国建筑数据包",
     "modules.pp_name_croatia_hr": "克罗地亚建筑数据包",
+    "modules.pp_name_bulgaria_bg": "保加利亚建筑数据包",
     "modules.pp_name_canada_ca": "加拿大建筑数据包",
     "modules.pp_name_czechia_cz": "捷克建筑数据包",
     "modules.pp_name_india_cpwd": "印度建筑数据包",

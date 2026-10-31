@@ -49574,6 +49574,7 @@ const resource = {
     "modules.pp_name_belgium_be": "بسته ساخت‌وساز بلژیک",
     "modules.pp_name_china_gbt50500": "بسته ساخت‌وساز چین",
     "modules.pp_name_croatia_hr": "بسته ساخت‌وساز کرواسی",
+    "modules.pp_name_bulgaria_bg": "بسته ساخت‌وساز بلغارستان",
     "modules.pp_name_canada_ca": "بسته ساخت‌وساز کانادا",
     "modules.pp_name_czechia_cz": "بسته ساخت‌وساز چک",
     "modules.pp_name_india_cpwd": "بسته ساخت‌وساز هند",

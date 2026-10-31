@@ -70,6 +70,11 @@ MAX_REGISTRATION_LINE = 160
 MAX_PHONE = 40
 MAX_EMAIL = 120
 MAX_WEBSITE = 120
+#: The statutory company number and its name, when the active country pack
+#: names one (see :class:`app.core.partner_pack.manifest.CompanyIdentifierSpec`).
+#: Long enough for any national register number with its separators.
+MAX_COMPANY_ID = 40
+MAX_COMPANY_ID_LABEL = 40
 
 #: The address block. Three lines covers street, city line and country in
 #: every format we have seen; more than that pushes the document title down
@@ -102,6 +107,13 @@ DEFAULT_COMPANY_PROFILE: dict[str, str] = {
     "phone": "",
     "email": "",
     "website": "",
+    # The firm's statutory company number (Bulgaria's ЕИК, say) and the name it
+    # goes by. Both are filled only when an active country pack asks for the
+    # number: the router checks it against that pack's scheme and writes the
+    # label from the pack, so a letterhead never prints a term the firm typed
+    # by hand under a name the platform guessed.
+    "company_id": "",
+    "company_id_label": "",
 }
 
 #: The single-line fields and their caps.
@@ -111,6 +123,8 @@ _LINE_CAPS: dict[str, int] = {
     "phone": MAX_PHONE,
     "email": MAX_EMAIL,
     "website": MAX_WEBSITE,
+    "company_id": MAX_COMPANY_ID,
+    "company_id_label": MAX_COMPANY_ID_LABEL,
 }
 
 
@@ -205,6 +219,37 @@ def sanitise(data: Any) -> dict[str, str]:
     for field, cap in _LINE_CAPS.items():
         clean[field] = _line(data.get(field), cap)
     return {field: clean[field] for field in DEFAULT_COMPANY_PROFILE}
+
+
+def registration_text(profile: Any) -> str:
+    """The registration line a document prints: the company number, then the firm's line.
+
+    The company number is printed under its own name ("ЕИК 123456786") ahead
+    of whatever the firm wrote in ``registration_line``. A firm that already
+    typed the number into that line before the field existed is not printed
+    the number twice: the line is printed on its own when it already carries
+    the digits.
+
+    Args:
+        profile: A company profile, as :func:`read_company_profile` returns it.
+
+    Returns:
+        One line, or ``""`` when the profile has neither.
+    """
+    if not isinstance(profile, dict):
+        return ""
+
+    def _text(key: str) -> str:
+        value = profile.get(key)
+        return value.strip() if isinstance(value, str) else ""
+
+    line = _text("registration_line")
+    number = _text("company_id")
+    if not number or number in re.sub(r"[\s\-./]", "", line):
+        return line
+    label = _text("company_id_label")
+    head = f"{label} {number}" if label else number
+    return f"{head} · {line}" if line else head
 
 
 def has_letterhead(profile: Any) -> bool:

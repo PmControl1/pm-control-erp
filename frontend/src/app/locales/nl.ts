@@ -50534,6 +50534,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Bouwpakket België",
     "modules.pp_name_china_gbt50500": "Bouwpakket China",
     "modules.pp_name_croatia_hr": "Bouwpakket Kroatië",
+    "modules.pp_name_bulgaria_bg": "Bouwpakket Bulgarije",
     "modules.pp_name_canada_ca": "Bouwpakket Canada",
     "modules.pp_name_czechia_cz": "Bouwpakket Tsjechië",
     "modules.pp_name_india_cpwd": "Bouwpakket India",

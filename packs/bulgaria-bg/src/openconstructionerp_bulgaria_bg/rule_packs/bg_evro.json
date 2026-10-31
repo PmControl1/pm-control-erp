@@ -1,0 +1,19 @@
+{
+  "rule_pack_id": "bg_evro",
+  "name": "Euro changeover - lev amounts at the fixed rate",
+  "standard": "Council Regulation (EU) 2025/1409; Council Decision (EU) 2025/1407; Закон за въвеждане на еврото в Република България (ЗВЕРБ), чл. 12",
+  "jurisdiction": "BG",
+  "regulator": "Българска народна банка; Министерство на финансите",
+  "applies_to": [
+    "boq",
+    "estimate",
+    "cost_database",
+    "currency"
+  ],
+  "description": "Reference document for the lev. The euro became Bulgaria's currency on 1 January 2026 at the irrevocable rate of 1.95583 lev per euro (Council Regulation (EU) 2025/1409, amending Regulation (EC) No 2866/98). Under ЗВЕРБ чл. 12 a lev amount is converted by dividing it by that rate, the rate is never rounded or shortened, and the euro result is rounded to the cent on the third decimal, half up. The platform holds the rate in app.core.euro_conversion and applies it wherever a lev amount meets the euro: every FX conversion through the rate register uses it instead of a market quote (the ECB no longer publishes one), the bundled fallback rate is the exact 1.95583, and a new Bulgarian project in euro starts with the lev at that rate in its own rate table, so lines priced from the Sofia cost database, which was published in lev, convert into a euro КСС. The lev was pegged to the euro at the same rate under the currency board since 1 January 1999, so the one rate is right for every lev amount on file. A project saved in lev keeps its currency and its figures: the platform does not re-denominate a stored bill.",
+  "review_status": "The rate, its legal basis and the conversion rule are taken from EUR-Lex and from Bulgarian publications on the ЗВЕРБ, read on 2026-10-31.",
+  "severity_overrides": {},
+  "enables_rule_ids": [
+    "boq_quality.currency_consistency"
+  ]
+}

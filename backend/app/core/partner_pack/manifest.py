@@ -65,6 +65,84 @@ class PartnerBranding(BaseModel):
     )
 
 
+class CompanyIdentifierSpec(BaseModel):
+    """The statutory company number a country pack asks the company profile for.
+
+    The company profile is free text on purpose: the platform does not get to
+    design a letterhead, and a label it printed for a jurisdiction would be a
+    translation of somebody else's legal term. A country pack is the one place
+    that is allowed to know the term, so it names it here, in its market's own
+    words, together with the scheme in :mod:`app.core.party_identifiers` that
+    checks the number. Bulgaria's ЕИК is the first: nine digits with a
+    two-pass check digit, which a free-text line could never catch mistyped.
+    """
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    scheme: str = Field(
+        ...,
+        description=(
+            "Scheme id in app.core.party_identifiers for the pack's country, e.g. 'eik'. "
+            "Checked against the registry when the pack is applied."
+        ),
+        pattern=r"^[a-z][a-z0-9_]{1,31}$",
+    )
+    label: str = Field(
+        ...,
+        description="The number's name as the market writes it, e.g. 'ЕИК'. Printed on the letterhead.",
+        min_length=1,
+        max_length=40,
+    )
+    label_en: str | None = Field(default=None, max_length=80, description="English gloss for other languages.")
+    placeholder: str | None = Field(default=None, max_length=40)
+    help: str | None = Field(default=None, max_length=300, description="One sentence under the field.")
+
+
+class ClassificationOption(BaseModel):
+    """One value of a project classification, e.g. Bulgaria's category III."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    value: str = Field(..., pattern=r"^[A-Za-z0-9_.\-]{1,16}$", description="Stored value, e.g. 'III'.")
+    label: str = Field(..., min_length=1, max_length=80)
+    label_en: str | None = Field(default=None, max_length=80)
+    hint: str | None = Field(default=None, max_length=400)
+    hint_en: str | None = Field(default=None, max_length=400)
+
+
+class ProjectClassificationSpec(BaseModel):
+    """A statutory classification a project in the pack's country is filed under.
+
+    Bulgaria sorts every construction into one of six categories (ЗУТ чл. 137)
+    and the category decides who issues the permit, whether a licensed
+    consultant must supervise and who puts the building into service. That is
+    the shape this describes: one closed list per classification, stored on the
+    project under ``custom_fields[key]`` so it needs no migration, offered on
+    the project form for projects in the pack's market, and refused by the
+    project service when a value is not one of the options.
+    """
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    key: str = Field(..., pattern=r"^[a-z][a-z0-9_]{2,40}$", description="Key under project.custom_fields.")
+    label: str = Field(..., min_length=1, max_length=80)
+    label_en: str | None = Field(default=None, max_length=80)
+    statute: str | None = Field(default=None, max_length=160, description="Where the list is set, e.g. 'ЗУТ чл. 137'.")
+    help: str | None = Field(default=None, max_length=400)
+    help_en: str | None = Field(default=None, max_length=400)
+    options: list[ClassificationOption] = Field(..., min_length=2, max_length=40)
+
+    @field_validator("options")
+    @classmethod
+    def _unique_values(cls, value: list[ClassificationOption]) -> list[ClassificationOption]:
+        seen: set[str] = set()
+        for option in value:
+            if option.value in seen:
+                raise ValueError(f"classification option {option.value!r} is listed twice")
+            seen.add(option.value)
+        return value
+
+
 class PartnerPackManifest(BaseModel):
     """Manifest exported by a partner pack via the entry-point group.
 
@@ -270,6 +348,26 @@ class PartnerPackManifest(BaseModel):
         ),
     )
 
+    # Country specifics the forms ask for
+    company_identifier: CompanyIdentifierSpec | None = Field(
+        default=None,
+        description=(
+            "The statutory company number the company profile asks for while "
+            "this pack is active, and the party_identifiers scheme that checks "
+            "it. Only a pack that names a market can declare one."
+        ),
+    )
+    project_classifications: list[ProjectClassificationSpec] = Field(
+        default_factory=list,
+        description=(
+            "Closed lists a project in the pack's market is filed under, stored "
+            "in project.custom_fields and offered on the project form. Read for a "
+            "project through the pack that fits out its country (see "
+            "app.modules.projects.country_configuration), the same pack its rule "
+            "sets and methodology come from."
+        ),
+    )
+
     # Branding (logo, colours, favicon)
     branding: PartnerBranding = Field(default_factory=PartnerBranding)
 
@@ -445,6 +543,26 @@ class PartnerPackManifest(BaseModel):
             object.__setattr__(self, "pack_type", self._infer_pack_type())
         return self
 
+    @model_validator(mode="after")
+    def _country_specifics_need_a_country(self) -> PartnerPackManifest:
+        """Refuse a company number or project classification from a pack with no market.
+
+        Both are statements about one jurisdiction: the identifier is checked
+        by ``party_identifiers`` under the pack's country, and a classification
+        is offered to projects in that country. A sector pack spans countries,
+        so there is no country to check against or offer in, and accepting the
+        declaration would print a Bulgarian label on a German letterhead.
+        """
+        if (self.company_identifier or self.project_classifications) and self.market_country_code is None:
+            raise ValueError(
+                "company_identifier and project_classifications need metadata['country'] "
+                "to name the one market they belong to"
+            )
+        keys = [spec.key for spec in self.project_classifications]
+        if len(keys) != len(set(keys)):
+            raise ValueError(f"project_classifications repeats a key: {keys}")
+        return self
+
     @property
     def type(self) -> PackType:
         """The resolved pack type. Always one of the four ``PackType`` values."""
@@ -537,6 +655,10 @@ class PartnerPackManifest(BaseModel):
             "recommended_modules": self.recommended_modules,
             "hidden_modules": self.hidden_modules,
             "default_company_profile": self.default_company_profile,
+            "company_identifier": (
+                self.company_identifier.model_dump() if self.company_identifier is not None else None
+            ),
+            "project_classifications": [spec.model_dump() for spec in self.project_classifications],
             "branding": {
                 "primary_color": self.branding.primary_color,
                 "accent_color": self.branding.accent_color,

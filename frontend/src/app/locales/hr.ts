@@ -49940,6 +49940,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Građevinski paket Belgija",
     "modules.pp_name_china_gbt50500": "Građevinski paket Kina",
     "modules.pp_name_croatia_hr": "Građevinski paket Hrvatska",
+    "modules.pp_name_bulgaria_bg": "Građevinski paket Bugarska",
     "modules.pp_name_canada_ca": "Građevinski paket Kanada",
     "modules.pp_name_czechia_cz": "Građevinski paket Češka",
     "modules.pp_name_india_cpwd": "Građevinski paket Indija",

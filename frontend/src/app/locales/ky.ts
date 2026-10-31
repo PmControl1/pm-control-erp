@@ -49764,6 +49764,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Бельгия курулуш пакети",
     "modules.pp_name_china_gbt50500": "Кытай курулуш пакети",
     "modules.pp_name_croatia_hr": "Хорватия курулуш пакети",
+    "modules.pp_name_bulgaria_bg": "Болгария курулуш пакети",
     "modules.pp_name_canada_ca": "Канада курулуш пакети",
     "modules.pp_name_czechia_cz": "Чехия курулуш пакети",
     "modules.pp_name_india_cpwd": "Индия курулуш пакети",

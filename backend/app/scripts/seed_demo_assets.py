@@ -399,6 +399,7 @@ BUNDLE_MAP: dict[str, str] = {
     "residential-brno": "residential_ifc",
     "residential-zagreb": "residential_ifc",
     "office-split": "commercial_rvt",
+    "residential-sofia": "residential_ifc",
     "office-lisbon": "commercial_rvt",
     "residential-porto": "residential_ifc",
     "commercial-jakarta": "commercial_rvt",

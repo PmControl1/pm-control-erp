@@ -57,6 +57,65 @@ _logger_ev = __import__("logging").getLogger(__name__ + ".events")
 _logger_audit = __import__("logging").getLogger(__name__ + ".audit")
 
 
+def _with_fixed_euro_rates(
+    requested: list[dict[str, Any]] | None,
+    currency: str | None,
+    region: str | None,
+    country_code: str | None,
+) -> list[dict[str, Any]]:
+    """The caller's rate rows plus the fixed rate of a currency the euro replaced.
+
+    A Bulgarian project in euro is priced from sources still written in lev,
+    the national cost base first among them. Without a lev row its BOQ reports
+    every one of those lines as unconvertible; with the market rate it would
+    convert at something other than the 1.95583 the law fixes. A row the caller
+    sent for the same code is kept as sent: it is an explicit statement and the
+    rate table refuses two rows for one code.
+    """
+    rows = list(requested or [])
+    try:
+        from app.core.euro_conversion import fixed_rate_entries_for_project
+        from app.modules.projects.country_configuration import validated_country
+
+        given = {str(row.get("code") or "").strip().upper() for row in rows if isinstance(row, dict)}
+        country = validated_country(region, country_code)
+        rows.extend(row for row in fixed_rate_entries_for_project(currency, country) if row["code"] not in given)
+    except Exception:  # noqa: BLE001 - a rate table must never block a create
+        _logger_ev.warning("Project create: could not add the fixed euro rates", exc_info=True)
+    return rows
+
+
+def _classification_errors_for(pack: Any, custom_fields: dict[str, Any] | None) -> list[dict[str, str]]:
+    """What is wrong with ``custom_fields`` against the classifications ``pack`` declares.
+
+    ``pack`` is the pack that fits out the project's country, or ``None``.
+    Keys the pack does not declare are free custom fields and pass untouched.
+    """
+    if pack is None or not custom_fields:
+        return []
+    from app.core.partner_pack.classifications import classification_errors
+
+    return classification_errors(pack, custom_fields)
+
+
+def _country_pack_of(region: str | None, country_code: str | None) -> Any:
+    """The pack that fits out a project in this region and country, or ``None``."""
+    try:
+        from app.core.partner_pack.discovery import discover_packs, get_active_pack
+        from app.modules.projects.country_configuration import configuration_pack
+
+        pack, _source = configuration_pack(
+            region=region,
+            country_code=country_code,
+            active_pack=get_active_pack(),
+            shipped=discover_packs,
+        )
+        return pack
+    except Exception:  # noqa: BLE001 - an unreadable pack tree checks nothing, as before
+        _logger_ev.warning("Project update: could not resolve the country pack", exc_info=True)
+        return None
+
+
 async def _safe_audit(
     session: AsyncSession,
     *,
@@ -696,6 +755,19 @@ class ProjectService:
         except Exception:  # noqa: BLE001 - creation must never break on pack lookup
             _rule_sets = list(data.validation_rule_sets or [])
 
+        # A classification the project's country pack declares (Bulgaria's
+        # ЗУТ category, say) is a closed list. A value outside it is refused
+        # here rather than stored, because every reader downstream would have
+        # to decide what an unknown category means.
+        _classification_errors = _classification_errors_for(_config_pack, data.custom_fields)
+        if _classification_errors:
+            if reserved_code is not None:
+                _PROJECT_CODE_RESERVED.discard(reserved_code)
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={"error": "invalid_project_classification", "errors": _classification_errors},
+            )
+
         project = Project(
             name=data.name,
             description=data.description,
@@ -727,7 +799,7 @@ class ProjectService:
             custom_fields=data.custom_fields,
             work_calendar_id=data.work_calendar_id,
             # ── v2.6.0 multi-currency / VAT (RFC 37) ────────────────────
-            fx_rates=list(data.fx_rates or []),
+            fx_rates=_with_fixed_euro_rates(data.fx_rates, data.currency, data.region, country_code),
             default_vat_rate=data.default_vat_rate,
             custom_units=list(data.custom_units or []),
         )
@@ -960,6 +1032,19 @@ class ProjectService:
 
         if not fields:
             return project
+
+        # The same closed lists the create path holds a project to, read from
+        # the pack of the country the project will be in after this patch.
+        if fields.get("custom_fields"):
+            classification_errors = _classification_errors_for(
+                _country_pack_of(fields.get("region", project.region), project.country_code),
+                fields["custom_fields"],
+            )
+            if classification_errors:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail={"error": "invalid_project_classification", "errors": classification_errors},
+                )
 
         # ── Currency-change guard ──────────────────────────────────────
         # A no-op (same value, just re-normalised) is always allowed; a

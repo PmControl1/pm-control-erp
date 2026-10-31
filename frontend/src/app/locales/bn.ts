@@ -49991,6 +49991,7 @@ const resource = {
     "modules.pp_name_belgium_be": "বেলজিয়াম নির্মাণ প্যাক",
     "modules.pp_name_china_gbt50500": "চীন নির্মাণ প্যাক",
     "modules.pp_name_croatia_hr": "ক্রোয়েশিয়া নির্মাণ প্যাক",
+    "modules.pp_name_bulgaria_bg": "বুলগেরিয়া নির্মাণ প্যাক",
     "modules.pp_name_canada_ca": "কানাডা নির্মাণ প্যাক",
     "modules.pp_name_czechia_cz": "চেকিয়া নির্মাণ প্যাক",
     "modules.pp_name_india_cpwd": "ভারত নির্মাণ প্যাক",

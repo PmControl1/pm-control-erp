@@ -294,6 +294,13 @@ def first_language(locale: str) -> str:
     return locale_languages(locale)[0]
 
 
+def _registration_text(profile: dict[str, Any]) -> str:
+    """The registration line, with the company number in front when one is set."""
+    from app.core.company_profile import registration_text  # noqa: PLC0415
+
+    return registration_text(profile)
+
+
 def _address(value: Any) -> str:
     """An address stored as text or as an object, on one line."""
     if isinstance(value, str):
@@ -345,7 +352,7 @@ def own_company_party() -> CertificateParty:
         profile = {}
     return CertificateParty(
         name=str(profile.get("legal_name") or ""),
-        tax_number=str(profile.get("registration_line") or ""),
+        tax_number=_registration_text(profile),
         address=_address(profile.get("address")),
     )
 

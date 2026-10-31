@@ -335,12 +335,14 @@ def _company_lines(profile: dict[str, Any]) -> list[tuple[str, str]]:
     The address runs on one line, the way the PDF sets it under a centred
     logo: three address rows would add three rows to every frozen pane.
     """
+    from app.core.company_profile import registration_text
+
     lines: list[tuple[str, str]] = []
     legal_name = _text(profile, "legal_name")
     if legal_name:
         lines.append(("name", legal_name))
     address = " · ".join(line.strip() for line in _text(profile, "address").split("\n") if line.strip())
-    registration = _text(profile, "registration_line")
+    registration = registration_text(profile)
     contact = " · ".join(part for part in (_text(profile, key) for key in ("phone", "email", "website")) if part)
     lines.extend(("detail", text) for text in (address, registration, contact) if text)
     return lines

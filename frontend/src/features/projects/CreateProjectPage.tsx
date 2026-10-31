@@ -29,6 +29,7 @@ import {
   type ProjectWorks,
 } from './api';
 import { ProjectWorksField } from './ProjectWorksField';
+import { ProjectClassificationFields } from './ProjectClassificationFields';
 import { useTelemetry } from '@/shared/lib/telemetry';
 import { lookupCountryDefault } from './currencyGroups';
 import { regionOptionLabel, type RegionOption } from './regionLabel';
@@ -81,6 +82,7 @@ const REGION_GROUPS: OptionGroup[] = [
       { value: 'Poland', label: 'Poland', iso: 'PL' },
       { value: 'Czech', label: 'Czech Republic', iso: 'CZ' },
       { value: 'Croatia', label: 'Croatia', iso: 'HR' },
+      { value: 'Bulgaria', label: 'Bulgaria', iso: 'BG' },
       { value: 'HU', label: 'Hungary', iso: 'HU' },
       { value: 'UA', label: 'Ukraine', iso: 'UA' },
       { value: 'Turkey', label: 'Turkey', iso: 'TR' },
@@ -617,6 +619,11 @@ export function CreateProjectModal({
   const [projectCode, setProjectCode] = useState('');
   const [projectType, setProjectType] = useState('');
   const [works, setWorks] = useState<ProjectWorks | null>(null);
+  // Statutory classifications the country's pack files a project under
+  // (Bulgaria's ЗУТ category). Only chosen values are sent.
+  const [classifications, setClassifications] = useState<Record<string, string | null>>({});
+  const setClassification = (key: string, value: string | null) =>
+    setClassifications((prev) => ({ ...prev, [key]: value }));
   const [clientName, setClientName] = useState('');
   const [contractValue, setContractValue] = useState('');
   const [budgetEstimate, setBudgetEstimate] = useState('');
@@ -917,6 +924,7 @@ export function CreateProjectModal({
         project_code: projectCode.trim() || null,
         project_type: projectType.trim() || null,
         works,
+        custom_fields: chosenClassifications(classifications),
         client_id: clientName.trim() || null,
         contract_value: contractValue.trim() || null,
         budget_estimate: budgetEstimate.trim() || null,
@@ -1643,6 +1651,14 @@ export function CreateProjectModal({
                   <div className="sm:col-span-2">
                     <ProjectWorksField id="qc-works" value={works} onChange={setWorks} />
                   </div>
+                  <ProjectClassificationFields
+                    idPrefix="qc-classification"
+                    itemClassName="sm:col-span-2"
+                    region={form.region === '__custom__' ? effectiveRegion : form.region}
+                    countryCode={countryCode}
+                    values={classifications}
+                    onChange={setClassification}
+                  />
                   </div>
                 </div>
 
@@ -1962,6 +1978,16 @@ export function CreateProjectModal({
                   {t('projects.regional_factor_hint', { defaultValue: 'Multiply all rates by this factor (e.g. 1.12 = +12% over base).' })}
                 </p>
               </div>
+              {!isEdit && (
+                <ProjectClassificationFields
+                  idPrefix="wizard-classification"
+                  itemClassName="max-w-md"
+                  region={form.region === '__custom__' ? effectiveRegion : form.region}
+                  countryCode={countryCode}
+                  values={classifications}
+                  onChange={setClassification}
+                />
+              )}
             </div>
           )}
 
@@ -2383,6 +2409,19 @@ function labelFor(groups: OptionGroup[], value: string, lang: string): string {
     if (o) return regionOptionLabel(o, lang);
   }
   return value;
+}
+
+/**
+ * The classification values a create sends: only the chosen ones, and nothing
+ * at all when none was chosen, so an untouched form still posts a minimal body.
+ */
+export function chosenClassifications(
+  values: Record<string, string | null>,
+): Record<string, string> | undefined {
+  const chosen = Object.fromEntries(
+    Object.entries(values).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== ''),
+  );
+  return Object.keys(chosen).length > 0 ? chosen : undefined;
 }
 
 function clampFactor(raw: string): number {

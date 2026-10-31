@@ -48,6 +48,11 @@ export interface Project {
   /** Whether the client is a public buyer; null when not recorded. */
   works?: ProjectWorks | null;
   /**
+   * Free custom fields, and the statutory classifications the country's pack
+   * files the project under (Bulgaria: `bg_zut_category`, "I" to "VI").
+   */
+  custom_fields?: Record<string, unknown> | null;
+  /**
    * True when this project may use AIA G702/G703 payment applications
    * (US/CA/AU only). Computed server-side from the project country; the
    * front end keys the AIA UI off this so it never renders elsewhere.
@@ -99,6 +104,8 @@ export interface CreateProjectData {
   subdivision_code?: string | null;
   /** Public buyer or private client; omitted or null when not recorded. */
   works?: ProjectWorks | null;
+  /** Classifications the country's pack declares, keyed as it names them. */
+  custom_fields?: Record<string, unknown> | null;
   /** Phase-12 expansion fields — all optional on the backend schema. */
   project_code?: string | null;
   project_type?: string | null;

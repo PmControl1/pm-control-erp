@@ -36,6 +36,7 @@ import { getErrorMessage } from '@/shared/lib/api';
 import { projectsApi, type Project, type ProjectFxRate } from './api';
 import { CURRENCY_GROUPS, CreateProjectModal } from './CreateProjectPage';
 import { ProjectWorksField } from './ProjectWorksField';
+import { ProjectClassificationFields } from './ProjectClassificationFields';
 import { getVatPercent } from '../boq/boqHelpers';
 import { TranslationSettingsTab } from '../translation';
 import { MethodologyActiveCard } from '../methodology/MethodologyActiveCard';
@@ -906,6 +907,19 @@ export function ProjectSettingsPage() {
             value={project.works}
             disabled={updateMutation.isPending}
             onChange={(next) => updateMutation.mutate({ works: next } as Partial<Project>)}
+          />
+          <ProjectClassificationFields
+            idPrefix="project-settings-classification"
+            itemClassName="mt-4"
+            region={project.region}
+            countryCode={project.country_code}
+            values={project.custom_fields}
+            disabled={updateMutation.isPending}
+            onChange={(key, value) =>
+              updateMutation.mutate({
+                custom_fields: { ...(project.custom_fields ?? {}), [key]: value },
+              } as Partial<Project>)
+            }
           />
         </div>
       </Card>

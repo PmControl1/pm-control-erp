@@ -50899,6 +50899,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Stavební balíček Belgie",
     "modules.pp_name_china_gbt50500": "Stavební balíček Čína",
     "modules.pp_name_croatia_hr": "Stavební balíček Chorvatsko",
+    "modules.pp_name_bulgaria_bg": "Stavební balíček Bulharsko",
     "modules.pp_name_canada_ca": "Stavební balíček Kanada",
     "modules.pp_name_czechia_cz": "Stavební balíček Česko",
     "modules.pp_name_india_cpwd": "Stavební balíček Indie",

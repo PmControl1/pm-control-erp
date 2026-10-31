@@ -52223,6 +52223,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Pack Construction Belgique",
     "modules.pp_name_china_gbt50500": "Pack Construction Chine",
     "modules.pp_name_croatia_hr": "Pack Construction Croatie",
+    "modules.pp_name_bulgaria_bg": "Pack Construction Bulgarie",
     "modules.pp_name_canada_ca": "Pack Construction Canada",
     "modules.pp_name_czechia_cz": "Pack Construction Tchéquie",
     "modules.pp_name_india_cpwd": "Pack Construction Inde",

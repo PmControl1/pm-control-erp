@@ -49566,6 +49566,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Rakennuspaketti: Belgia",
     "modules.pp_name_china_gbt50500": "Kiinan rakennuspaketti",
     "modules.pp_name_croatia_hr": "Kroatian rakennuspaketti",
+    "modules.pp_name_bulgaria_bg": "Bulgarian rakennuspaketti",
     "modules.pp_name_canada_ca": "Rakennuspaketti: Kanada",
     "modules.pp_name_czechia_cz": "Rakennuspaketti: Tšekki",
     "modules.pp_name_india_cpwd": "Intian rakennuspaketti",

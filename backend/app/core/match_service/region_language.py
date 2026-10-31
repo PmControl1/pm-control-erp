@@ -383,6 +383,7 @@ PROJECT_REGION_LABELS: dict[str, tuple[str | None, str | None]] = {
     "Poland": ("PL", "pl"),
     "Czech": ("CZ", "cs"),
     "Croatia": ("HR", "hr"),
+    "Bulgaria": ("BG", "bg"),
     "HU": ("HU", "hu"),
     "UA": ("UA", "uk"),
     "Turkey": ("TR", "tr"),

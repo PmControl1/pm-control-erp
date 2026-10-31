@@ -3631,6 +3631,9 @@ _COUNTRY_RULE_SETS: dict[str, list[str]] = {
     "GR": ["greece", "din276"],
     "UA": ["ukraine", "din276"],
     "HR": ["din276"],
+    # Bulgaria, with its country pack: a КСС is mapped onto DIN 276, the
+    # registry's answer for BG, and a project without the pack ran nothing.
+    "BG": ["din276"],
     "CZ": ["din276"],
     "BE": ["din276"],
     "PL": ["poland"],

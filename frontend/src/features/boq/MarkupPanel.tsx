@@ -54,6 +54,7 @@ const REGIONS: MarkupRegion[] = [
   { code: 'BE', flag: '\ud83c\udde7\ud83c\uddea', standard: 'BSAB' },
   { code: 'CZ', flag: '\ud83c\udde8\ud83c\uddff', standard: 'TSP' },
   { code: 'HR', flag: '\ud83c\udded\ud83c\uddf7', standard: 'Tro\u0161kovnik' },
+  { code: 'BG', flag: '\ud83c\udde7\ud83c\uddec', standard: '\u041a\u0421\u0421' },
   { code: 'RO', flag: '\ud83c\uddf7\ud83c\uddf4', standard: 'DevGen' },
   { code: 'GR', flag: '\ud83c\uddec\ud83c\uddf7', standard: 'ATOE' },
   { code: 'HU', flag: '\ud83c\udded\ud83c\uddfa', standard: 'TERC' },

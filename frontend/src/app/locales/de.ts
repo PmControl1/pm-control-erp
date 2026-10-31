@@ -52184,6 +52184,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Belgien-Baupaket",
     "modules.pp_name_china_gbt50500": "China-Baupaket",
     "modules.pp_name_croatia_hr": "Kroatien-Baupaket",
+    "modules.pp_name_bulgaria_bg": "Bulgarien-Baupaket",
     "modules.pp_name_canada_ca": "Kanada-Baupaket",
     "modules.pp_name_czechia_cz": "Tschechien-Baupaket",
     "modules.pp_name_india_cpwd": "Indien-Baupaket",

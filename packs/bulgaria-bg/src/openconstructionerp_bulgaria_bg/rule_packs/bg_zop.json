@@ -1,0 +1,20 @@
+{
+  "rule_pack_id": "bg_zop",
+  "name": "ЗОП - public procurement of construction",
+  "standard": "Закон за обществените поръчки (ДВ, бр. 13 от 2016 г., and amendments)",
+  "jurisdiction": "BG",
+  "regulator": "Агенция по обществените поръчки (АОП); Централизирана автоматизирана информационна система \"Електронни обществени поръчки\" (ЦАИС ЕОП)",
+  "applies_to": [
+    "tender",
+    "boq",
+    "contract"
+  ],
+  "description": "Reference document for public works tendered under the ЗОП. The contracting authority publishes the tender documentation, including the количествена сметка, through the ЦАИС ЕОП, and bidders return it priced as a КСС without changing descriptions, units or quantities, together with the ценообразуващи показатели they priced it with (hourly rate, допълнителни разходи on labour and on plant, доставно-складови разходи, печалба). The contract price is the КСС total, and changes during the works are agreed within the limits of чл. 116 ЗОП, typically through a заменителна таблица. What the pack checks is that the returned bill is complete and reconciles: every line has a quantity and a non-zero unit rate and the totals add up.",
+  "review_status": "Procedure names and the use of the ЦАИС ЕОП are taken from the Агенция по обществените поръчки, read on 2026-10-31. The rules of a specific procedure are set by its documentation.",
+  "severity_overrides": {},
+  "enables_rule_ids": [
+    "boq_quality.position_has_quantity",
+    "boq_quality.position_has_unit_rate",
+    "boq_quality.total_mismatch"
+  ]
+}

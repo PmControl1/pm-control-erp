@@ -49550,6 +49550,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Construction Pack ng Belgium",
     "modules.pp_name_china_gbt50500": "Construction Pack ng China",
     "modules.pp_name_croatia_hr": "Construction Pack ng Croatia",
+    "modules.pp_name_bulgaria_bg": "Construction Pack ng Bulgaria",
     "modules.pp_name_canada_ca": "Construction Pack ng Canada",
     "modules.pp_name_czechia_cz": "Construction Pack ng Czechia",
     "modules.pp_name_india_cpwd": "Construction Pack ng India",

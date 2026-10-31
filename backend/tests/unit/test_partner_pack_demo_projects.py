@@ -190,6 +190,8 @@ def test_mapped_demo_ids_resolve_to_templates() -> None:
 #: office any more.
 PACKS_WITH_ONE_IN_MARKET_DEMO = frozenset(
     {
+        # Bulgaria ships its Sofia residential block alone so far.
+        "bulgaria-bg",
         "japan-jp",
         "korea-kr",
         "poland-pl",

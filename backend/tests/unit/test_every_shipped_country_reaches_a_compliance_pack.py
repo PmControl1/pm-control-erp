@@ -257,6 +257,7 @@ NO_NATIONAL_RULES_REGISTERED: dict[str, str] = {
     "CZ": "No Czech rule set is registered; nothing reads a Czech classification code.",
     "DK": "No Danish rule set is registered; nothing reads a CCS or V&S code.",
     "EU": "Not a country. Two cross-region demos carry it as their region tag.",
+    "BG": "No Bulgarian rule set is registered; the Bulgarian demo measures to DIN 276.",
     "HR": "No Croatian rule set is registered; the Croatian demos measure to DIN 276.",
     "ID": "No Indonesian rule set is registered; nothing reads an SNI code.",
     "IE": "No Irish rule set is registered; the pack declares NRM.",

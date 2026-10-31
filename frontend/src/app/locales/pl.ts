@@ -51160,6 +51160,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Pakiet budowlany Belgia",
     "modules.pp_name_china_gbt50500": "Pakiet budowlany Chiny",
     "modules.pp_name_croatia_hr": "Pakiet budowlany Chorwacja",
+    "modules.pp_name_bulgaria_bg": "Pakiet budowlany Bułgaria",
     "modules.pp_name_canada_ca": "Pakiet budowlany Kanada",
     "modules.pp_name_czechia_cz": "Pakiet budowlany Czechy",
     "modules.pp_name_india_cpwd": "Pakiet budowlany Indie",

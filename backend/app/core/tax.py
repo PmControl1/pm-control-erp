@@ -193,6 +193,17 @@ _RAW: dict[str, dict[str, str]] = {
     # something prices from them. Do not read the entry's presence as evidence
     # that a Romanian pack exists or that Romanian VAT flows through here.
     "RO": {"standard": "0.21", "reduced": "0.11", "zero": "0.00"},
+    # ── Bulgaria ──────────────────────────────────────────────────────────
+    # ДДС, Закон за данък върху добавената стойност чл. 66: 20 percent
+    # standard (ал. 1) and 9 percent on hotel accommodation (ал. 2), with
+    # zero-rated exports and intra-EU supplies. The temporary 9 percent on
+    # restaurant services and some foods ended on 1 January 2025, so 9 is the
+    # accommodation rate alone. Construction works are charged at 20, which is
+    # the BG markup stack's one line. Read on the National Revenue Agency's
+    # rates and on 2026 professional summaries, 2026-10-31. Its consumer is
+    # the pack preview (``country_builtins``), which used to report that the
+    # platform had no Bulgarian VAT.
+    "BG": {"standard": "0.20", "reduced": "0.09", "zero": "0.00"},
     # ── Türkiye ───────────────────────────────────────────────────────────
     # KDV, Law 3065 art. 28 and Karar 2007/13033 as amended by Karar 7346
     # (Resmî Gazete 7 July 2023, no. 32241): general rate 20 and list (II)

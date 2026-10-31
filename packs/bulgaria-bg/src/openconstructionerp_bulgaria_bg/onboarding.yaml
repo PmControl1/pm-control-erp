@@ -1,0 +1,44 @@
+# Bulgaria Construction Pack - first-login onboarding wizard.
+# Streamed by /api/v1/partner-pack/onboarding-script. Like every pack's
+# script it is a description of the steps, not something the product runs:
+# the ЕИК is entered under Settings > Company profile and the ЗУТ category on
+# the project form, both of which the pack switches on by itself.
+
+version: 2
+locale: bg
+title: "Welcome - Bulgaria Edition"
+title_bg: "Добре дошли - българско издание"
+subtitle: "Three steps to align your workspace with Bulgarian construction practice. Три стъпки до работно пространство по българската строителна практика."
+
+steps:
+  - id: company_profile
+    title: "Company profile / Данни за фирмата"
+    body: "Enter your firm details so reports, КСС and tender documents carry the correct attribution. Въведете данните на фирмата, за да се отпечатват правилно в отчетите, КСС и офертите."
+    fields:
+      - { key: company_name, label: "Company name / Наименование", type: text, required: true }
+      - { key: eik, label: "ЕИК (единен идентификационен код)", type: text, required: false, placeholder: "123456786", help: "Nine digits, or thirteen for a branch, checked by the check digit. A VAT-registered company's ДДС number is BG followed by the ЕИК." }
+      - { key: legal_form, label: "Legal form / Правна форма", type: select, options: ["ЕООД (еднолично дружество с ограничена отговорност)", "ООД (дружество с ограничена отговорност)", "АД (акционерно дружество)", "ЕАД (еднолично акционерно дружество)", "ЕТ (едноличен търговец)", "Other / Друго"], default: "ЕООД (еднолично дружество с ограничена отговорност)", required: true }
+      - { key: registered_for_dds, label: "Registered for ДДС / Регистрирана по ЗДДС", type: checkbox, default: true }
+      - { key: primary_role, label: "Primary role / Основна роля", type: select, options: ["Изпълнител (contractor)", "Подизпълнител (subcontractor)", "Възложител / инвеститор (client)", "Консултант / строителен надзор (consultant)", "Проектант (designer)"], required: true, default: "Изпълнител (contractor)" }
+
+  - id: standards
+    title: "Estimating and tax / КСС и данъци"
+    body: "A Bulgarian КСС prices every line at an all-in unit rate and adds ДДС once, at the end. Amounts in lev convert to euro at the fixed 1.95583. Българската КСС е с единични цени, които включват допълнителните разходи и печалбата, а ДДС се начислява веднъж, накрая."
+    fields:
+      - { key: estimate_type, label: "Default bill type / Вид сметка по подразбиране", type: radio, options: ["КСС за оферта (tender bill)", "Предварителна стойностна сметка (cost estimate)", "Акт за изпълнени работи (interim valuation)"], required: true, default: "КСС за оферта (tender bill)" }
+      - { key: default_dds, label: "Default ДДС rate / ДДС по подразбиране", type: radio, options: ["20% (стандартна ставка)", "9% (намалена ставка)", "0% (нулева ставка)"], required: true, default: "20% (стандартна ставка)" }
+      - { key: public_procurement, label: "Public procurement under ЗОП / Обществени поръчки по ЗОП", type: checkbox, default: false, help: "A КСС published with a public tender is returned priced without changing descriptions, units or quantities." }
+
+  - id: review
+    title: "Review and finish / Преглед и край"
+    body: "We will create your workspace with EUR currency, ДДС at 20% and the КСС checks. New Bulgarian projects ask for their ЗУТ category. Работното пространство ще бъде в евро, с ДДС 20% и проверки на КСС."
+    action:
+      label: "Create my Bulgaria workspace / Създай работното пространство"
+      apply:
+        - set_default_currency: EUR
+        - enable_rule_packs:
+            - bg_kss
+            - bg_zut
+            - bg_zop
+            - bg_dds
+            - bg_evro

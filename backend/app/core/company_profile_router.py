@@ -24,6 +24,8 @@ migration.
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 
@@ -32,6 +34,8 @@ from app.core.company_profile import (
     LOGO_IMAGE_TYPES,
     MAX_ADDRESS_CHARS,
     MAX_ADDRESS_LINES,
+    MAX_COMPANY_ID,
+    MAX_COMPANY_ID_LABEL,
     MAX_EMAIL,
     MAX_LEGAL_NAME,
     MAX_PHONE,
@@ -62,6 +66,10 @@ class CompanyProfileResponse(BaseModel):
     phone: str = ""
     email: str = ""
     website: str = ""
+    #: The statutory company number the active country pack asks for, as
+    #: checked and normalised, and the name it is printed under ("ЕИК").
+    company_id: str = ""
+    company_id_label: str = ""
 
 
 class CompanyProfileOptions(BaseModel):
@@ -76,6 +84,10 @@ class CompanyProfileOptions(BaseModel):
     max_address_lines: int
     max_logo_data_url_chars: int
     logo_mime_types: list[str]
+    #: The company number the active country pack asks for (its scheme, label,
+    #: placeholder and help, plus ``country``), or ``None`` when no active
+    #: pack names one. The form shows the field only when this is set.
+    company_identifier: dict[str, Any] | None = None
 
 
 class CompanyProfileUpdate(BaseModel):
@@ -99,6 +111,7 @@ class CompanyProfileUpdate(BaseModel):
     phone: str | None = None
     email: str | None = None
     website: str | None = None
+    company_id: str | None = None
 
 
 @router.get(
@@ -138,11 +151,75 @@ async def get_company_profile_options() -> CompanyProfileOptions:
             "phone": MAX_PHONE,
             "email": MAX_EMAIL,
             "website": MAX_WEBSITE,
+            "company_id": MAX_COMPANY_ID,
+            "company_id_label": MAX_COMPANY_ID_LABEL,
         },
         max_address_lines=MAX_ADDRESS_LINES,
         max_logo_data_url_chars=MAX_LOGO_DATA_URL_CHARS,
         logo_mime_types=list(_LOGO_MIME_TYPES),
+        company_identifier=_active_company_identifier(),
     )
+
+
+def _active_company_identifier() -> dict[str, Any] | None:
+    """The active pack's company number spec with its country, or ``None``.
+
+    Read at request time, so activating or switching a pack changes the form
+    without a restart. An unreadable pack state asks for nothing, the way an
+    installation without a pack does.
+    """
+    try:
+        from app.core.partner_pack.discovery import get_active_pack
+
+        pack = get_active_pack()
+    except Exception:  # noqa: BLE001 - a broken pack state must not break the settings page
+        return None
+    if pack is None or pack.company_identifier is None or pack.market_country_code is None:
+        return None
+    return {**pack.company_identifier.model_dump(), "country": pack.market_country_code}
+
+
+def _checked_company_id(submitted: str) -> tuple[str, str]:
+    """The number to store and the label to store it under, or a 422.
+
+    ``""`` clears the number on purpose. Anything else is checked by the
+    active pack's scheme when the registry has one: a shape or check-digit
+    failure is refused, so a mistyped ЕИК never reaches a letterhead or a
+    tender declaration. A scheme the registry does not carry stores the
+    number as typed, which is what the free-text registration line did.
+    Without an active pack that names a number there is nothing to file it
+    under, and the field is refused rather than stored with no name.
+    """
+    spec = _active_company_identifier()
+    if not submitted:
+        return "", ""
+    if spec is None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "no_company_identifier",
+                "field": "company_id",
+                "message": "No active country pack names a company number, so there is nothing to file it under.",
+            },
+        )
+    from app.core.party_identifiers import check
+
+    result = check(spec["country"], spec["scheme"], submitted)
+    if result is None:
+        return submitted, spec["label"]
+    if not result.valid:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "invalid_company_id",
+                "field": "company_id",
+                "reason": result.reason,
+                "scheme": spec["scheme"],
+                "label": spec["label"],
+                "message": result.details.get("message") or f"This is not a valid {spec['label']}.",
+            },
+        )
+    return result.normalised, spec["label"]
 
 
 def _refuse_an_unusable_logo(submitted: str | None) -> None:
@@ -205,6 +282,8 @@ async def put_company_profile(body: CompanyProfileUpdate) -> CompanyProfileRespo
     _refuse_an_unusable_logo(body.document_logo_data_url)
     current = read_company_profile()
     patch = {key: value for key, value in body.model_dump().items() if value is not None}
+    if "company_id" in patch:
+        patch["company_id"], patch["company_id_label"] = _checked_company_id(patch["company_id"])
     if "document_logo_data_url" in patch:
         # A new logo replaces its PNG too, unless the same request carries one.
         patch.setdefault("document_logo_png_data_url", "")

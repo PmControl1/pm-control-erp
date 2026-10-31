@@ -333,6 +333,7 @@ export const SUGGESTED_VAT_RATES: Record<string, number> = {
   'Poland': 0.23,
   'Czech Republic': 0.21,
   'Croatia': 0.25,
+  'Bulgaria': 0.20,
   'Turkey': 0.20,
   'Russia': 0.22,
   'United States': 0.0,

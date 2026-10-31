@@ -49703,6 +49703,7 @@ const resource = {
     "modules.pp_name_belgium_be": "بیلجیم تعمیراتی پیکج",
     "modules.pp_name_china_gbt50500": "چین تعمیراتی پیکج",
     "modules.pp_name_croatia_hr": "کروشیا تعمیراتی پیکج",
+    "modules.pp_name_bulgaria_bg": "بلغاریہ تعمیراتی پیکج",
     "modules.pp_name_canada_ca": "کینیڈا تعمیراتی پیکج",
     "modules.pp_name_czechia_cz": "چیکیا تعمیراتی پیکج",
     "modules.pp_name_india_cpwd": "بھارت تعمیراتی پیکج",

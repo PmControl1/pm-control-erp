@@ -50023,6 +50023,7 @@ const resource = {
     "modules.pp_name_belgium_be": "벨기에 건설 팩",
     "modules.pp_name_china_gbt50500": "중국 건설 팩",
     "modules.pp_name_croatia_hr": "크로아티아 건설 팩",
+    "modules.pp_name_bulgaria_bg": "불가리아 건설 팩",
     "modules.pp_name_canada_ca": "캐나다 건설 팩",
     "modules.pp_name_czechia_cz": "체코 건설 팩",
     "modules.pp_name_india_cpwd": "인도 건설 팩",

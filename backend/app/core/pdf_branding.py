@@ -872,6 +872,7 @@ def _build_letterhead(
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.platypus import Paragraph, Table, TableStyle
 
+    from app.core.company_profile import registration_text
     from app.core.pdf_fonts import BODY_FONT, BOLD_FONT, pdf_style_for_text
 
     align = appearance.get("logo_align")
@@ -918,7 +919,7 @@ def _build_letterhead(
         block.append(_line(" · ".join(address), detail_style))
     else:
         block.extend(_line(line, detail_style) for line in address)
-    registration = _profile_text(profile, "registration_line")
+    registration = registration_text(profile)
     if registration:
         block.append(_line(registration, detail_style))
     contact = " · ".join(

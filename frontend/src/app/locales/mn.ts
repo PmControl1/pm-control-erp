@@ -49363,6 +49363,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Барилгын багц: Бельги",
     "modules.pp_name_china_gbt50500": "Хятадын барилгын багц",
     "modules.pp_name_croatia_hr": "Хорватын барилгын багц",
+    "modules.pp_name_bulgaria_bg": "Болгарын барилгын багц",
     "modules.pp_name_canada_ca": "Барилгын багц: Канад",
     "modules.pp_name_czechia_cz": "Барилгын багц: Чех",
     "modules.pp_name_india_cpwd": "Энэтхэгийн барилгын багц",

@@ -49398,6 +49398,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Paket Konstruksi Belgia",
     "modules.pp_name_china_gbt50500": "Paket Konstruksi Tiongkok",
     "modules.pp_name_croatia_hr": "Paket Konstruksi Kroasia",
+    "modules.pp_name_bulgaria_bg": "Paket Konstruksi Bulgaria",
     "modules.pp_name_canada_ca": "Paket Konstruksi Kanada",
     "modules.pp_name_czechia_cz": "Paket Konstruksi Ceko",
     "modules.pp_name_india_cpwd": "Paket Konstruksi India",

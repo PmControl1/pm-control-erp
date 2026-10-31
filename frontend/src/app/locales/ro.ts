@@ -50013,6 +50013,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Pachet de construcții Belgia",
     "modules.pp_name_china_gbt50500": "Pachet de construcții China",
     "modules.pp_name_croatia_hr": "Pachet de construcții Croația",
+    "modules.pp_name_bulgaria_bg": "Pachet de construcții Bulgaria",
     "modules.pp_name_canada_ca": "Pachet de construcții Canada",
     "modules.pp_name_czechia_cz": "Pachet de construcții Cehia",
     "modules.pp_name_india_cpwd": "Pachet de construcții India",

@@ -46,6 +46,7 @@ from pathlib import Path
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.euro_conversion import EURO, fixed_euro_rate, fixed_rate_between
 from app.core.money import money_quantum
 from app.core.validation.engine import ValidationReport, validation_engine
 from app.modules.fx import repository as repo
@@ -315,6 +316,11 @@ def cross_rate(
     ECB shape). The base is implicit at 1, so the cross rate is
     ``rate[to] / rate[from]``. Pure function, no I/O.
 
+    A currency the euro replaced (see :mod:`app.core.euro_conversion`) is
+    priced at its irrevocable rate against the euro, whatever ``base_rates``
+    holds for it: a lev amount is 1/1.95583 euro in every rate set, including
+    the ones published after the ECB stopped quoting the lev.
+
     Args:
         from_currency: ISO 4217 source code.
         to_currency: ISO 4217 target code.
@@ -331,9 +337,22 @@ def cross_rate(
     to = _norm_ccy(to_currency)
     base = _norm_ccy(base_currency)
 
+    # A pair the law fixes is answered by the law, not by the map. After the
+    # changeover the ECB publishes no rate for a replaced currency, and the
+    # seed carries a rounded copy of the old peg, so the map is either silent
+    # or slightly wrong for exactly the amounts a contract was signed in.
+    fixed = fixed_rate_between(frm, to)
+    if fixed is not None:
+        return fixed
+
     def rate_of(ccy: str) -> Decimal:
         if ccy == base:
             return Decimal("1")
+        per_euro = fixed_euro_rate(ccy)
+        if per_euro is not None:
+            # A replaced currency is the euro at a fixed rate, so it is quoted
+            # wherever the euro is, whatever the map says about it.
+            return per_euro * rate_of(EURO)
         found = base_rates.get(ccy)
         if found is None:
             raise UnknownCurrencyError(ccy)

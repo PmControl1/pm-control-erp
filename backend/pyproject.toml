@@ -647,6 +647,7 @@ artifacts = ["app/scripts/flagship_assets/site_photos/*.jpg"]
 "../packs/austria-at/src" = "packs/austria-at/src"
 "../packs/belgium-be/src" = "packs/belgium-be/src"
 "../packs/brazil-sinapi/src" = "packs/brazil-sinapi/src"
+"../packs/bulgaria-bg/src" = "packs/bulgaria-bg/src"
 "../packs/canada-ca/src" = "packs/canada-ca/src"
 "../packs/china-gbt50500/src" = "packs/china-gbt50500/src"
 "../packs/croatia-hr/src" = "packs/croatia-hr/src"

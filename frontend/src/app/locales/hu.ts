@@ -51560,6 +51560,7 @@ const resource = {
     "modules.pp_name_belgium_be": "Építőipari csomag: Belgium",
     "modules.pp_name_china_gbt50500": "Kínai építőipari csomag",
     "modules.pp_name_croatia_hr": "Horvát építőipari csomag",
+    "modules.pp_name_bulgaria_bg": "Bolgár építőipari csomag",
     "modules.pp_name_canada_ca": "Építőipari csomag: Kanada",
     "modules.pp_name_czechia_cz": "Építőipari csomag: Csehország",
     "modules.pp_name_india_cpwd": "Indiai építőipari csomag",

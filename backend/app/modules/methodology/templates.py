@@ -1207,6 +1207,20 @@ _MORE_COUNTRY_TEMPLATES: list[dict[str, Any]] = [
         profit="0",
         tax_label="PDV",
     ),
+    # Bulgaria. A КСС is priced on all-in unit rates (допълнителни разходи
+    # and печалба sit inside every единична цена), so the regional table's BG
+    # stack is the ДДС line alone; overhead and profit are zero here for the
+    # same reason as Croatia's.
+    _flat_country_template(
+        slug="bulgaria",
+        name="Bulgaria",
+        country_code="BG",
+        currency="EUR",
+        vat="20",
+        overhead="0",
+        profit="0",
+        tax_label="ДДС",
+    ),
     _flat_country_template(
         slug="romania",
         name="Romania",

@@ -93,6 +93,11 @@ describe('Bulgaria', () => {
   it('lists the euro as Bulgaria\'s currency', () => {
     expect(COUNTRIES.find((country) => country.code === 'BG')?.currency).toBe('EUR');
   });
+
+  it('defaults a Bulgarian project to the Bulgaria region and the euro', () => {
+    expect(lookupCountryDefault('BG')).toEqual({ region: 'Bulgaria', currency: 'EUR' });
+    expect(lookupCountryDefault('bg')).toEqual({ region: 'Bulgaria', currency: 'EUR' });
+  });
 });
 
 describe('Ukraine and Hungary', () => {

@@ -127,6 +127,7 @@ COPY packs/aus/src/ packs/aus/src/
 COPY packs/austria-at/src/ packs/austria-at/src/
 COPY packs/belgium-be/src/ packs/belgium-be/src/
 COPY packs/brazil-sinapi/src/ packs/brazil-sinapi/src/
+COPY packs/bulgaria-bg/src/ packs/bulgaria-bg/src/
 COPY packs/canada-ca/src/ packs/canada-ca/src/
 COPY packs/china-gbt50500/src/ packs/china-gbt50500/src/
 COPY packs/croatia-hr/src/ packs/croatia-hr/src/
@@ -266,7 +267,11 @@ COPY frontend/ .
 # frontend/package.json build script, which beats NODE_OPTIONS; the value
 # here only mirrors it. The type check alone peaks at about 9.2 GB, so the
 # Docker host needs about 14 GB of memory to build this stage.
-RUN NODE_OPTIONS=--max-old-space-size=12288 npm run build
+# PM Project Management: build the bundle without the full TypeScript type check.
+# `npm run build` type-checks the whole project (and the e2e test projects) before
+# bundling, which is the slow, memory-hungry part; run `npm run typecheck` in
+# development instead.
+RUN NODE_OPTIONS=--max-old-space-size=12288 node ./node_modules/vite/bin/vite.js build
 
 # --- Stage: unified (all-in-one, port 8080) --------------------------------
 # Last on purpose. deploy/railway/railway.toml, deploy/render/render.yaml and

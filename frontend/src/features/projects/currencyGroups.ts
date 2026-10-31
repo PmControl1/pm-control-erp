@@ -177,6 +177,8 @@ export const COUNTRY_DEFAULTS: Readonly<Record<string, CountryDefault>> = {
   // offered for a new project at all. A project saved in HRK before then
   // still shows its code; the picker renders an unlisted code as custom.
   hr: { region: 'Croatia', currency: 'EUR' },
+  // The lev was replaced by the euro on 2026-01-01 at 1.95583 per euro.
+  bg: { region: 'Bulgaria', currency: 'EUR' },
   hu: { region: 'HU', currency: 'HUF' },
   ua: { region: 'UA', currency: 'UAH' },
   tr: { region: 'Turkey', currency: 'TRY' },

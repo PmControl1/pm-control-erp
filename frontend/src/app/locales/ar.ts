@@ -52581,6 +52581,7 @@ const resource = {
     "modules.pp_name_belgium_be": "حزمة إنشاءات بلجيكا",
     "modules.pp_name_china_gbt50500": "حزمة إنشاءات الصين",
     "modules.pp_name_croatia_hr": "حزمة إنشاءات كرواتيا",
+    "modules.pp_name_bulgaria_bg": "حزمة إنشاءات بلغاريا",
     "modules.pp_name_canada_ca": "حزمة إنشاءات كندا",
     "modules.pp_name_czechia_cz": "حزمة إنشاءات التشيك",
     "modules.pp_name_india_cpwd": "حزمة إنشاءات الهند",

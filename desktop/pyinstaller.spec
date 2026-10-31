@@ -297,6 +297,7 @@ _COMMUNITY_PACKS = (
     "austria-at",
     "belgium-be",
     "brazil-sinapi",
+    "bulgaria-bg",
     "canada-ca",
     "china-gbt50500",
     "croatia-hr",

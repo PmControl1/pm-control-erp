@@ -1,0 +1,17 @@
+{
+  "rule_pack_id": "bg_zut",
+  "name": "ЗУТ - categories of construction works",
+  "standard": "Закон за устройство на територията, чл. 137; Наредба № 1 от 30.07.2003 г. за номенклатурата на видовете строежи",
+  "jurisdiction": "BG",
+  "regulator": "Министерство на регионалното развитие и благоустройството; Дирекция за национален строителен контрол (ДНСК); the municipalities",
+  "applies_to": [
+    "project",
+    "permits",
+    "supervision",
+    "handover"
+  ],
+  "description": "Reference document for the six categories of construction works in ЗУТ чл. 137, ал. 1, detailed by Наредба № 1 от 30.07.2003 г. The category is set by the works' characteristics, significance, complexity and operational risk, and a строеж that falls in two categories by different criteria takes the higher one. It decides who approves the investment design and issues the building permit, whether construction supervision by a licensed consultant is mandatory (categories I to IV), and how the works are put into service: a разрешение за ползване from the ДНСК for categories I to III, an удостоверение за въвеждане в експлоатация from the municipality for IV and V, and neither for VI, which covers the works of чл. 54, ал. 1 и 4 and чл. 147. The pack files every Bulgarian project under one of the six (project field \"Категория по ЗУТ\", stored as bg_zut_category) and refuses any other value. Contractors are entered in the Централен професионален регистър на строителя by group and category of works, so the category is also what a bidder's registration is checked against.",
+  "review_status": "The category list and its consequences for supervision and putting into service are taken from ЗУТ чл. 137 and from Bulgarian professional publications, read on 2026-10-31. The per-category hints offered on the project form are summaries for choosing; the statute and the Наредба decide a real case.",
+  "severity_overrides": {},
+  "enables_rule_ids": []
+}
