@@ -184,9 +184,9 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: More swap for the type check
-        # The full type check needs about 9 GB. A private repository's runner
-        # has less memory than that, so give it swap rather than fail. On a
-        # public repository's runner this is harmless.
+        # The full type check needs about 9 GB. A public repository's runner
+        # has 16 GB; the swap is a safety margin.
+        if: ${{ !github.event.repository.private }}
         working-directory: .
         run: |
           free -h
@@ -205,8 +205,20 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        # A private repository's runner has 7 GB. With swap the check ran past
+        # 75 minutes and was cancelled, every time, at a cost of 75 of the
+        # month's free minutes. It runs once the repository is public (which
+        # the AGPL asks for anyway once outside users come); until then run
+        # `npm run typecheck` on your PC before merging frontend changes.
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && !github.event.repository.private }}
         run: npm run typecheck
+
+      - name: Type check skipped (private repository)
+        if: ${{ github.event.repository.private }}
+        run: >-
+          echo "::warning title=Type check not run::This private repository's runners have too
+          little memory for the 9 GB TypeScript check. Make the repository public, or run
+          'npm run typecheck' in frontend/ before merging."
 
       - name: Tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
