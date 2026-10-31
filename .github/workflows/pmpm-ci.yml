@@ -125,7 +125,9 @@ jobs:
 
       - name: Install
         id: install
-        run: pip install -e ".[dev]"
+        # The annotate plugin puts each failing test on the pull request page
+        # with its message, so a red check says what broke without the log.
+        run: pip install -e ".[dev]" pytest-github-actions-annotate-failures
 
       - name: Lint (ruff)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
