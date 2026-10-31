@@ -161,7 +161,7 @@ analytics = []
 # DigitalOcean Spaces).  Enables ``storage_backend=s3`` in settings so
 # BIM/CAD blobs live in a bucket instead of the local filesystem.
 s3 = [
-    "aioboto3>=12.0.0",
+    "aioboto3>=15.5.0",
 ]
 # Everything
 all = [
