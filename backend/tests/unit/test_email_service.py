@@ -260,7 +260,7 @@ class TestEmailService:
         service = EmailService(mem)
         result = await service.send_document(
             "buyer@example.com",
-            subject="Handover Certificate - OpenConstructionERP",
+            subject="Handover Certificate - PM Project Management",
             document_name="Handover Certificate",
             attachment=EmailAttachment(
                 filename="handover-certificate.pdf",
@@ -419,7 +419,7 @@ class TestTemplates:
     def test_wrap_contains_boilerplate(self):
         html = wrap("Title", "<p>Body</p>")
         assert "<!DOCTYPE html>" in html
-        assert "OpenConstructionERP" in html
+        assert "PM Project Management" in html
         assert "Title" in html
         assert "<p>Body</p>" in html
 
@@ -434,7 +434,7 @@ class TestTemplates:
             reset_url="https://x.y/r?token=T",
             token_lifetime_minutes=45,
         )
-        assert "Reset your OpenConstructionERP password" in subject
+        assert "Reset your PM Project Management password" in subject
         assert "Alice" in html
         assert "https://x.y/r?token=T" in html
         assert "45 minutes" in html

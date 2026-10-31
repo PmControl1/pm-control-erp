@@ -119,6 +119,37 @@ def text_pass(name: str) -> tuple[int, int]:
     return changed_files, hits
 
 
+# Backend tests that check what a user is shown: the product name in emails,
+# reports, the CLI banner and the settings default. They assert the upstream
+# name, so they are renamed along with the app; the rest of the test tree is
+# left as upstream wrote it (see SKIP_PARTS).
+BRAND_TESTS = [
+    ROOT / "backend" / "tests" / "unit" / name
+    for name in (
+        "test_every_email_carries_the_brand.py",
+        "test_email_service.py",
+        "test_config.py",
+        "test_cli_version_flag_matches_the_version_command.py",
+        "test_a_generated_report_is_written_in_the_readers_language.py",
+        "test_converter_install_integrity.py",
+    )
+]
+
+
+def brand_tests_pass(name: str) -> int:
+    changed = 0
+    for f in BRAND_TESTS:
+        if not f.exists():
+            continue
+        original = f.read_text(encoding="utf-8")
+        lines = original.splitlines(keepends=True)
+        new = "".join(rename_in_line(ln, name, short=False) for ln in lines)
+        if new != original:
+            f.write_text(new, encoding="utf-8")
+            changed += 1
+    return changed
+
+
 # ── 2. JSX wordmark + "by OpenConstructionERP" attribution ─────────────────
 
 WORDMARK_RE = re.compile(
@@ -294,6 +325,7 @@ def main() -> int:
     files, lines = text_pass(args.name)
     print(f"1. product name: {lines} lines in {files} files")
     print(f"2. wordmarks/attribution lines: {jsx_pass()} files")
+    print(f"   tests that assert the product name: {brand_tests_pass(args.name)} files")
     print(f"3. upstream prompts + update check switched off: {gate_pass()} changes")
     print(f"4. upstream-link CSS rule: {'added' if css_pass() else 'already present'}")
     print(f"5. assets installed: {assets_pass()}, html heads updated: {html_pass(args.name)}")

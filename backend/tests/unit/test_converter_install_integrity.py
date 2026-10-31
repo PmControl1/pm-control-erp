@@ -300,7 +300,7 @@ def test_an_asset_the_release_no_longer_lists_is_a_coded_error(monkeypatch: pyte
     assert err.asset == PACKAGES["dwg"].asset
     assert err.tag == router._DDC_TAG
     assert f"expects {PACKAGES['dwg'].asset} from {router._DDC_TAG}" in str(err)
-    assert "Update OpenConstructionERP" in str(err)
+    assert "Update PM Project Management" in str(err)
     assert not (tmp_path / "dwg_windows").exists()
 
 
