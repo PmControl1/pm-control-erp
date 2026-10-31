@@ -19,6 +19,12 @@ import ast
 import importlib.util
 from pathlib import Path
 
+import pytest
+
+# PM fork: PyPI publishing is the original project's release lane, switched off
+# here (.github/upstream-workflows/); this fork publishes a Docker image instead.
+pytestmark = pytest.mark.skip(reason="PM fork: the original project's PyPI lane is switched off")
+
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "scripts" / "check_pypi_runway.py"
 

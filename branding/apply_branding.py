@@ -132,6 +132,14 @@ BRAND_TESTS = [
         "test_cli_version_flag_matches_the_version_command.py",
         "test_a_generated_report_is_written_in_the_readers_language.py",
         "test_converter_install_integrity.py",
+        "test_notification_email_links.py",
+        "test_notification_email_locale.py",
+        "test_portal_login_email.py",
+        "test_pdf_letterhead.py",
+        "test_pdf_appearance_reaches_the_renderer.py",
+        "test_outgoing_documents_print_the_company_letterhead.py",
+        "test_version_fallback_names_a_version.py",
+        "test_pack_install_says_what_it_did.py",
     )
 ]
 

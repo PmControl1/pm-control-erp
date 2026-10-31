@@ -100,14 +100,14 @@ def _render(**overrides):
 def test_the_button_carries_the_absolute_link_escaped():
     html = _render()
     assert 'href="https://erp.example.com/erp/rfi?id=7&amp;tab=answers"' in html
-    assert "Open in OpenConstructionERP" in html
+    assert "Open in PM Project Management" in html
 
 
 def test_a_dropped_link_renders_no_button():
     html = _render(action_url="javascript:alert(1)")
     assert "javascript" not in html
     assert "href=" not in html
-    assert "Open in OpenConstructionERP" not in html
+    assert "Open in PM Project Management" not in html
 
 
 def test_every_interpolated_value_is_escaped():
@@ -125,7 +125,7 @@ def test_every_interpolated_value_is_escaped():
 def test_the_reader_language_is_used():
     html = _render(locale="de")
     assert "Guten Tag Ann," in html
-    assert "In OpenConstructionERP öffnen" in html
+    assert "In PM Project Management öffnen" in html
     assert "Benachrichtigungseinstellungen" in html
     for english in ("Hello", "Hi ", "Open in", "notification settings", "notification preferences"):
         assert english not in html
@@ -166,8 +166,8 @@ def test_the_catalogue_covers_the_languages_the_other_emails_speak():
 
 
 def test_the_digest_subject_is_localised_with_its_count():
-    assert email_render.digest_subject("en", 3) == "OpenConstructionERP: Notification digest (3)"
-    assert email_render.digest_subject("de", 3) == "OpenConstructionERP: Benachrichtigungsübersicht (3)"
+    assert email_render.digest_subject("en", 3) == "PM Project Management: Notification digest (3)"
+    assert email_render.digest_subject("de", 3) == "PM Project Management: Benachrichtigungsübersicht (3)"
     assert email_render.digest_heading("ru") == "Последние уведомления:"
 
 
@@ -205,7 +205,7 @@ async def test_the_sent_mail_links_into_the_app_in_the_reader_language():
     assert len(sent) == 1
     html = sent[0].html_body
     assert 'href="https://erp.example.com/erp/rfi?id=7"' in html
-    assert "In OpenConstructionERP öffnen" in html
+    assert "In PM Project Management öffnen" in html
     assert "RFI-7 - Slab edge" in html
 
 
@@ -231,7 +231,7 @@ async def test_the_digest_mail_is_localised():
         event_type="notifications.digest",
     )
     assert len(sent) == 1
-    assert sent[0].subject == "OpenConstructionERP: Сводка уведомлений (2)"
+    assert sent[0].subject == "PM Project Management: Сводка уведомлений (2)"
     assert "Последние уведомления:" in sent[0].html_body
     assert "Recent notifications" not in sent[0].html_body
     assert "digest" not in sent[0].subject

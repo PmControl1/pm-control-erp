@@ -209,5 +209,5 @@ def test_other_mail_keeps_its_footer():
     # Only mail someone subscribed to says so; every mail closes with the brand.
     assert "notification preferences" in template_task_assigned("T", "Ann", "P")[1]
     assert "notification preferences" not in wrap("Hi", "<p>x</p>")
-    assert "OpenConstructionERP</p></body>" in wrap("Hi", "<p>x</p>", footer="")
+    assert "PM Project Management</p></body>" in wrap("Hi", "<p>x</p>", footer="")
     assert "Sent on behalf of A &amp; B" in wrap("Hi", "<p>x</p>", footer="Sent on behalf of A &amp; B")
