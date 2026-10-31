@@ -60,13 +60,16 @@ jobs:
           frontend=true
           if [ -n "$base" ] && git rev-parse -q --verify "${base}^{commit}" >/dev/null; then
             files="$(git diff --name-only "$base" "$GITHUB_SHA")"
-            echo "Changed files:"; echo "$files" | head -50
+            # Here-strings, not pipes: under pipefail, `echo | grep -q` fails
+            # whenever grep stops reading early, which reads as "no match".
+            echo "Changed files: $(wc -l <<< "$files")"
+            head -50 <<< "$files"
             backend=false
             frontend=false
-            if echo "$files" | grep -qE '^(backend|packs|data|scripts)/'; then backend=true; fi
-            if echo "$files" | grep -qE '^(frontend|packages)/'; then frontend=true; fi
+            if grep -qE '^(backend|packs|data|scripts)/' <<< "$files"; then backend=true; fi
+            if grep -qE '^(frontend|packages)/' <<< "$files"; then frontend=true; fi
             # A change to this workflow runs everything, so the change proves itself.
-            if echo "$files" | grep -qxF '.github/workflows/pmpm-ci.yml'; then backend=true; frontend=true; fi
+            if grep -qxF '.github/workflows/pmpm-ci.yml' <<< "$files"; then backend=true; frontend=true; fi
           else
             echo "No usable base commit (manual run or new branch): running everything."
           fi
@@ -148,6 +151,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          if [ "${{ needs.changes.result }}" != "success" ]; then
+            echo "::error::Could not work out what changed, so nothing was tested"
+            exit 1
+          fi
           r="${{ needs.backend.result }}"
           if [ "$r" = "success" ] || [ "$r" = "skipped" ]; then
             echo "Backend: $r"
