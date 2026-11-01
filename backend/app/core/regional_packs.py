@@ -42,21 +42,10 @@ from typing import Any
 #: belongs here; the integration test
 #: ``test_us_pack_measurement_system_governs_boq_validation`` fails when this
 #: tuple drifts from the packs on disk.
-PACK_CONFIG_MODULES: tuple[str, ...] = (
-    "app.modules.asia_pac_pack.config",
-    "app.modules.china_pack.config",
-    "app.modules.dach_pack.config",
-    "app.modules.india_pack.config",
-    "app.modules.latam_pack.config",
-    "app.modules.mexico_pack.config",
-    "app.modules.middle_east_pack.config",
-    "app.modules.russia_pack.config",
-    "app.modules.sa_pack.config",
-    "app.modules.uk_pack.config",
-    "app.modules.us_ca_pack.config",
-    "app.modules.us_pack.config",
-    "app.modules.us_tx_pack.config",
-)
+#: PM Project Management: the other countries' regional packs (DACH, UK, US,
+#: Texas, California, Saudi Arabia, Middle East, India, China, Mexico, LatAm,
+#: Asia-Pacific, Russia) were removed. A Bulgaria pack goes here once it exists.
+PACK_CONFIG_MODULES: tuple[str, ...] = ()
 
 #: The measurement systems a pack may declare. A pack naming anything else is
 #: ignored rather than passed through, so a typo cannot reach a rule that

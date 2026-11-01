@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import type { DrainSummary, QueuedOp } from '@/shared/lib/offline';
 import { getFieldTimeQueue } from './offlineQueue';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 /** Milliseconds to let a freshly restored link settle before draining. */
 const SETTLE_MS = 800;
@@ -43,34 +44,41 @@ export interface FieldTimeOfflineSync {
 
 export function useFieldTimeOfflineSync(): FieldTimeOfflineSync {
   const online = useOnlineStatus();
+  const userId = useAuthStore((state) => state.userId);
   const [pending, setPending] = useState<QueuedOp[]>([]);
+  const [pendingOwner, setPendingOwner] = useState(userId);
   const [syncing, setSyncing] = useState(false);
   const [lastSummary, setLastSummary] = useState<DrainSummary | null>(null);
   // Survives unmount so a drain that finishes after the page closes cannot set
   // state on a dead component.
   const mounted = useRef(true);
 
-  const queue = useMemo(() => getFieldTimeQueue(), []);
+  const queue = useMemo(() => getFieldTimeQueue(userId), [userId]);
 
   const refresh = useCallback(async () => {
     const ops = await queue.pending();
-    if (mounted.current) setPending(ops);
-  }, [queue]);
+    if (mounted.current && userId === useAuthStore.getState().userId) {
+      setPending(ops);
+      setPendingOwner(userId);
+    }
+  }, [queue, userId]);
 
   const sync = useCallback(async () => {
-    if (!mounted.current) return;
+    if (!mounted.current || userId !== useAuthStore.getState().userId) return;
     setSyncing(true);
     try {
       const summary = await queue.drain();
-      if (!mounted.current) return;
+      if (!mounted.current || userId !== useAuthStore.getState().userId) return;
       // A short-circuited drain (one was already running) reports nothing at
       // all; showing "0 synced" then would be a lie about what happened.
       if (summary.results.length > 0) setLastSummary(summary);
+    } catch (error) {
+      if (userId === useAuthStore.getState().userId) throw error;
     } finally {
-      if (mounted.current) setSyncing(false);
+      if (mounted.current && userId === useAuthStore.getState().userId) setSyncing(false);
       await refresh();
     }
-  }, [queue, refresh]);
+  }, [queue, refresh, userId]);
 
   const discard = useCallback(
     async (clientOpId: string) => {
@@ -82,6 +90,8 @@ export function useFieldTimeOfflineSync(): FieldTimeOfflineSync {
 
   useEffect(() => {
     mounted.current = true;
+    setLastSummary(null);
+    setSyncing(false);
     void refresh();
     const unsubscribe = queue.onChange(() => {
       void refresh();
@@ -103,5 +113,12 @@ export function useFieldTimeOfflineSync(): FieldTimeOfflineSync {
     return () => clearTimeout(timer);
   }, [online, sync]);
 
-  return { online, pending, syncing, lastSummary, sync, refresh, discard };
+  const currentOwner = pendingOwner === userId;
+  return {
+    online,
+    pending: currentOwner ? pending : [],
+    syncing: currentOwner && syncing,
+    lastSummary: currentOwner ? lastSummary : null,
+    sync, refresh, discard,
+  };
 }

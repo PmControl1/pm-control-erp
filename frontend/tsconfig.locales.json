@@ -1,0 +1,18 @@
+{
+  // Check the large translation dictionaries first and emit their exact types.
+  // The app and its tests then read the declarations instead of retaining all
+  // dictionary ASTs in the same process. Both projects keep the strict options.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src/app/locales",
+    "outDir": "node_modules/.cache/locales-dts",
+    "tsBuildInfoFile": "node_modules/.cache/locales.tsbuildinfo"
+  },
+  "include": ["src/app/locales/*.ts"],
+  "exclude": [],
+  "references": []
+}

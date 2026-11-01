@@ -26,7 +26,7 @@ describe('converterInstallMessage', () => {
     });
     expect(text).toContain('DDC-RVT-Converter-0.6.8-portable.zip');
     expect(text).toContain('v2026.10.0');
-    expect(text).toContain('Update OpenConstructionERP');
+    expect(text).toContain('Update PM Project Management');
     expect(text).not.toContain('raw backend text');
   });
 

@@ -481,6 +481,11 @@ def _english_only(case: Case) -> set[str]:
 
 
 def _leaks(case: Case, text: str) -> list[str]:
+    # PM fork: the product's own name is not a label. "PM Project Management"
+    # carries the English word "Project" onto every page it brands.
+    from app.config import get_settings
+
+    text = text.replace(get_settings().app_name, " ")
     return sorted(
         value for value in _english_only(case) if re.search(rf"(?<!\w){re.escape(value)}(?!\w)", text) is not None
     )

@@ -74,6 +74,8 @@ const WORKSPACE: appearanceApi.DocumentAppearance = {
 };
 
 const PROFILE: profileApi.CompanyProfile = {
+  company_id: '',
+  company_id_label: '',
   document_logo_data_url: '',
   document_logo_png_data_url: '',
   legal_name: 'Hochbau Nord GmbH',

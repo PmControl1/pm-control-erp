@@ -237,17 +237,17 @@ def _force_included_slugs() -> set[str]:
 def test_a_country_pack_without_its_own_line_claims_no_partnership() -> None:
     m = PartnerPackManifest(slug="some-country", partner_name="Somewhere Construction Pack", metadata={"country": "DE"})
     assert m.type == "country"
-    assert m.effective_powered_by == "Powered by OpenConstructionERP"
+    assert m.effective_powered_by == "Powered by PM Project Management"
 
 
 def test_a_partner_pack_still_gets_its_partnership_line() -> None:
     m = PartnerPackManifest(slug="some-partner", partner_name="Acme Builders", pack_type="partner")
-    assert m.effective_powered_by == "Powered by OpenConstructionERP · In partnership with Acme Builders"
+    assert m.effective_powered_by == "Powered by PM Project Management · In partnership with Acme Builders"
     explicit = PartnerPackManifest(
         slug="explicit",
         partner_name="Xyz Partner",
         metadata={"country": "CA"},
-        branding=PartnerBranding(powered_by_text="Powered by OpenConstructionERP, in partnership with Xyz Partner"),
+        branding=PartnerBranding(powered_by_text="Powered by PM Project Management, in partnership with Xyz Partner"),
     )
     assert explicit.effective_powered_by.endswith("in partnership with Xyz Partner")
 

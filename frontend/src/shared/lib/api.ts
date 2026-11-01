@@ -555,6 +555,14 @@ async function request<TResponse>(
   init?: ApiRequestInit,
   _isRetry = false,
 ): Promise<TResponse> {
+  // Capture the account before the first await. A response or offline write
+  // from this request must never be adopted by a later sign-in in this tab.
+  const ownerId = useAuthStore.getState().userId;
+  const requireSameAccount = () => {
+    if (ownerId !== useAuthStore.getState().userId) {
+      throw new DOMException('The signed-in account changed', 'AbortError');
+    }
+  };
   const headers = buildHeaders(init?.headers);
 
   if (body !== undefined) {
@@ -615,6 +623,7 @@ async function request<TResponse>(
     clearTimeout(timeoutId);
   } catch (err) {
     clearTimeout(timeoutId);
+    requireSameAccount();
     // A caller's cancellation (including its own deadline) is not an
     // offline write to replay later. In particular, cancelling an AI run
     // while connectivity drops must not silently schedule another run.
@@ -665,18 +674,21 @@ async function request<TResponse>(
     if (!navigator.onLine) {
       // For reads: try to serve from IndexedDB cache
       if (isRead) {
-        const cached = await getCachedResponse<TResponse>(cacheKey);
+        const cached = await getCachedResponse<TResponse>(cacheKey, ownerId);
+        requireSameAccount();
         if (cached !== null) return cached;
       }
       // For mutating requests: queue for later replay
-      if (!isRead) {
+      if (!isRead && ownerId) {
         await queueMutation({
+          ownerId,
           method: method as 'POST' | 'PUT' | 'PATCH' | 'DELETE',
           path,
           body,
           queuedAt: Date.now(),
           retries: 0,
         });
+        requireSameAccount();
         useToastStore.getState().addToast({
           type: 'info',
           title: i18next.t('common.saved_offline', 'Saved offline'),
@@ -687,6 +699,7 @@ async function request<TResponse>(
     }
     throw err;
   }
+  requireSameAccount();
 
   // Handle 401 – try a silent token refresh before tearing down the session.
   //
@@ -705,6 +718,7 @@ async function request<TResponse>(
     }
 
     const refreshed = await useAuthStore.getState().refreshSession();
+    requireSameAccount();
     if (refreshed.token) {
       // Refresh succeeded — replay the original request with the fresh token.
       // buildHeaders() inside the recursive call reads the now-updated store,
@@ -768,10 +782,11 @@ async function request<TResponse>(
   }
 
   const data = (await response.json()) as TResponse;
+  requireSameAccount();
 
   // Cache successful reads for offline use
   if (isRead) {
-    cacheResponse(cacheKey, data).catch(() => {});
+    cacheResponse(cacheKey, data, undefined, ownerId).catch(() => {});
   }
 
   return data;
@@ -886,7 +901,12 @@ export async function apiDelete<TResponse = void>(
  * @param init - As for `fetch`; an `Authorization` header set here wins.
  */
 export async function fetchWithAuth(input: string, init: RequestInit = {}): Promise<Response> {
+  const ownerId = useAuthStore.getState().userId;
+  const requireSameAccount = () => {
+    if (ownerId !== useAuthStore.getState().userId) throw new DOMException('The signed-in account changed', 'AbortError');
+  };
   const send = () => {
+    requireSameAccount();
     const headers = new Headers(init.headers);
     const token = getToken();
     if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
@@ -894,10 +914,16 @@ export async function fetchWithAuth(input: string, init: RequestInit = {}): Prom
     return fetch(input, { ...init, headers });
   };
   const response = await send();
+  requireSameAccount();
   if (response.status !== 401 || new Headers(init.headers).has('Authorization')) return response;
 
   const refreshed = await useAuthStore.getState().refreshSession();
-  if (refreshed.token) return send();
+  requireSameAccount();
+  if (refreshed.token) {
+    const retried = await send();
+    requireSameAccount();
+    return retried;
+  }
   if (refreshed.reason === 'rejected') forceLogoutRedirect(input, response.statusText, true);
   return response;
 }
@@ -937,6 +963,10 @@ export function triggerDownload(blob: Blob, filename: string): void {
  * @throws Error carrying the server's message when the response is not ok.
  */
 export async function downloadWithAuth(url: string, fallbackFilename: string): Promise<void> {
+  const ownerId = useAuthStore.getState().userId;
+  const requireSameAccount = () => {
+    if (ownerId !== useAuthStore.getState().userId) throw new DOMException('The signed-in account changed', 'AbortError');
+  };
   const token = getAuthToken();
   const headers: Record<string, string> = { Accept: 'application/octet-stream' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -944,6 +974,7 @@ export async function downloadWithAuth(url: string, fallbackFilename: string): P
   if (digits) headers['X-Digit-System'] = digits;
 
   const response = await fetch(url, { method: 'GET', headers });
+  requireSameAccount();
   if (!response.ok) {
     let detail = `Download failed (HTTP ${response.status})`;
     try {
@@ -955,6 +986,7 @@ export async function downloadWithAuth(url: string, fallbackFilename: string): P
   }
 
   const blob = await response.blob();
+  requireSameAccount();
   const disposition = response.headers.get('Content-Disposition');
   // Try RFC 5987 filename* first (UTF-8 encoded), then plain filename.
   // The old regex matched `filename*=UTF-8''name.md` as a single capture

@@ -256,6 +256,19 @@ export function importIssueText(
       text: issue.text,
       value: formatNumber(issue.value),
     });
+  } else if (issue.code === 'currency_converted_to_euro') {
+    // A КСС priced in лева, imported into a euro project.
+    body = t('boq.import_issue.currency_converted_to_euro', {
+      defaultValue:
+        'The bill is priced in leva: {{count}} rates were converted to euro at the fixed rate {{rate}}. Each line keeps its lev rate',
+      count: issue.count ?? 0,
+      rate: issue.text ?? '1.95583',
+    });
+  } else if (issue.code === 'currency_not_stated') {
+    body = t('boq.import_issue.currency_not_stated', {
+      defaultValue:
+        "The price headings do not say leva or euro, so the rates were imported as written, in the project's currency. Check them against the file",
+    });
   } else if (issue.code === 'column_mapping_not_applied') {
     const where = issue.sheet
       ? `${t('boq.import_issue.sheet', { defaultValue: 'Sheet {{sheet}}', sheet: issue.sheet })}: `

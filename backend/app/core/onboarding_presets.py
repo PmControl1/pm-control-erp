@@ -101,21 +101,8 @@ _ENTERPRISE = ["enterprise_workflows", "full_evm", "rfq_bidding", "integrations"
 # map and read as on, and which half of the thirteen a reader saw depended on
 # nothing they could see. ``test_regional_list_matches_the_packs_on_disk``
 # fails when a pack is added without a line here.
-_REGIONAL = [
-    "asia_pac_pack",
-    "china_pack",
-    "dach_pack",
-    "india_pack",
-    "latam_pack",
-    "mexico_pack",
-    "middle_east_pack",
-    "russia_pack",
-    "sa_pack",
-    "uk_pack",
-    "us_ca_pack",
-    "us_pack",
-    "us_tx_pack",
-]
+# PM Project Management: the other countries' regional packs were removed.
+_REGIONAL: list[str] = []
 
 # Every functional module, in display order (used by Full Enterprise).
 _ALL_FUNCTIONAL: list[str] = [

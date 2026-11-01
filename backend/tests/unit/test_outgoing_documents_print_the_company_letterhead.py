@@ -61,7 +61,7 @@ from app.modules.tendering.pdf_documents import (
 LEGAL_NAME = "Müller Bau GmbH"
 #: Printed by the letterhead and by nothing else in these documents.
 LETTERHEAD_ONLY = "10115 Berlin"
-PLATFORM = "OpenConstructionERP"
+PLATFORM = "PM Project Management"
 
 
 def _png_data_url() -> str:

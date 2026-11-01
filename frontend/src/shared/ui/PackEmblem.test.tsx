@@ -132,8 +132,9 @@ describe('every shipped country pack has a flag that draws', () => {
   it('found the packs on disk', () => {
     // A loop over an empty list passes while checking nothing, and this one
     // reads a directory outside the frontend package, so it is the first thing
-    // to break if the layout moves.
-    expect(countries.length).toBeGreaterThan(8);
+    // to break if the layout moves. PM Project Management ships one country
+    // pack (Bulgaria), so finding any proves the directory was read.
+    expect(countries.length).toBeGreaterThan(0);
   });
 
   it.each(countries)('%s flies a drawn flag for %s', (_slug, code) => {

@@ -1,0 +1,29 @@
+# HTTPS for the platform. Caddy fetches and renews the certificate itself once
+# the domain's DNS points at this server and ports 80 and 443 are open.
+{
+	email {$PMPM_ACME_EMAIL}
+}
+
+{$PMPM_DOMAIN} {
+	encode zstd gzip
+
+	# Drawings, scans and site photos can be large.
+	request_body {
+		max_size 500MB
+	}
+
+	reverse_proxy app:8080 {
+		# Long-running exports and imports.
+		transport http {
+			read_timeout 10m
+			write_timeout 10m
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

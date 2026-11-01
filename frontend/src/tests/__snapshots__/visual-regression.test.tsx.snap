@@ -5598,156 +5598,13 @@ exports[`Visual Regression - Logo > Logo - large with animation 1`] = `
 <div>
   <div
     class="h-10 w-10 relative shrink-0"
-    style="animation: oeLogoFloat 3s ease-in-out 1.2s infinite, oeLogoGlow 3s ease-in-out 1.2s infinite;"
   >
-    <svg
-      class="w-full h-full"
-      fill="none"
-      viewBox="0 0 512 512"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <lineargradient
-          id="oe-lg-lg-a"
-          x1="0%"
-          x2="100%"
-          y1="0%"
-          y2="100%"
-        >
-          <stop
-            offset="0%"
-            stop-color="#0066ff"
-          />
-          <stop
-            offset="100%"
-            stop-color="#5856d6"
-          />
-        </lineargradient>
-      </defs>
-      <rect
-        fill="url(#oe-lg-lg-a)"
-        height="448"
-        rx="96"
-        style="animation: oeBgScale 450ms cubic-bezier(0.34,1.56,0.64,1) both;"
-        width="448"
-        x="32"
-        y="32"
-      />
-      <rect
-        fill="#fff"
-        height="114"
-        opacity=".85"
-        rx="6"
-        style="transform-origin: bottom; animation: oeBarGrow 500ms cubic-bezier(0.34,1.56,0.64,1) both; animation-delay: 120ms;"
-        width="42"
-        x="102"
-        y="296"
-      />
-      <rect
-        fill="#fff"
-        height="177"
-        opacity=".95"
-        rx="6"
-        style="transform-origin: bottom; animation: oeBarGrow 500ms cubic-bezier(0.34,1.56,0.64,1) both; animation-delay: 200ms;"
-        width="42"
-        x="162"
-        y="233"
-      />
-      <rect
-        fill="#fff"
-        height="234"
-        opacity=".85"
-        rx="6"
-        style="transform-origin: bottom; animation: oeBarGrow 500ms cubic-bezier(0.34,1.56,0.64,1) both; animation-delay: 280ms;"
-        width="42"
-        x="222"
-        y="176"
-      />
-      <rect
-        fill="#fff"
-        height="260"
-        opacity=".9"
-        rx="8"
-        style="animation: oeBuildingSlide 600ms cubic-bezier(0.22,1,0.36,1) both; animation-delay: 300ms;"
-        width="128"
-        x="282"
-        y="150"
-      />
-      <g
-        style="animation: oeBuildingSlide 600ms cubic-bezier(0.22,1,0.36,1) both; animation-delay: 300ms;"
-      >
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="28"
-          opacity=".5"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 550ms;"
-          width="26"
-          x="304"
-          y="182"
-        />
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="28"
-          opacity=".5"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 600ms;"
-          width="26"
-          x="362"
-          y="182"
-        />
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="28"
-          opacity=".5"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 650ms;"
-          width="26"
-          x="304"
-          y="226"
-        />
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="28"
-          opacity=".5"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 700ms;"
-          width="26"
-          x="362"
-          y="226"
-        />
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="28"
-          opacity=".45"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 750ms;"
-          width="26"
-          x="304"
-          y="272"
-        />
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="28"
-          opacity=".45"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 800ms;"
-          width="26"
-          x="362"
-          y="272"
-        />
-        <rect
-          fill="url(#oe-lg-lg-a)"
-          height="82"
-          opacity=".55"
-          rx="4"
-          style="animation: oeWindowFade 400ms ease both; animation-delay: 850ms;"
-          width="34"
-          x="329"
-          y="328"
-        />
-      </g>
-    </svg>
+    <img
+      alt="PM Project Management"
+      class="w-full h-full object-contain"
+      draggable="false"
+      src="/brand/pmpm-logo.svg"
+    />
   </div>
 </div>
 `;
@@ -5757,75 +5614,12 @@ exports[`Visual Regression - Logo > Logo - small 1`] = `
   <div
     class="h-6 w-6 relative shrink-0"
   >
-    <svg
-      class="w-full h-full"
-      fill="none"
-      viewBox="0 0 512 512"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <lineargradient
-          id="oe-lg-sm-s"
-          x1="0%"
-          x2="100%"
-          y1="0%"
-          y2="100%"
-        >
-          <stop
-            offset="0%"
-            stop-color="#0066ff"
-          />
-          <stop
-            offset="100%"
-            stop-color="#5856d6"
-          />
-        </lineargradient>
-      </defs>
-      <rect
-        fill="url(#oe-lg-sm-s)"
-        height="448"
-        rx="96"
-        width="448"
-        x="32"
-        y="32"
-      />
-      <rect
-        fill="#fff"
-        height="114"
-        opacity=".85"
-        rx="6"
-        width="42"
-        x="102"
-        y="296"
-      />
-      <rect
-        fill="#fff"
-        height="177"
-        opacity=".95"
-        rx="6"
-        width="42"
-        x="162"
-        y="233"
-      />
-      <rect
-        fill="#fff"
-        height="234"
-        opacity=".85"
-        rx="6"
-        width="42"
-        x="222"
-        y="176"
-      />
-      <rect
-        fill="#fff"
-        height="260"
-        opacity=".9"
-        rx="8"
-        width="128"
-        x="282"
-        y="150"
-      />
-    </svg>
+    <img
+      alt="PM Project Management"
+      class="w-full h-full object-contain"
+      draggable="false"
+      src="/brand/pmpm-logo.svg"
+    />
   </div>
 </div>
 `;
@@ -5838,156 +5632,18 @@ exports[`Visual Regression - Logo > LogoWithText - default 1`] = `
     <div
       class="h-7 w-7 relative shrink-0"
     >
-      <svg
-        class="w-full h-full"
-        fill="none"
-        viewBox="0 0 512 512"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <lineargradient
-            id="oe-lg-md-s"
-            x1="0%"
-            x2="100%"
-            y1="0%"
-            y2="100%"
-          >
-            <stop
-              offset="0%"
-              stop-color="#0066ff"
-            />
-            <stop
-              offset="100%"
-              stop-color="#5856d6"
-            />
-          </lineargradient>
-        </defs>
-        <rect
-          fill="url(#oe-lg-md-s)"
-          height="448"
-          rx="96"
-          width="448"
-          x="32"
-          y="32"
-        />
-        <rect
-          fill="#fff"
-          height="114"
-          opacity=".85"
-          rx="6"
-          width="42"
-          x="102"
-          y="296"
-        />
-        <rect
-          fill="#fff"
-          height="177"
-          opacity=".95"
-          rx="6"
-          width="42"
-          x="162"
-          y="233"
-        />
-        <rect
-          fill="#fff"
-          height="234"
-          opacity=".85"
-          rx="6"
-          width="42"
-          x="222"
-          y="176"
-        />
-        <rect
-          fill="#fff"
-          height="260"
-          opacity=".9"
-          rx="8"
-          width="128"
-          x="282"
-          y="150"
-        />
-        <g>
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="304"
-            y="182"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="362"
-            y="182"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="304"
-            y="226"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="362"
-            y="226"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".45"
-            rx="4"
-            width="26"
-            x="304"
-            y="272"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".45"
-            rx="4"
-            width="26"
-            x="362"
-            y="272"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="82"
-            opacity=".55"
-            rx="4"
-            width="34"
-            x="329"
-            y="328"
-          />
-        </g>
-      </svg>
+      <img
+        alt="PM Project Management"
+        class="w-full h-full object-contain"
+        draggable="false"
+        src="/brand/pmpm-logo.svg"
+      />
     </div>
     <span
-      class="text-[17px] leading-none font-medium text-content-primary whitespace-nowrap tracking-tight"
+      class="text-[17px] leading-none font-semibold text-content-primary whitespace-nowrap tracking-tight"
       style="font-family: "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.02em;"
     >
-      Open
-      <span
-        class="text-oe-blue"
-      >
-        Construction
-      </span>
-      <span
-        class="text-content-quaternary"
-      >
-        ERP
-      </span>
+      PM Project Management
     </span>
   </div>
 </div>
@@ -6001,151 +5657,18 @@ exports[`Visual Regression - Logo > LogoWithText - without version 1`] = `
     <div
       class="h-7 w-7 relative shrink-0"
     >
-      <svg
-        class="w-full h-full"
-        fill="none"
-        viewBox="0 0 512 512"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <lineargradient
-            id="oe-lg-md-s"
-            x1="0%"
-            x2="100%"
-            y1="0%"
-            y2="100%"
-          >
-            <stop
-              offset="0%"
-              stop-color="#0066ff"
-            />
-            <stop
-              offset="100%"
-              stop-color="#5856d6"
-            />
-          </lineargradient>
-        </defs>
-        <rect
-          fill="url(#oe-lg-md-s)"
-          height="448"
-          rx="96"
-          width="448"
-          x="32"
-          y="32"
-        />
-        <rect
-          fill="#fff"
-          height="114"
-          opacity=".85"
-          rx="6"
-          width="42"
-          x="102"
-          y="296"
-        />
-        <rect
-          fill="#fff"
-          height="177"
-          opacity=".95"
-          rx="6"
-          width="42"
-          x="162"
-          y="233"
-        />
-        <rect
-          fill="#fff"
-          height="234"
-          opacity=".85"
-          rx="6"
-          width="42"
-          x="222"
-          y="176"
-        />
-        <rect
-          fill="#fff"
-          height="260"
-          opacity=".9"
-          rx="8"
-          width="128"
-          x="282"
-          y="150"
-        />
-        <g>
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="304"
-            y="182"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="362"
-            y="182"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="304"
-            y="226"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".5"
-            rx="4"
-            width="26"
-            x="362"
-            y="226"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".45"
-            rx="4"
-            width="26"
-            x="304"
-            y="272"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="28"
-            opacity=".45"
-            rx="4"
-            width="26"
-            x="362"
-            y="272"
-          />
-          <rect
-            fill="url(#oe-lg-md-s)"
-            height="82"
-            opacity=".55"
-            rx="4"
-            width="34"
-            x="329"
-            y="328"
-          />
-        </g>
-      </svg>
+      <img
+        alt="PM Project Management"
+        class="w-full h-full object-contain"
+        draggable="false"
+        src="/brand/pmpm-logo.svg"
+      />
     </div>
     <span
-      class="text-[17px] leading-none font-medium text-content-primary whitespace-nowrap tracking-tight"
+      class="text-[17px] leading-none font-semibold text-content-primary whitespace-nowrap tracking-tight"
       style="font-family: "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.02em;"
     >
-      Open
-      <span
-        class="text-oe-blue"
-      >
-        Construction
-      </span>
+      PM Project Management
     </span>
   </div>
 </div>

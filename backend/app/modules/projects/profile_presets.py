@@ -53,16 +53,8 @@ ALWAYS_ON: tuple[str, ...] = (
 CROSS_CUTTING: frozenset[str] = frozenset({"finance", "risk", "safety", "carbon"})
 
 # ── Region → regional pack module (doc §2.6, auto-added) ─────────────────
-REGION_PACK: dict[str, str] = {
-    "dach": "dach_pack",
-    "uk": "uk_pack",
-    "us": "us_pack",
-    "russia_cis": "russia_pack",
-    "latam": "latam_pack",
-    "mena": "middle_east_pack",
-    "asia_pacific": "asia_pac_pack",
-    "india": "india_pack",
-}
+# PM Project Management: the other countries' regional packs were removed.
+REGION_PACK: dict[str, str] = {}
 
 
 class PresetMeta(TypedDict):

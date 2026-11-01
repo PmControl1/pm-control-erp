@@ -33,7 +33,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useI18nReady } from '@/shared/lib/useI18nReady';
 import { isTauri, openAppInBrowser, openLink } from '@/shared/lib/desktop';
 import { SupportUsButton } from './SupportUsButton';
-import { BRAND_NAME, BRAND_SUPPORT_EMAIL } from '@/shared/brand';
+import { BRAND_NAME, BRAND_SUPPORT_EMAIL, UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
 import { SubscribeButton } from './SubscribeButton';
 import { ProjectJourneyButton } from './ProjectJourney';
 import { PresenceAvatarStack } from '@/features/global_presence';
@@ -756,11 +756,11 @@ export function BugReportMenu() {
   };
 
   const handleEmail = () => {
-    if (descriptionTooShort) return;
+    if (descriptionTooShort || !BRAND_SUPPORT_EMAIL.trim()) return;
     setOpen(false);
     setDescription('');
     const { body, title } = buildBugReportUrl(trimmedDescription);
-    const subject = `PM Project Management Issue - ${title}`;
+    const subject = `${BRAND_NAME} Issue - ${title}`;
     // mailto bodies are also length-limited (~2000 chars in Chrome),
     // so we trim aggressively. The downloaded log JSON is the long form.
     const safeBody = body.length > 1500 ? `${body.slice(0, 1500)}\n\n_[truncated - attach the JSON log if needed]_` : body;
@@ -773,6 +773,7 @@ export function BugReportMenu() {
   };
 
   const handleFeedbackForm = () => {
+    if (!UPSTREAM_PROMPTS_ENABLED) return;
     setOpen(false);
     if (errorCount > 0) {
       triggerDownload(exportErrorReport(), errorLogFilename());
@@ -809,6 +810,7 @@ export function BugReportMenu() {
      * getting the JSON they were about to attach.
      */
     requiresDescription: boolean;
+    available?: boolean;
   };
 
   const channels: Channel[] = [
@@ -830,6 +832,7 @@ export function BugReportMenu() {
       desc: t('bug.channel_email_desc', { defaultValue: 'Opens your mail client with the report attached.' }),
       onClick: handleEmail,
       requiresDescription: true,
+      available: Boolean(BRAND_SUPPORT_EMAIL.trim()),
     },
     {
       icon: MessageSquarePlus,
@@ -838,6 +841,7 @@ export function BugReportMenu() {
       desc: t('bug.channel_form_desc', { defaultValue: 'Richer fields and screenshots on openconstructionerp.com.' }),
       onClick: handleFeedbackForm,
       requiresDescription: false,
+      available: UPSTREAM_PROMPTS_ENABLED,
     },
     {
       icon: Upload,
@@ -983,7 +987,7 @@ export function BugReportMenu() {
               start while its server comes up, so the whole menu read as dead
               links until somebody found "report anyway". */}
           <div className="py-1">
-            {channels.map((ch, idx) => {
+            {channels.filter((ch) => ch.available !== false).map((ch, idx) => {
               const Icon = ch.icon;
               // Disabled for real, not dimmed: a `pointer-events-none` wrapper
               // still lets a keyboard reach the control, and tells nobody why
@@ -1066,6 +1070,7 @@ function HelpMenu() {
   // header). Downloads the in-session error log if there are any
   // errors so the user can attach it.
   const handleFeedback = () => {
+    if (!UPSTREAM_PROMPTS_ENABLED) return;
     setOpen(false);
     if (getErrorCount() > 0) {
       triggerDownload(exportErrorReport(), errorLogFilename());
@@ -1177,7 +1182,7 @@ function HelpMenu() {
           <div className="my-1 border-t border-border-light" role="separator" />
 
           {/* Feedback / report flows */}
-          <button
+          {UPSTREAM_PROMPTS_ENABLED && <button
             type="button"
             role="menuitem"
             onClick={handleFeedback}
@@ -1185,13 +1190,13 @@ function HelpMenu() {
           >
             <MessageSquarePlus size={14} className="text-content-tertiary shrink-0" />
             <span>{t('feedback.title', { defaultValue: 'Send feedback' })}</span>
-          </button>
+          </button>}
           {/* Bug-reporting lives in the dedicated Bug menu (the bug-icon button
               next to this one), which already offers a pre-filled GitHub issue,
               the web form, an email channel and a log download. Keeping those
               flows out of here leaves Help for docs and general feedback and
               gives bug reporting a single, obvious home. */}
-          <a
+          {BRAND_SUPPORT_EMAIL.trim() && <a
             role="menuitem"
             href={`mailto:${BRAND_SUPPORT_EMAIL}?subject=${encodeURIComponent(`${BRAND_NAME} issue report`)}`}
             onClick={() => setOpen(false)}
@@ -1199,7 +1204,7 @@ function HelpMenu() {
           >
             <Mail size={14} className="text-content-tertiary shrink-0" />
             <span>{t('header.email_issues', { defaultValue: 'Email the team' })}</span>
-          </a>
+          </a>}
         </div>
       )}
     </div>

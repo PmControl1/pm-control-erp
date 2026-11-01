@@ -28,7 +28,8 @@ from app.core import converter_source as cs
 from app.modules.takeoff import router
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "desktop-release.yml"
+# PM fork: the original project's workflows live in .github/upstream-workflows/ (switched off).
+WORKFLOW_PATH = REPO_ROOT / ".github" / "upstream-workflows" / "desktop-release.yml"
 DWG_PAGE_PATH = REPO_ROOT / "frontend" / "src" / "features" / "dwg-takeoff" / "DwgTakeoffPage.tsx"
 
 _TAG = re.compile(r"\Av\d{4}\.\d{2}\.\d+\Z")

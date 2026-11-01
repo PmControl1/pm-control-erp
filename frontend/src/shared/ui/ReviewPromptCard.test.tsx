@@ -14,8 +14,16 @@
  * copy even though every string in the component is an i18n key.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+
+// Exercise the retained optional widget behavior without enabling upstream
+// prompts in the PM Project Management distribution. The default-off contract
+// is covered separately in pilotUpstreamPrompts.test.tsx.
+vi.mock('@/shared/brand', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/brand')>();
+  return { ...actual, UPSTREAM_PROMPTS_ENABLED: true };
+});
 
 import { ReviewPromptCard } from './ReviewPromptCard';
 import {

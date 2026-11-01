@@ -22,7 +22,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 TAURI_CONF = ROOT / "desktop" / "src-tauri" / "tauri.conf.json"
-WORKFLOW = ROOT / ".github" / "workflows" / "desktop-release.yml"
+# PM fork: the original project's workflows live in .github/upstream-workflows/ (switched off).
+WORKFLOW = ROOT / ".github" / "upstream-workflows" / "desktop-release.yml"
 
 
 @pytest.fixture(scope="module")

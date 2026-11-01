@@ -41,16 +41,15 @@ import yaml
 YAML_SUFFIXES = (".yml", ".yaml")
 JSON_SUFFIX = ".json"
 
-# tsconfig files are JSONC by format, comments are legal in them, and three of
-# the four open with one. Strict json.loads is simply the wrong instrument
+# tsconfig files are JSONC by format; comments are legal in them. Strict json.loads is simply the wrong instrument
 # here, and writing a comment stripper would make this gate's verdict depend on
 # the stripper rather than on the file. They already have a stronger reader:
 # npm run typecheck:e2e runs tsc -p over tsconfig.e2e.json, tsconfig.e2e-root.json
-# and tsconfig.configs.json, tsconfig.json is the default project for the build,
-# and TypeScript checks far more of them than syntax. So they are skipped by
+# and tsconfig.configs.json. npm run typecheck also checks tsconfig.locales.json
+# before the application project, and TypeScript checks far more than syntax. So they are skipped by
 # name and counted out loud.
 JSONC_PREFIX = "tsconfig"
-EXPECTED_JSONC = 4
+EXPECTED_JSONC = 5
 
 # Anchored to this file rather than to the caller's working directory. git
 # ls-files answers about the directory it is run in, so from backend/ it lists
@@ -153,7 +152,7 @@ def main() -> int:
 
     print(
         f"config syntax OK: {len(yaml_files)} YAML and {len(json_files)} JSON parsed, "
-        f"{len(jsonc)} JSONC skipped ({JSONC_PREFIX}*.json, read by tsc in npm run typecheck:e2e)"
+        f"{len(jsonc)} JSONC skipped ({JSONC_PREFIX}*.json, read by tsc in npm run typecheck)"
     )
     return 0
 

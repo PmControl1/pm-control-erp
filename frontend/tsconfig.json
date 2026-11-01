@@ -15,10 +15,13 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
+    "disableSourceOfProjectReferenceRedirect": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/app/locales/*.ts"],
+  "references": [{ "path": "./tsconfig.locales.json" }]
 }

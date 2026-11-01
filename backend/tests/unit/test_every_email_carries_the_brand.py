@@ -1,6 +1,6 @@
 # DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-"""Every email the platform sends carries the OpenConstructionERP brand.
+"""Every email the platform sends carries the PM Project Management brand.
 
 The brand shows in the same places in every mail: the ``From:`` display name,
 the line beside the logo, and the closing line of the footer. It is never
@@ -41,7 +41,7 @@ OLD_NAME = re.compile("open ?estimate", re.IGNORECASE)
 
 
 def _assert_branded(subject: str, html_body: str, *, shell: bool = True) -> None:
-    assert BRAND_NAME == "OpenConstructionERP"
+    assert BRAND_NAME == "PM Project Management"
     assert brand_header() in html_body, "the mail does not open with the brand line"
     if shell:
         assert html_body.endswith(BRAND_FOOTER), "the mail does not close with the brand line"
@@ -159,7 +159,7 @@ def test_a_progress_report_email_carries_the_brand():
 
 def test_a_bare_sender_address_shows_the_brand_name():
     assert sender_addresses("info@datadrivenconstruction.io") == (
-        "OpenConstructionERP <info@datadrivenconstruction.io>",
+        "PM Project Management <info@datadrivenconstruction.io>",
         "info@datadrivenconstruction.io",
     )
 
@@ -207,5 +207,5 @@ def test_the_smtp_backend_sends_under_the_brand_name():
         )
     assert result.ok
     assert sent["envelope_from"] == "info@datadrivenconstruction.io"
-    assert "From: OpenConstructionERP <info@datadrivenconstruction.io>" in sent["raw"]
+    assert "From: PM Project Management <info@datadrivenconstruction.io>" in sent["raw"]
     assert not OLD_NAME.search(sent["raw"])

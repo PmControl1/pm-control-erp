@@ -7825,6 +7825,32 @@ def _unexpected_parse_failure(chosen: type) -> dict[str, Any]:
     }
 
 
+async def _convert_replaced_currency_to_euro(boq_id: uuid.UUID, imported_boq: Any, service: BOQService) -> None:
+    """Bring a bill priced in a currency the euro replaced into a euro project, in euro.
+
+    A Bulgarian КСС written before 2026 is in лева; the project it is loaded
+    into is kept in euro. Imported as written, every rate would be read as
+    euro and the bill would come in at almost twice its value. The rates are
+    converted at the fixed rate instead (bulgaria_kss.convert_to_euro), and
+    each line keeps its lev rate. A project still kept in the old currency
+    takes the bill as written.
+    """
+    from app.core.euro_conversion import is_replaced_by_euro
+    from app.modules.boq.importers.bulgaria_kss import convert_to_euro
+    from app.modules.projects.repository import ProjectRepository
+
+    if not is_replaced_by_euro(getattr(imported_boq, "currency", "")):
+        return
+    try:
+        boq = await service.get_boq(boq_id)
+        project = await ProjectRepository(service.session).get_by_id(boq.project_id)
+    except Exception:  # noqa: BLE001 - without a project there is nothing to convert to
+        logger.warning("Could not read the project currency of BOQ %s for conversion", boq_id, exc_info=True)
+        return
+    if project is not None and (project.currency or "").strip()[:3].upper() == "EUR":
+        convert_to_euro(imported_boq, imported_boq.currency)
+
+
 async def _run_native_import(
     boq_id: uuid.UUID,
     chosen: type,
@@ -7869,6 +7895,7 @@ async def _run_native_import(
             detail=_unexpected_parse_failure(chosen),
         ) from exc
 
+    await _convert_replaced_currency_to_euro(boq_id, imported_boq, service)
     if on_phase is not None:
         await on_phase("writing")
     apply_summary = await _persist_imported_boq(

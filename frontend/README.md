@@ -60,7 +60,11 @@ npm run build
 
 This runs `npm run typecheck` first and then `vite build`. Type checking covers `src` through `tsconfig.json`, both end-to-end test projects, and the root configuration files. The bundle output goes to `dist/`.
 
-The main TypeScript check reuses its incremental cache at `node_modules/.cache/typecheck.tsbuildinfo`, including when a build follows `npm run typecheck`. Changed sources still undergo type checking. The cache is disposable: `npm ci` removes it, so the next check starts cold. The three additional projects still undergo type checking on every invocation.
+`npm run typecheck` first checks the large translation dictionaries in `tsconfig.locales.json` and emits their exact declarations into `node_modules/.cache/locales-dts`. It then checks the application and tests with `scripts/typecheck.mjs`. Each compiler process loads the complete original program, including every imported global or module augmentation, but collects semantic diagnostics for at most 512 source roots. Every root is checked, and imported implementation files outside the roots are also checked. Releasing the checker between batches bounds memory without changing the strict compiler options or using untyped substitutes. The existing end-to-end and root configuration checks still run afterward.
+
+The locale project reuses its disposable incremental cache under `node_modules/.cache`; changed dictionaries are checked before their declarations are consumed. The semantic batches and three additional projects run on every invocation. To verify from a clean install, run `npm ci && npm run typecheck` from `frontend/`.
+
+If a single cached locale declaration was deleted while its build metadata remains, rebuild the declarations with `node --max-old-space-size=5120 ./node_modules/typescript/bin/tsc -b tsconfig.locales.json --force`, then rerun `npm run typecheck`.
 
 Bundle size analysis is opt-in because calculating gzip and maximum-quality Brotli sizes is expensive. To generate `frontend/stats.html` (relative to the repository root), run from `frontend/`:
 
@@ -108,7 +112,7 @@ All scripts are defined in `package.json` and run with `npm run <name>`.
 | `test:e2e:install` | `playwright install chromium firefox webkit --with-deps` | Install the browsers Playwright needs. |
 | `lint` | `eslint .` | Lint the source with ESLint. |
 | `lint:unicode` | inline Node check | Fail if any source file contains stray zero-width Unicode characters. |
-| `typecheck` | `tsc --noEmit` | Type-check without emitting output. |
+| `typecheck` | Locale declarations, bounded semantic batches, and the three additional projects | Check all application and test sources; only disposable locale type declarations are emitted. |
 | `api:generate` | `openapi-typescript ...` | Regenerate `src/shared/lib/api-types.ts` from the backend OpenAPI schema. |
 
 ## Source layout

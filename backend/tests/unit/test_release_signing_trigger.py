@@ -30,8 +30,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-WORKFLOW = Path(__file__).resolve().parents[3] / ".github" / "workflows" / "release-signing.yml"
-SBOM_WORKFLOW = Path(__file__).resolve().parents[3] / ".github" / "workflows" / "sbom-and-licenses.yml"
+# PM fork: the original project's workflows live in .github/upstream-workflows/ (switched off).
+WORKFLOW = Path(__file__).resolve().parents[3] / ".github" / "upstream-workflows" / "release-signing.yml"
+SBOM_WORKFLOW = Path(__file__).resolve().parents[3] / ".github" / "upstream-workflows" / "sbom-and-licenses.yml"
 
 #: The formats Desktop Release produces, and whether the release has to carry
 #: one before it is worth signing. The rpm is the odd one out on purpose:

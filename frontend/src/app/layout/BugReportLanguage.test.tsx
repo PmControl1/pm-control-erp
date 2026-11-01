@@ -1,7 +1,8 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 /**
- * What the bug menu hands to GitHub is written in English, whatever language
+ * What the bug menu hands to a configured support mailbox is written in
+ * English, whatever language
  * the app is running in.
  *
  * A report filed from /modules on 16.8.0 arrived titled in Spanish, and its
@@ -38,6 +39,11 @@ import type React from 'react';
 
 const openLink = vi.hoisted(() => vi.fn());
 
+vi.mock('@/shared/brand', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/brand')>(),
+  BRAND_SUPPORT_EMAIL: 'support@example.test',
+}));
+
 // Keep the real module; observe only the call that hands the report off.
 vi.mock('@/shared/lib/desktop', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/lib/desktop')>();
@@ -73,8 +79,8 @@ const REPORTER_WORDS =
 /**
  * The popover's controls are located by role and position rather than by
  * label, because in these tests no label is in English. The channels are the
- * only buttons inside the dialog and keep their declared order, so the first
- * is the one that opens GitHub.
+ * only buttons inside the dialog and keep their declared order, so the second
+ * is the configured email channel.
  */
 function openMenuOnModules(lang: string | null) {
   window.history.pushState({}, '', '/modules');
@@ -92,19 +98,22 @@ function openMenuOnModules(lang: string | null) {
   fireEvent.click(screen.getAllByRole('button')[0]!);
   const dialog = screen.getByRole('dialog');
   return {
-    github: within(dialog).getAllByRole('button')[0] as HTMLButtonElement,
+    email: within(dialog).getAllByRole('button')[1] as HTMLButtonElement,
     description: within(dialog).getByRole('textbox') as HTMLTextAreaElement,
   };
 }
 
-/** File a report and return the GitHub URL the menu opened. */
+/** File a report and return the mailto URL the menu opened. */
 function fileReport(lang: string | null = 'es'): URL {
-  const { github, description } = openMenuOnModules(lang);
+  const { email, description } = openMenuOnModules(lang);
   fireEvent.change(description, { target: { value: REPORTER_WORDS } });
   expect(REPORTER_WORDS.length).toBeGreaterThanOrEqual(MIN_DESCRIPTION_LENGTH);
-  fireEvent.click(github);
+  fireEvent.click(email);
   expect(openLink).toHaveBeenCalledTimes(1);
-  return new URL(openLink.mock.calls[0]![0] as string);
+  const url = new URL(openLink.mock.calls[0]![0] as string);
+  expect(url.protocol).toBe('mailto:');
+  expect(url.pathname).toBe('support@example.test');
+  return url;
 }
 
 beforeEach(() => {
@@ -114,10 +123,10 @@ beforeEach(() => {
 
 describe('bug report payload - written in English from a UI that is not', () => {
   it('titles the issue in English and names the screen it came from', () => {
-    const title = fileReport().searchParams.get('title') ?? '';
+    const title = fileReport().searchParams.get('subject') ?? '';
 
     // The exact line that arrived in Spanish, and the surface it names.
-    expect(title).toBe('[Modules] Bug report from in-app menu');
+    expect(title).toBe('PM Project Management Issue - [Modules] Bug report from in-app menu');
     expect(title).not.toContain(TRANSLATED);
   });
 

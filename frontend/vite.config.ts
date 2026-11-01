@@ -366,29 +366,9 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            // API reads — NetworkFirst with 30 s timeout, cache only
-            // used as the offline fallback for idempotent GETs.  Other
-            // verbs bypass the SW (no ``method`` match here means GET
-            // by default).
-            urlPattern: ({ url, request }) => {
-              if (request.method !== 'GET') return false;
-              // A bidder link's token is its credential; never keep it, or
-              // the bill behind it, in a cache on a shared device.
-              if (url.pathname.startsWith('/api/v1/tendering/bid-portal/')) return false;
-              return url.pathname.startsWith('/api/v1/');
-            },
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'oce-api',
-              networkTimeoutSeconds: 30,
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 24 * 60 * 60, // 1 day
-              },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
+          // API responses are account-specific. Keep them out of the shared
+          // service-worker CacheStorage: api.ts uses the per-account IndexedDB
+          // fallback instead, including its in-flight session-change guards.
         ],
       },
     }),

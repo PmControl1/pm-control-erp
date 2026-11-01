@@ -12450,6 +12450,13 @@ async def install_demo_project(
     Raises ``ValueError`` if ``demo_id`` is not in the registry.
     """
     from app.core.demo_marker import restore_demo_id, retired_demo_ids
+    from app.core.demo_seed import seed_demo_enabled
+
+    # PM Project Management: no demo project is installed while demo data is
+    # turned off (SEED_DEMO=false, or the opt-out the demo purge records). Every
+    # caller already treats a ValueError as "this demo cannot be installed".
+    if not seed_demo_enabled():
+        raise ValueError("Demo projects are turned off on this installation")
 
     template = DEMO_TEMPLATES.get(demo_id)
     if template is None:

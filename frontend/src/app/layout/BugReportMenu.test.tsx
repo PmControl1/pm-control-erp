@@ -39,6 +39,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
 const openLink = vi.hoisted(() => vi.fn());
+const copyToClipboard = vi.hoisted(() => vi.fn().mockResolvedValue(true));
+const triggerDownload = vi.hoisted(() => vi.fn());
+
+vi.mock('@/shared/lib/browser', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/lib/browser')>(),
+  copyToClipboard,
+}));
+
+vi.mock('@/shared/lib/api', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/lib/api')>(),
+  triggerDownload,
+}));
 
 // Keep the real module; observe only the call that hands the report off.
 vi.mock('@/shared/lib/desktop', async (importOriginal) => {
@@ -72,7 +84,6 @@ function openMenu() {
 const channel = (label: string) =>
   screen.getByText(label).closest('button') as HTMLButtonElement;
 const githubChannel = () => channel('Report a bug (with logs)');
-const emailChannel = () => channel('Email the team');
 const downloadChannel = () => channel('Download log only');
 const descriptionField = () => screen.getByLabelText(/What happened/) as HTMLTextAreaElement;
 
@@ -82,6 +93,8 @@ function type(text: string) {
 
 beforeEach(() => {
   openLink.mockClear();
+  copyToClipboard.mockClear();
+  triggerDownload.mockClear();
 });
 
 describe('BugReportMenu - a report with no description cannot be sent', () => {
@@ -89,7 +102,7 @@ describe('BugReportMenu - a report with no description cannot be sent', () => {
     openMenu();
 
     expect(githubChannel().disabled).toBe(true);
-    expect(emailChannel().disabled).toBe(true);
+    expect(screen.queryByText('Email the team')).toBeNull();
     // The reason travels with the control, not in a toast that would only
     // appear after a click the button no longer accepts.
     expect(githubChannel().textContent).toContain('Describe what happened above');
@@ -99,6 +112,7 @@ describe('BugReportMenu - a report with no description cannot be sent', () => {
     // and the reporter met our submit button already holding nothing to say.
     fireEvent.click(githubChannel());
     expect(openLink).not.toHaveBeenCalled();
+    expect(copyToClipboard).not.toHaveBeenCalled();
   });
 
   it('still refuses a description too short to act on, and states the minimum up front', () => {
@@ -118,15 +132,15 @@ describe('BugReportMenu - a report with no description cannot be sent', () => {
     expect(githubChannel().disabled).toBe(false);
   });
 
-  it('sends the reporter words instead of a placeholder once the field is filled', () => {
+  it('copies the reporter words instead of a placeholder when no tracker is configured', () => {
     openMenu();
     type(REAL_DESCRIPTION);
 
     fireEvent.click(githubChannel());
 
-    expect(openLink).toHaveBeenCalledTimes(1);
-    const url = new URL(openLink.mock.calls[0]![0] as string);
-    const body = url.searchParams.get('body') ?? '';
+    expect(openLink).not.toHaveBeenCalled();
+    expect(copyToClipboard).toHaveBeenCalledTimes(1);
+    const body = copyToClipboard.mock.calls[0]![0] as string;
 
     expect(body).toContain('### Description');
     expect(body).toContain(REAL_DESCRIPTION);
@@ -150,5 +164,16 @@ describe('BugReportMenu - a report with no description cannot be sent', () => {
     openMenu();
 
     expect(downloadChannel().disabled).toBe(false);
+    fireEvent.click(downloadChannel());
+    expect(triggerDownload).toHaveBeenCalledWith(expect.any(Blob), expect.stringMatching(/\.json$/));
+    expect(openLink).not.toHaveBeenCalled();
+  });
+
+  it('offers no unconfigured email or upstream web feedback destination in the pilot', () => {
+    openMenu();
+
+    expect(screen.queryByText('Email the team')).toBeNull();
+    expect(screen.queryByText('Web feedback form')).toBeNull();
+    expect(screen.getByRole('dialog').querySelector('a')).toBeNull();
   });
 });

@@ -119,6 +119,48 @@ def text_pass(name: str) -> tuple[int, int]:
     return changed_files, hits
 
 
+# Tests that check what a user is shown: the product name in emails,
+# reports, the CLI banner and the settings default. They assert the upstream
+# name, so they are renamed along with the app; the rest of the test tree is
+# left as upstream wrote it (see SKIP_PARTS).
+BRAND_TESTS = [
+    ROOT / path
+    for path in (
+        "backend/tests/unit/test_every_email_carries_the_brand.py",
+        "backend/tests/unit/test_email_service.py",
+        "backend/tests/unit/test_config.py",
+        "backend/tests/unit/test_cli_version_flag_matches_the_version_command.py",
+        "backend/tests/unit/test_a_generated_report_is_written_in_the_readers_language.py",
+        "backend/tests/unit/test_converter_install_integrity.py",
+        "backend/tests/unit/test_notification_email_links.py",
+        "backend/tests/unit/test_notification_email_locale.py",
+        "backend/tests/unit/test_portal_login_email.py",
+        "backend/tests/unit/test_pdf_letterhead.py",
+        "backend/tests/unit/test_pdf_appearance_reaches_the_renderer.py",
+        "backend/tests/unit/test_outgoing_documents_print_the_company_letterhead.py",
+        "backend/tests/unit/test_version_fallback_names_a_version.py",
+        "backend/tests/unit/test_pack_install_says_what_it_did.py",
+        "frontend/src/features/onboarding/__tests__/OnboardingWizard.flow.test.tsx",
+        "frontend/src/modules/gaeb-exchange/GAEBExchangeModule.test.tsx",
+        "frontend/src/features/bim/__tests__/converterPackageMissing.test.ts",
+    )
+]
+
+
+def brand_tests_pass(name: str) -> int:
+    changed = 0
+    for f in BRAND_TESTS:
+        if not f.exists():
+            continue
+        original = f.read_text(encoding="utf-8")
+        lines = original.splitlines(keepends=True)
+        new = "".join(rename_in_line(ln, name, short=False) for ln in lines)
+        if new != original:
+            f.write_text(new, encoding="utf-8")
+            changed += 1
+    return changed
+
+
 # ── 2. JSX wordmark + "by OpenConstructionERP" attribution ─────────────────
 
 WORDMARK_RE = re.compile(
@@ -196,10 +238,11 @@ def gate_pass() -> int:
     if upd.exists():
         s = upd.read_text(encoding="utf-8")
         new = re.sub(
-            r"const UPDATE_CHECK_DISABLED = (?!true;)[^;]+;",
-            "const UPDATE_CHECK_DISABLED = true; // PM Project Management: no upstream update check",
+            r"const UPDATE_CHECK_DISABLED = [^;]+;[^\n]*",
+            "const UPDATE_CHECK_DISABLED = !UPSTREAM_PROMPTS_ENABLED || Boolean(import.meta.env.VITE_DISABLE_UPDATE_CHECK);",
             s,
         )
+        new = ensure_import(new, GATE_IMPORT, "UPSTREAM_PROMPTS_ENABLED")
         if new != s:
             upd.write_text(new, encoding="utf-8")
             n += 1
@@ -294,6 +337,7 @@ def main() -> int:
     files, lines = text_pass(args.name)
     print(f"1. product name: {lines} lines in {files} files")
     print(f"2. wordmarks/attribution lines: {jsx_pass()} files")
+    print(f"   tests that assert the product name: {brand_tests_pass(args.name)} files")
     print(f"3. upstream prompts + update check switched off: {gate_pass()} changes")
     print(f"4. upstream-link CSS rule: {'added' if css_pass() else 'already present'}")
     print(f"5. assets installed: {assets_pass()}, html heads updated: {html_pass(args.name)}")
