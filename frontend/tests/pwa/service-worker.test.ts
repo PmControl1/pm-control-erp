@@ -1,9 +1,8 @@
 /**
  * PWA service-worker test — verifies the generated ``dist/sw.js``
- * registers the three runtime cache lanes declared in vite.config.ts:
+ * registers the static runtime cache lanes declared in vite.config.ts:
  *   * oce-static-assets-v2 (CacheFirst, same-origin fonts/images/asset chunks)
  *   * oce-i18n-locales    (StaleWhileRevalidate, per-locale chunks)
- *   * oce-api             (NetworkFirst, /api/v1/* GETs)
  *
  * AN ABSENT BUILD IS A FAILURE HERE, NOT A SKIP, and that is the whole
  * point of this file's shape. It used to open with
@@ -91,8 +90,8 @@ describe('PWA service worker (generateSW)', () => {
     expect(serviceWorkerSource()).toContain('oce-i18n-locales');
   });
 
-  it('declares the oce-api runtime cache', () => {
-    expect(serviceWorkerSource()).toContain('oce-api');
+  it('does not cache private API responses in shared CacheStorage', () => {
+    expect(serviceWorkerSource()).not.toContain('oce-api');
   });
 
   it('declares the navigation fallback to /index.html', () => {
@@ -128,10 +127,9 @@ describe('PWA service worker configuration', () => {
     expect(config).toContain("'oce-i18n-locales'");
   });
 
-  it('configures oce-api cache with NetworkFirst + 30s timeout', () => {
-    expect(config).toContain("'oce-api'");
-    expect(config).toContain("'NetworkFirst'");
-    expect(config).toContain('networkTimeoutSeconds: 30');
+  it('leaves private API responses to the account-scoped offline store', () => {
+    expect(config).not.toContain("cacheName: 'oce-api'");
+    expect(config).not.toContain("handler: 'NetworkFirst'");
   });
 
   it('configures registerType: autoUpdate', () => {

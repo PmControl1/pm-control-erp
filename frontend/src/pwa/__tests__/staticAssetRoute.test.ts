@@ -64,8 +64,8 @@ describe('the renamed cache', () => {
   });
 
   it('deletes the old cache on start', async () => {
-    const storage = { delete: vi.fn(async (name: string) => name === 'oce-static-assets') };
-    expect(await retireStaleCaches(storage)).toEqual(['oce-static-assets']);
+    const storage = { delete: vi.fn(async (name: string) => ['oce-static-assets', 'oce-api'].includes(name)) };
+    expect(await retireStaleCaches(storage)).toEqual(['oce-static-assets', 'oce-api']);
     expect(storage.delete).toHaveBeenCalledWith('oce-static-assets');
     expect(storage.delete).not.toHaveBeenCalledWith(STATIC_ASSETS_CACHE);
   });

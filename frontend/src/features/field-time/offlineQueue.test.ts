@@ -25,6 +25,10 @@ import {
   OP_WITHDRAW,
 } from './offlineQueue';
 import type { OfflineEntryPayload } from './api';
+import { useAuthStore } from '@/stores/useAuthStore';
+
+beforeEach(() => { useAuthStore.setState({ userId: 'field-time-test-user' }); });
+afterEach(() => { useAuthStore.setState({ userId: null }); });
 
 function entry(key: string, hours: string, date = '2026-06-11'): OfflineEntryPayload {
   return {

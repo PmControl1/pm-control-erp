@@ -30,13 +30,15 @@ vi.mock('../offlineStore', async (importOriginal) => ({
 }));
 
 // The network error is logged on its way through; keep that off the wire.
-vi.mock('../errorLogger', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../errorLogger')>()),
+vi.mock('../errorLogger', () => ({
   logError: vi.fn(),
   logApiError: vi.fn(),
 }));
 
+vi.mock('../intlLocale', () => ({ getDigitSystem: () => 'latn' }));
+
 import { apiPost } from '../api';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const PATH = '/v1/boq/boqs/by-projects/';
 const BODY = { project_ids: ['p-1', 'p-2'] };
@@ -55,6 +57,7 @@ function answerOnline(body: unknown) {
 }
 
 beforeEach(() => {
+  useAuthStore.setState({ userId: 'offline-test-user' });
   store.cacheResponse.mockClear();
   store.getCachedResponse.mockReset();
   store.getCachedResponse.mockResolvedValue(null);
@@ -74,7 +77,7 @@ describe('a POST that says it only reads', () => {
 
     await expect(apiPost(PATH, BODY, { readOnly: true })).resolves.toEqual(cached);
 
-    expect(store.getCachedResponse).toHaveBeenCalledWith(READ_KEY);
+    expect(store.getCachedResponse).toHaveBeenCalledWith(READ_KEY, 'offline-test-user');
     expect(store.queueMutation).not.toHaveBeenCalled();
   });
 
@@ -91,12 +94,12 @@ describe('a POST that says it only reads', () => {
     answerOnline(answer);
 
     await expect(apiPost(PATH, BODY, { readOnly: true })).resolves.toEqual(answer);
-    expect(store.cacheResponse).toHaveBeenCalledWith(READ_KEY, answer);
+    expect(store.cacheResponse).toHaveBeenCalledWith(READ_KEY, answer, undefined, 'offline-test-user');
 
     // A different set of projects is a different question with its own entry.
     store.cacheResponse.mockClear();
     await apiPost(PATH, { project_ids: ['p-3'] }, { readOnly: true });
-    expect(store.cacheResponse).toHaveBeenCalledWith(`POST ${PATH} ${JSON.stringify({ project_ids: ['p-3'] })}`, answer);
+    expect(store.cacheResponse).toHaveBeenCalledWith(`POST ${PATH} ${JSON.stringify({ project_ids: ['p-3'] })}`, answer, undefined, 'offline-test-user');
   });
 });
 

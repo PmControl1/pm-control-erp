@@ -111,6 +111,9 @@ parser.feed(html.decode())
 assert parser.sources, "The production image did not serve a compiled frontend"
 javascript, asset_headers = request(parser.sources[0], origin="http://caddy")
 assert javascript and "javascript" in asset_headers.get("Content-Type", ""), dict(asset_headers)
+worker, worker_headers = request("/sw.js", origin="http://caddy")
+assert "javascript" in worker_headers.get("Content-Type", ""), dict(worker_headers)
+assert b"oce-api" not in worker, "The built service worker still has a shared authenticated API cache"
 assert api("/api/demo/catalog") == [], "Demo projects are offered in production"
 
 email = "pilot-smoke@example.com"

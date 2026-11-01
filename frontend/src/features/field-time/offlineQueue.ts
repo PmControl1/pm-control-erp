@@ -39,6 +39,7 @@ import {
   type ReplayOutcome,
 } from '@/shared/lib/offline';
 import { getAuthToken, API_BASE } from '@/shared/lib/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { OfflineEntryPayload, OfflineEntryResult, OfflineWithdrawPayload } from './api';
 
 /** Its own IndexedDB database, never a new store in the field PWA's. */
@@ -121,8 +122,11 @@ export async function outcomeFromResponse(res: Response): Promise<ReplayOutcome>
  * key already lives inside it, and overwriting anything at replay time would
  * mean the op that finally lands is not the op the foreman recorded.
  */
-export function createFieldTimeSender(): OpSender {
+export function createFieldTimeSender(ownerId = useAuthStore.getState().userId): OpSender {
   return async (op: QueuedOp): Promise<ReplayOutcome> => {
+    if (!ownerId || ownerId !== useAuthStore.getState().userId) {
+      throw new DOMException('The signed-in account changed', 'AbortError');
+    }
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -134,31 +138,54 @@ export function createFieldTimeSender(): OpSender {
       headers,
       body: op.body === undefined ? undefined : JSON.stringify(op.body),
     });
+    if (ownerId !== useAuthStore.getState().userId) {
+      throw new DOMException('The signed-in account changed', 'AbortError');
+    }
     return outcomeFromResponse(res);
   };
 }
 
 /** IndexedDB where it exists, memory where it does not. Same queue either way. */
-export function pickFieldTimeStorage(): QueueStorage {
-  if (typeof indexedDB !== 'undefined') {
-    return createIndexedDbQueueStorage(FIELD_TIME_QUEUE_DB);
-  }
-  return createMemoryQueueStorage();
+export function pickFieldTimeStorage(ownerId = useAuthStore.getState().userId): QueueStorage {
+  // Do not adopt the old unowned database: there is no safe way to infer who
+  // recorded its entries. Keep each account's unsynced days for that account.
+  const storage = ownerId && typeof indexedDB !== 'undefined'
+    ? createIndexedDbQueueStorage(`${FIELD_TIME_QUEUE_DB}:${encodeURIComponent(ownerId)}`)
+    : createMemoryQueueStorage();
+  const isOwner = () => !!ownerId && ownerId === useAuthStore.getState().userId;
+  const requireOwner = () => {
+    if (!isOwner()) throw new DOMException('The signed-in account changed', 'AbortError');
+  };
+  return {
+    async getAll() {
+      if (!isOwner()) return [];
+      const entries = await storage.getAll();
+      return isOwner() ? entries : [];
+    },
+    async put(op) { requireOwner(); await storage.put(op); },
+    async remove(id) { requireOwner(); await storage.remove(id); },
+    async clear() { requireOwner(); await storage.clear(); },
+  };
 }
 
-let singleton: MutationQueue | null = null;
+const accountQueues = new Map<string | null, MutationQueue>();
+let testQueue: MutationQueue | null = null;
 
-/** The process-wide field-time queue, built on first use. */
-export function getFieldTimeQueue(): MutationQueue {
-  if (!singleton) {
-    singleton = new MutationQueue(pickFieldTimeStorage(), createFieldTimeSender());
+/** The requested account's field-time queue, built on first use. */
+export function getFieldTimeQueue(ownerId = useAuthStore.getState().userId): MutationQueue {
+  if (testQueue) return testQueue;
+  let queue = accountQueues.get(ownerId);
+  if (!queue) {
+    queue = new MutationQueue(pickFieldTimeStorage(ownerId), createFieldTimeSender(ownerId));
+    accountQueues.set(ownerId, queue);
   }
-  return singleton;
+  return queue;
 }
 
 /** Test seam: drop the singleton so the next call rebuilds it. */
 export function resetFieldTimeQueueForTests(queue: MutationQueue | null = null): void {
-  singleton = queue;
+  testQueue = queue;
+  accountQueues.clear();
 }
 
 /** Queue one day for replay. A fresh op id every time, so an edit is never lost. */

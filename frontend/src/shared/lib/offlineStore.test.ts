@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { describe, it, expect, beforeEach } from 'vitest';
+import { useAuthStore } from '@/stores/useAuthStore';
 import {
   cacheResponse,
   getCachedResponse,
@@ -16,6 +17,7 @@ const hasIndexedDB = typeof indexedDB !== 'undefined';
 
 describe.skipIf(!hasIndexedDB)('offlineStore - IndexedDB', () => {
   beforeEach(async () => {
+    useAuthStore.setState({ userId: 'offline-test-user' });
     await clearCache();
     await clearMutationQueue();
   });

@@ -44,7 +44,7 @@ let isReplaying = false;
  * Replay queued offline mutations when back online.
  * Runs each mutation sequentially. Failed mutations stay in queue.
  */
-async function replayMutations(): Promise<{ replayed: number; failed: number }> {
+export async function replayMutations(): Promise<{ replayed: number; failed: number }> {
   if (isReplaying) return { replayed: 0, failed: 0 };
   isReplaying = true;
 
@@ -52,10 +52,11 @@ async function replayMutations(): Promise<{ replayed: number; failed: number }> 
   let failed = 0;
 
   try {
+    const { userId: ownerId, accessToken: token } = useAuthStore.getState();
+    if (!ownerId || !token) return { replayed: 0, failed: 0 };
     const queue = await getQueuedMutations();
     if (queue.length === 0) return { replayed: 0, failed: 0 };
 
-    const token = useAuthStore.getState().accessToken;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -63,6 +64,8 @@ async function replayMutations(): Promise<{ replayed: number; failed: number }> 
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     for (const mutation of queue) {
+      if (ownerId !== useAuthStore.getState().userId) break;
+      if (mutation.ownerId !== ownerId) continue;
       try {
         const res = await fetch(`/api${mutation.path}`, {
           method: mutation.method,
@@ -92,6 +95,7 @@ async function replayMutations(): Promise<{ replayed: number; failed: number }> 
  */
 export function useOfflineSync(): void {
   const isOnline = useOnlineStatus();
+  const userId = useAuthStore((s) => s.userId);
   const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
@@ -100,6 +104,7 @@ export function useOfflineSync(): void {
     // Small delay to let network stabilize
     const timer = setTimeout(async () => {
       const { replayed, failed } = await replayMutations();
+      if (userId !== useAuthStore.getState().userId) return;
       // `i18next.t` rather than a hook's `t`: a language switch must not
       // re-run this effect, because re-running it schedules another replay.
       if (replayed > 0) {
@@ -125,5 +130,5 @@ export function useOfflineSync(): void {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [isOnline, addToast]);
+  }, [isOnline, userId, addToast]);
 }

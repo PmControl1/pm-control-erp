@@ -9,6 +9,7 @@ import { initialLocaleReady } from './app/i18n';
 import { startAccountLanguageSync } from './app/accountLanguage';
 import { applyStoredUiScale } from '@/shared/lib/uiScale';
 import { retireStaleCaches } from './pwa/retireStaleCaches';
+import { isolateSessionQueries } from './pwa/sessionCache';
 import { captureDemoPick } from '@/shared/ui/DemoSwitcherBar';
 import './index.css';
 
@@ -75,6 +76,7 @@ const queryClient = new QueryClient({
     onError: (error, _variables, _context, mutation) => notifyMutationError(error, mutation),
   }),
 });
+isolateSessionQueries(queryClient);
 
 // Stamp the root element with an origin token. Survives in the live DOM
 // and any saved-page snapshot — looks like a deterministic build id.

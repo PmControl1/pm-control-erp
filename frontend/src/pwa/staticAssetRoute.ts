@@ -30,10 +30,10 @@
 export const STATIC_ASSETS_CACHE = 'oce-static-assets-v2';
 
 /**
- * Earlier names of the lane. Their entries may hold cached failures, so the
- * app deletes them on start (see ``retireStaleCaches``).
+ * Earlier runtime caches. The static cache may hold failures; oce-api held
+ * account-specific responses under shared URLs. Delete both on start.
  */
-export const RETIRED_STATIC_ASSETS_CACHES: readonly string[] = ['oce-static-assets'];
+export const RETIRED_STATIC_ASSETS_CACHES: readonly string[] = ['oce-static-assets', 'oce-api'];
 
 /** What workbox hands a route's match callback, reduced to what this one reads. */
 export interface StaticAssetMatch {
