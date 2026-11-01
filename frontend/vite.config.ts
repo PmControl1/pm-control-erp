@@ -620,12 +620,15 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
     // PM Project Management: the rebrand switches off the update check against
-    // the original project's releases, and the bug reports to its tracker and
+    // the original project's releases, its support-us and rate-us prompts
+    // (UPSTREAM_PROMPTS_ENABLED), and the bug reports to its tracker and
     // mailbox (GITHUB_REPO and BRAND_SUPPORT_EMAIL are empty until the firm
     // sets its own), so the tests of those features have nothing to test.
     exclude: [
       ...configDefaults.exclude,
       'src/shared/ui/__tests__/updateNotice.test.tsx',
+      'src/app/layout/SupportUsButton.test.tsx',
+      'src/shared/ui/ReviewPromptCard.test.tsx',
       'src/app/layout/BugReportMenu.test.tsx',
       'src/app/layout/BugReportMenuLinks.test.tsx',
       'src/app/layout/BugReportLanguage.test.tsx',
