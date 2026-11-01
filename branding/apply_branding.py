@@ -238,10 +238,11 @@ def gate_pass() -> int:
     if upd.exists():
         s = upd.read_text(encoding="utf-8")
         new = re.sub(
-            r"const UPDATE_CHECK_DISABLED = (?!true;)[^;]+;",
-            "const UPDATE_CHECK_DISABLED = true; // PM Project Management: no upstream update check",
+            r"const UPDATE_CHECK_DISABLED = [^;]+;[^\n]*",
+            "const UPDATE_CHECK_DISABLED = !UPSTREAM_PROMPTS_ENABLED || Boolean(import.meta.env.VITE_DISABLE_UPDATE_CHECK);",
             s,
         )
+        new = ensure_import(new, GATE_IMPORT, "UPSTREAM_PROMPTS_ENABLED")
         if new != s:
             upd.write_text(new, encoding="utf-8")
             n += 1

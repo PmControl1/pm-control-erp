@@ -1,7 +1,8 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 /**
- * Every channel in the bug menu has to leave the app, on both builds.
+ * Configured report channels work on both builds; the pilot keeps reports
+ * local when its issue tracker has not been configured.
  *
  * Reported against 18.5.0 as "none of the links work". Two things in this menu
  * made that true without any link being broken on its own:
@@ -24,6 +25,19 @@ import { MemoryRouter } from 'react-router-dom';
 
 const openLink = vi.hoisted(() => vi.fn());
 const networkOnly = vi.hoisted(() => ({ value: false }));
+const copyToClipboard = vi.hoisted(() => vi.fn().mockResolvedValue(true));
+
+// A distribution's own address may be configured without re-enabling any
+// upstream destination. The default empty-address case has its own suite.
+vi.mock('@/shared/brand', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/brand')>(),
+  BRAND_SUPPORT_EMAIL: 'support@example.test',
+}));
+
+vi.mock('@/shared/lib/browser', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/lib/browser')>(),
+  copyToClipboard,
+}));
 
 vi.mock('@/shared/lib/desktop', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/lib/desktop')>();
@@ -58,6 +72,7 @@ const channel = (label: string) => screen.getByText(label).closest('button') as 
 describe('bug menu channels', () => {
   beforeEach(() => {
     openLink.mockClear();
+    copyToClipboard.mockClear();
     networkOnly.value = false;
   });
 
@@ -67,17 +82,15 @@ describe('bug menu channels', () => {
 
     expect(openLink).toHaveBeenCalledTimes(1);
     const url = openLink.mock.calls[0]![0] as string;
-    expect(url.startsWith('mailto:info@datadrivenconstruction.io?subject=')).toBe(true);
+    expect(url.startsWith('mailto:support@example.test?subject=')).toBe(true);
     expect(decodeURIComponent(url)).toContain(REAL_DESCRIPTION);
   });
 
-  it('opens the web form through openLink', () => {
+  it('does not offer the upstream web form when a distribution configures its own email', () => {
     openMenu();
-    fireEvent.click(channel('Web feedback form'));
 
-    expect(openLink).toHaveBeenCalledWith(
-      expect.stringMatching(/^https:\/\/openconstructionerp\.com\/contact\.html\?report=true/),
-    );
+    expect(screen.queryByText('Web feedback form')).toBeNull();
+    expect(openLink).not.toHaveBeenCalled();
   });
 
   it('keeps every channel usable while the network banner is showing', () => {
@@ -86,14 +99,16 @@ describe('bug menu channels', () => {
 
     // The banner is still there to explain, it just no longer locks the menu.
     expect(screen.getByRole('alert')).toBeTruthy();
-    const list = channel('Web feedback form').parentElement as HTMLElement;
+    const list = channel('Email the team').parentElement as HTMLElement;
     expect(list.className).not.toMatch(/pointer-events-none|opacity-40/);
 
-    fireEvent.click(channel('Web feedback form'));
+    fireEvent.click(channel('Email the team'));
     fireEvent.click(screen.getByLabelText('Report a bug or send feedback'));
     fireEvent.change(screen.getByLabelText(/What happened/), { target: { value: REAL_DESCRIPTION } });
     fireEvent.click(channel('Report a bug (with logs)'));
 
-    expect(openLink).toHaveBeenCalledTimes(2);
+    expect(openLink).toHaveBeenCalledTimes(1);
+    expect(copyToClipboard).toHaveBeenCalledTimes(1);
+    expect(copyToClipboard).toHaveBeenCalledWith(expect.stringContaining(REAL_DESCRIPTION));
   });
 });

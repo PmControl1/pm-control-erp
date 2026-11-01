@@ -28,6 +28,14 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Exercise the retained optional widget behavior without enabling upstream
+// prompts in the PM Project Management distribution. The default-off contract
+// is covered separately in pilotUpstreamPrompts.test.tsx.
+vi.mock('@/shared/brand', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/brand')>();
+  return { ...actual, UPSTREAM_PROMPTS_ENABLED: true };
+});
+
 import { useAuthStore } from '@/stores/useAuthStore';
 
 import { UpdateInlineNotice, UpdateNotification } from '../UpdateChecker';

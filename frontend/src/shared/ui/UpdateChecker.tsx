@@ -47,6 +47,7 @@ import { copyToClipboard } from '@/shared/lib/browser';
 import { isTauri, openExternalUrl, openInNewTab } from '@/shared/lib/desktop';
 import { getIntlLocale } from '@/shared/lib/formatters';
 import { compareVersions, parseVersion } from '@/shared/lib/version';
+import { UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
 
 /* ── One-click upgrade — starts `pip install --upgrade` server-side ───
  *
@@ -198,7 +199,7 @@ const NOTES_CAP = 500;
  * update notice off for a deployment that does not want one - a demo, a
  * recording, a managed install upgraded by its own pipeline.
  */
-const UPDATE_CHECK_DISABLED = true; // PM Project Management: no upstream update check
+const UPDATE_CHECK_DISABLED = !UPSTREAM_PROMPTS_ENABLED || Boolean(import.meta.env.VITE_DISABLE_UPDATE_CHECK);
 
 /** The answer from ``GET /api/system/version-check``.
  *
@@ -555,7 +556,7 @@ export function useUpdateCheck(): VersionCheck | null {
     retry: false,
   });
 
-  return data && data.update_available ? data : null;
+  return !UPDATE_CHECK_DISABLED && data && data.update_available ? data : null;
 }
 
 /**

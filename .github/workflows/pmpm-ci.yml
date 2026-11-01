@@ -5,7 +5,7 @@ name: PM CI
 #
 #   backend   ruff, then the backend unit tests in 6 shards against PostgreSQL 16
 #   frontend  ESLint and the Vitest suite
-#   typecheck the full TypeScript check on a runner with enough RAM
+#   typecheck full TypeScript diagnostics in memory-bounded compiler batches
 #   image     builds and smoke-tests the production image on PRs, publishes on main
 #
 # The `changes` job skips the backend or frontend half when a change does not
@@ -203,10 +203,9 @@ jobs:
     name: TypeScript
     needs: changes
     if: ${{ needs.changes.outputs.frontend == 'true' }}
-    # Intel macOS has 14 GB even for private repositories. The 7 GB Linux
-    # runner cannot finish this check reliably, even with swap. Keep lint
-    # and Vitest on Linux to limit the more expensive macOS runner minutes.
-    runs-on: macos-15-intel
+    # The locale prepass and complete-program diagnostic batches preserve
+    # every strict check while fitting the private Linux runner's memory.
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
       run:
