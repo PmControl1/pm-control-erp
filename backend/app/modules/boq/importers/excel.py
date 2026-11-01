@@ -50,7 +50,7 @@ from app.modules.boq.importers._encoding import (
 )
 from app.modules.boq.importers._workbook import open_workbook
 from app.modules.boq.importers.bulgaria_kss import canonical_unit as bg_canonical_unit
-from app.modules.boq.importers.bulgaria_kss import money_currency as bg_money_currency
+from app.modules.boq.importers.bulgaria_kss import workbook_currency as bg_workbook_currency
 from app.modules.boq.importers.hungary_workbook import parse_hungarian_workbook
 from app.modules.boq.roundtrip import ID_COLUMN_ALIASES, normalise_id
 from app.modules.boq.units import is_lump_sum_unit
@@ -1552,6 +1552,7 @@ def _parse_csv(
         display_map = column_map if display == tuple(raw_headers) else _map_columns(display)
         report = header_report(display, display_map)
     language = header_language(raw_headers)
+    bg_currency = bg_workbook_currency([display]) if language == "bg" else None
 
     rows: list[dict[str, Any]] = []
     row_numbers: list[int] = []
@@ -1572,6 +1573,7 @@ def _parse_csv(
         "column_mapping": _report_mapping(display_map),
         "column_mapping_applied": overrides is not None,
         "header_language": language,
+        "bg_currency": bg_currency,
         "header_report": report,
         "encoding": encoding,
         "delimiter": delimiter,
@@ -1793,6 +1795,7 @@ def _parse_rows_from_excel(
     worksheets, notes = _pick_item_sheets(wb)
 
     read: list[dict[str, Any]] = []
+    currency_sheets: list[dict[str, Any]] = []
     fingerprints: dict[tuple[str, ...], str] = {}
     mapped_header: tuple[str, ...] | None = None
     mapping_notes: list[dict[str, Any]] = []
@@ -1811,6 +1814,9 @@ def _parse_rows_from_excel(
                 sheet = _read_sheet_rows(worksheet, header_row=row, overrides=overrides) or sheet
             else:
                 mapping_notes.append({"sheet": sheet["title"], "reason": "different_header"})
+        # Validate currencies even on sheets later considered duplicates:
+        # their row fingerprint deliberately ignores price headings.
+        currency_sheets.append(sheet)
         fingerprint = _sheet_fingerprint(sheet["rows"])
         if any(fingerprint) and fingerprint in fingerprints:
             # A copy of a sheet already read (a priced and an unpriced copy of
@@ -1825,6 +1831,11 @@ def _parse_rows_from_excel(
         raise ImporterParseError("Excel file is empty or has no header row", code="spreadsheet_no_header")
 
     first = read[0]
+    # A single first-sheet currency cannot describe a mixed-currency workbook:
+    # converting all rates would also convert sheets already priced in euro.
+    bg_currency = None
+    if any(header_language(sheet["headers"]) == "bg" for sheet in currency_sheets):
+        bg_currency = bg_workbook_currency([sheet["display_headers"] for sheet in currency_sheets])
     if len(read) == 1:
         rows, row_numbers = first["rows"], first["row_numbers"]
         row_sheets = [first["title"]] * len(rows)
@@ -1843,6 +1854,7 @@ def _parse_rows_from_excel(
         "column_mapping_applied": overrides is not None,
         "mapping_notes": mapping_notes,
         "header_language": language,
+        "bg_currency": bg_currency,
         "header_report": {**first["header_report"], "sheet": first["title"]},
         "sheet_names": sheet_names,
         "item_sheet": first["title"],
@@ -2909,11 +2921,11 @@ class ExcelImporter:
         for key in ("header_language", "item_sheet", "item_sheets", "encoding", "delimiter", "header_row"):
             if import_meta.get(key):
                 result.metadata[key] = import_meta[key]
-        if language == "bg" and not result.currency:
+        if import_meta.get("bg_currency") is not None and not result.currency:
             # "Ед. цена (лв. без ДДС)": the currency is in the bracket the
             # column match drops. A lev bill is converted to euro on import
             # into a euro project (router, bulgaria_kss.convert_to_euro).
-            result.currency = bg_money_currency(import_meta.get("original_columns") or [])
+            result.currency = import_meta["bg_currency"]
             if not result.currency and result.positions:
                 result.warnings.append(
                     {

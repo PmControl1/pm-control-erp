@@ -16,10 +16,19 @@ builds anything: GitHub Actions builds the image on every merge to `main`
 
 ## 1. The server
 
-- **Size:** 4 vCPU, 8 GB RAM, 80 GB+ disk is plenty for the pilot. Ubuntu 24.04.
-- **Where:** in the EU (the firm's data stays under GDPR without extra
-  paperwork). Any provider works; Hetzner (Germany/Finland) and the Bulgarian
-  hosts are the usual choices.
+- **Size:** start with 4 vCPU, 8 GB RAM and 80 GB+ disk on Ubuntu 24.04;
+  monitor disk space and memory as documents and BIM models accumulate.
+- **Architecture:** choose an **x86-64 / amd64** server. The CI image is built
+  for `linux/amd64`; Hetzner's ARM servers require a separately verified ARM
+  image.
+- **Where:** select a Hetzner location in Germany or Finland, and an EU region
+  for the backup bucket. EU hosting alone does **not** establish GDPR
+  compliance. Conclude Hetzner's [data processing agreement](https://docs.hetzner.com/general/company-and-policy/data-protection-at-hetzner/)
+  when processing personal data on the firm's behalf. Before real documents,
+  assess the lawful basis, notices, retention, access rights, breach response
+  and contracts for every processor (including email, backups and AI). See
+  the [European Commission's obligations guidance](https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en).
+  This runbook verifies deployment mechanics, not legal compliance.
 - **Domain:** pick the address people will use, e.g. `app.pmpm.bg`, and create
   a DNS **A record** pointing it at the server's IP. Do this first: the HTTPS
   certificate can only be issued once the name resolves.
@@ -53,6 +62,10 @@ cp .env.example .env && chmod 600 .env
 nano .env        # fill in domain, emails, and two secrets: openssl rand -hex 32
 ```
 
+The shell scripts source `.env` as shell assignments. Single-quote values
+containing spaces or shell characters, for example
+`SMTP_PASSWORD='literal password with $ signs'`. Do not put commands in `.env`.
+
 The repository is private, so its images are too. Give the server read access
 once with a GitHub **classic** personal access token that has only the
 `read:packages` scope (github.com → Settings → Developer settings → Personal
@@ -62,15 +75,32 @@ access tokens → Tokens (classic)):
 docker login ghcr.io -u PmControl1     # paste the token as the password
 ```
 
-Start it:
+Bootstrap the administrator **before Caddy exposes the app publicly**. The
+closed registration mode still allows the first account to become admin.
+Start only the database and app; neither publishes a host port:
 
 ```bash
+docker compose pull
+docker compose up -d --wait --wait-timeout 600 postgres app
+docker compose exec app python -c '
+import getpass, json, urllib.request
+email = input("Administrator email: ").strip()
+name = input("Administrator full name: ").strip()
+password = getpass.getpass("Administrator password (at least 12 characters): ")
+payload = json.dumps({"email": email, "full_name": name, "password": password, "locale": "bg"}).encode()
+request = urllib.request.Request("http://localhost:8080/api/v1/users/auth/register/", data=payload, headers={"Content-Type": "application/json"})
+with urllib.request.urlopen(request, timeout=60) as response:
+    user = json.load(response)
+assert user["role"] == "admin", "Bootstrap did not create an administrator"
+print("Administrator created. Public HTTPS may now be started.")
+'
 ./deploy.sh
 ```
 
-Then **immediately** open `https://<your domain>` and register your own
-account. The first account becomes the admin; after that, sign-up is closed
-and you add the firm's people from the admin pages.
+If registration is rejected, correct the supplied account details and repeat
+the registration command before starting Caddy. Once the administrator exists,
+open `https://<your domain>` and sign in; add the firm's people from the admin
+pages. Confirm a second public registration is refused.
 
 ## 3. Backups (do this before any real project goes in)
 
@@ -81,6 +111,9 @@ and you add the firm's people from the admin pages.
    `RESTIC_PASSWORD` with `openssl rand -base64 32` and **save a copy in your
    password manager**: without it the backups cannot be read, and a copy that
    only lives on the server dies with the server.
+   Keep an encrypted off-server copy of `.env` and the deployment files as
+   well: the data backup does not contain the database password, JWT secret,
+   bucket credentials or other server configuration.
 3. Run the first backup by hand. It creates the backup repository:
    ```bash
    ./backup.sh
@@ -92,8 +125,9 @@ and you add the firm's people from the admin pages.
    systemctl list-timers pmpm-backup.timer      # shows the next run
    ```
 5. **Prove a restore works.** This restores the newest backup into a
-   throwaway database and compares it with the live one. It does not touch the
-   live platform:
+   throwaway database, checks its files, and prints restored/live counts for
+   inspection. It does not change the live database or files; counts may differ
+   if data changed since the backup:
    ```bash
    ./restore.sh --test
    ```
@@ -104,6 +138,10 @@ and you add the firm's people from the admin pages.
 What is backed up: the whole database and the files volume (uploaded
 documents, drawings, generated PDFs). Kept: 14 daily, 8 weekly, 12 monthly
 snapshots, encrypted. Logs of each run: `journalctl -u pmpm-backup`.
+The app is stopped while the database and files are captured and uploaded
+together; downtime depends on data size and upload speed. It restarts before
+retention and integrity checks. Deploy, backup and restore share a maintenance
+lock so they cannot modify the stack concurrently.
 
 ## 4. Updating
 
@@ -135,8 +173,20 @@ docker compose exec app python -m app.cli promote-admin someone@firm.bg
 ## Running the same stack on your PC
 
 With Docker Desktop, set `PMPM_DOMAIN=localhost` in `.env` and run
-`docker compose up -d` in this folder. Caddy serves `https://localhost` with
-its own local certificate (the browser warns once).
+the same administrator bootstrap sequence before starting Caddy. Caddy serves
+`https://localhost` with its own local certificate (the browser warns once).
+
+## Pilot checks on the real server
+
+CI tests the production image against PostgreSQL and verifies the bundled UI.
+Before real project data, also verify DNS and a valid HTTPS certificate on the
+actual domain, login and a second sign-up refusal, SMTP delivery/password reset,
+an upload that survives an app recreation, and an off-server backup followed by
+`./restore.sh --test`. Import a representative firm КСС into an EUR project and
+compare quantities, units, totals and the retained BGN rates with the workbook.
+Keep the development AI phase limited to synthetic documents; verify the
+chosen production provider and its data-processing terms before enabling AI
+for real documents.
 
 ## Licence
 

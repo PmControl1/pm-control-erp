@@ -31,6 +31,7 @@ import unicodedata
 from typing import Any
 
 from app.core.euro_conversion import fixed_euro_rate, is_replaced_by_euro, to_euro
+from app.modules.boq.importers._base import ImporterParseError
 
 # ── Units ───────────────────────────────────────────────────────────────────
 
@@ -122,12 +123,8 @@ _LEV_WORDS = re.compile(r"(?<![а-яa-z])(лв|лева|лев|bgn)(?![а-яa-z]
 _EURO_WORDS = re.compile(r"(?<![а-яa-z])(евро|eur|euro)(?![а-яa-z])|€")
 
 
-def money_currency(headings: list[Any] | tuple[Any, ...]) -> str:
-    """The currency the price headings name: ``"BGN"``, ``"EUR"`` or ``""``.
-
-    ``""`` also when the headings name both, which a bill with a lev column
-    beside a euro column does; that bill is read as written, unconverted.
-    """
+def _money_currencies(headings: list[Any] | tuple[Any, ...]) -> set[str]:
+    """Every currency stated by a set of headings, before choosing one."""
     seen: set[str] = set()
     for heading in headings or ():
         if heading is None:
@@ -137,7 +134,37 @@ def money_currency(headings: list[Any] | tuple[Any, ...]) -> str:
             seen.add("BGN")
         if _EURO_WORDS.search(text):
             seen.add("EUR")
+    return seen
+
+
+def money_currency(headings: list[Any] | tuple[Any, ...]) -> str:
+    """The currency the price headings name: ``"BGN"``, ``"EUR"`` or ``""``.
+
+    ``""`` also when the headings name both, which a bill with a lev column
+    beside a euro column does. ``workbook_currency`` refuses that ambiguity
+    before an import can convert or persist its rates.
+    """
+    seen = _money_currencies(headings)
     return seen.pop() if len(seen) == 1 else ""
+
+
+def workbook_currency(sheet_headings: list[list[Any] | tuple[Any, ...]]) -> str:
+    """One currency for every item sheet; refuse a bill we cannot convert safely.
+
+    Dual-currency columns and worksheets in different currencies need a
+    per-column/per-sheet choice the importer does not offer yet. A sheet
+    without a stated currency must not inherit another sheet's BGN conversion.
+    All-unstated bills keep the existing warning and import-as-written behavior.
+    """
+    currencies = [_money_currencies(headings) for headings in sheet_headings]
+    stated = set().union(*currencies) if currencies else set()
+    if len(stated) > 1 or (stated and any(not codes for codes in currencies)):
+        raise ImporterParseError(
+            "The bill has mixed or ambiguous currencies. Use one currency in all price headings "
+            "and item sheets before importing; no rates were imported.",
+            code="spreadsheet_currency_ambiguous",
+        )
+    return next(iter(stated), "")
 
 
 # ── Lev to euro ─────────────────────────────────────────────────────────────

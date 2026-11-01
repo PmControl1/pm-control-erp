@@ -4527,6 +4527,7 @@ const resource = {
     "boq.import_error.column_mapping_out_of_range": "The column mapping names column {{column}}, but the header row has only {{width}} columns.",
     "boq.import_error.column_mapping_shared_target": "The column mapping sends columns {{columns}} all to {{field}}. Map the others to something else or leave them out.",
     "boq.import_error.spreadsheet_empty_file": "The file is empty.",
+    "boq.import_error.spreadsheet_currency_ambiguous": "The bill has mixed or ambiguous currencies. Use one currency in all price headings and item sheets before importing. No rates were imported.",
     "boq.import_error.spreadsheet_no_header": "The file is empty or has no header row.",
     "boq.import_error.spreadsheet_no_worksheets": "The workbook has no worksheets.",
     "boq.import_error.spreadsheet_format_unknown": "This is not a spreadsheet the import can read (.xlsx, .xls or .csv).",

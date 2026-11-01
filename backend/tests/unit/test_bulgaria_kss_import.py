@@ -19,6 +19,7 @@ import pytest
 from openpyxl import Workbook
 
 from app.modules.boq.importers import ImportedBOQ, ImportedPosition
+from app.modules.boq.importers._base import ImporterParseError
 from app.modules.boq.importers.bulgaria_kss import canonical_unit, convert_to_euro, money_currency
 from app.modules.boq.importers.excel import ExcelImporter
 
@@ -148,6 +149,76 @@ def test_headings_without_a_currency_are_flagged() -> None:
     result = _parse(_kss("Ед. цена", "Стойност"))
     assert result.currency == ""
     assert "currency_not_stated" in [w.get("code") for w in result.warnings]
+
+
+def _currency_sheets(currencies: tuple[str, ...], *, identical_rows: bool = False) -> bytes:
+    wb = Workbook()
+    wb.remove(wb.active)
+    for number, currency in enumerate(currencies, start=1):
+        ws = wb.create_sheet(f"Раздел {number}")
+        ws.append(["№ по ред", "Наименование на видовете СМР", "Ед. мярка", "Количество", f"Ед. цена {currency}"])
+        line_number = 1 if identical_rows else number
+        ws.append([line_number, f"Работа {line_number}", "м2", 1, 100])
+    output = io.BytesIO()
+    wb.save(output)
+    return output.getvalue()
+
+
+@pytest.mark.parametrize("currencies", [("(лв.)", "(€)"), ("(€)", "(лв.)"), ("", "(лв.)"), ("(лв.)", "")])
+def test_mixed_or_partly_unspecified_sheet_currencies_are_refused(currencies: tuple[str, ...]) -> None:
+    # Otherwise the first sheet decides whether EVERY sheet is divided by
+    # 1.95583, silently repricing a sheet already in euro (or missing BGN).
+    with pytest.raises(ImporterParseError) as error:
+        _parse(_currency_sheets(currencies))
+    assert error.value.code == "spreadsheet_currency_ambiguous"
+
+
+@pytest.mark.parametrize("currencies", [("(лв.)", "(€)"), ("(€)", "(лв.)"), ("", "(лв.)"), ("(лв.)", "")])
+def test_duplicate_rows_do_not_hide_conflicting_sheet_currencies(currencies: tuple[str, ...]) -> None:
+    with pytest.raises(ImporterParseError) as error:
+        _parse(_currency_sheets(currencies, identical_rows=True))
+    assert error.value.code == "spreadsheet_currency_ambiguous"
+
+
+@pytest.mark.parametrize("currency,expected", [("(лв.)", "BGN"), ("(€)", "EUR"), ("", "")])
+def test_same_currency_duplicate_sheets_are_still_deduplicated(currency: str, expected: str) -> None:
+    result = _parse(_currency_sheets((currency, currency), identical_rows=True))
+    assert result.currency == expected
+    assert len([p for p in result.positions if not p.is_section]) == 1
+    assert any(note.get("reason") == "duplicate" for note in result.warnings)
+
+
+@pytest.mark.parametrize("currency,expected", [("(лв.)", "BGN"), ("(€)", "EUR"), ("", "")])
+def test_same_currency_across_item_sheets_still_imports(currency: str, expected: str) -> None:
+    result = _parse(_currency_sheets((currency, currency)))
+    assert result.currency == expected
+    assert [p.unit_rate for p in result.positions if not p.is_section] == [100, 100]
+
+
+def test_a_cover_sheet_without_price_headings_does_not_hide_the_item_currency() -> None:
+    from openpyxl import load_workbook
+
+    wb = load_workbook(io.BytesIO(_currency_sheets(("(лв.)", "(лв.)"))))
+    cover = wb.create_sheet("Заглавна страница", 0)
+    cover.append(["Обект: Жилищна сграда"])
+    output = io.BytesIO()
+    wb.save(output)
+    result = _parse(output.getvalue())
+    assert result.currency == "BGN"
+    assert len([p for p in result.positions if not p.is_section]) == 2
+
+
+def test_dual_currency_price_columns_are_refused() -> None:
+    with pytest.raises(ImporterParseError) as error:
+        _parse(_kss("Ед. цена (лв.)", "Стойност (€)"))
+    assert error.value.code == "spreadsheet_currency_ambiguous"
+
+
+def test_dual_currency_csv_columns_are_refused() -> None:
+    content = "Наименование на видовете СМР;Ед. мярка;Количество;Ед. цена (лв.);Стойност (€)\nИзкоп;м3;1;100;51.13\n"
+    with pytest.raises(ImporterParseError) as error:
+        _parse(content.encode("utf-8"))
+    assert error.value.code == "spreadsheet_currency_ambiguous"
 
 
 @pytest.mark.parametrize(

@@ -4,9 +4,9 @@ name: PM CI
 # .github/upstream-workflows/ (see the README there for why).
 #
 #   backend   ruff, then the backend unit tests in 6 shards against PostgreSQL 16
-#   frontend  ESLint, the full TypeScript type check, then the Vitest suite
-#   image     builds the Docker image and pushes it to GitHub Container Registry
-#             (pushes to main only; this is the image deploy/pmpm/ runs)
+#   frontend  ESLint and the Vitest suite
+#   typecheck the full TypeScript check on a runner with enough RAM
+#   image     builds and smoke-tests the production image on PRs, publishes on main
 #
 # The `changes` job skips the backend or frontend half when a change does not
 # touch it, so a frontend-only fix does not pay for six backend shards. That
@@ -183,19 +183,6 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: More swap for the type check
-        # The full type check needs about 9 GB. A public repository's runner
-        # has 16 GB; the swap is a safety margin.
-        if: ${{ !github.event.repository.private }}
-        working-directory: .
-        run: |
-          free -h
-          sudo fallocate -l 10G /pmpm-swapfile
-          sudo chmod 600 /pmpm-swapfile
-          sudo mkswap /pmpm-swapfile
-          sudo swapon /pmpm-swapfile
-          free -h
-
       - name: Install
         id: install
         run: npm ci
@@ -203,22 +190,6 @@ jobs:
       - name: Lint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run lint
-
-      - name: Type check
-        # A private repository's runner has 7 GB. With swap the check ran past
-        # 75 minutes and was cancelled, every time, at a cost of 75 of the
-        # month's free minutes. It runs once the repository is public (which
-        # the AGPL asks for anyway once outside users come); until then run
-        # `npm run typecheck` on your PC before merging frontend changes.
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && !github.event.repository.private }}
-        run: npm run typecheck
-
-      - name: Type check skipped (private repository)
-        if: ${{ github.event.repository.private }}
-        run: >-
-          echo "::warning title=Type check not run::This private repository's runners have too
-          little memory for the 9 GB TypeScript check. Make the repository public, or run
-          'npm run typecheck' in frontend/ before merging."
 
       - name: Tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -228,17 +199,55 @@ jobs:
         # (the image job does).
         run: npm run test -- --run --maxWorkers=2 --exclude "tests/pwa/**"
 
+  typecheck:
+    name: TypeScript
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    # Intel macOS has 14 GB even for private repositories. The 7 GB Linux
+    # runner cannot finish this check reliably, even with swap. Keep lint
+    # and Vitest on Linux to limit the more expensive macOS runner minutes.
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+
+  deployment:
+    name: Deployment scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Shell syntax
+        run: bash -n deploy/pmpm/{backup,restore,deploy,smoke}.sh
+      - name: Maintenance failure paths
+        run: python -m unittest discover -s deploy/pmpm/tests -v
+
   image:
     name: Docker image
-    needs: [backend-result, frontend]
-    # Only from main, and only when the checks that ran passed (a skipped half
-    # counts as passed: it had nothing to check).
+    needs: [backend-result, frontend, typecheck, deployment]
+    # PR images are local validation artifacts. Only main may publish, and
+    # publication requires every applicable check, including TypeScript.
     if: >-
       ${{ !cancelled()
-          && github.event_name != 'pull_request'
-          && github.ref == 'refs/heads/main'
           && needs.backend-result.result == 'success'
-          && (needs.frontend.result == 'success' || needs.frontend.result == 'skipped') }}
+          && needs.deployment.result == 'success'
+          && (needs.frontend.result == 'success' || needs.frontend.result == 'skipped')
+          && (github.event_name == 'pull_request'
+              || (github.ref == 'refs/heads/main'
+                  && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -253,18 +262,25 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build memory headroom
+        run: |
+          # The image carries scientific Python dependencies; free unused
+          # Android/.NET/Haskell tooling before allocating build swap.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo fallocate -l 8G /pmpm-build-swapfile
+          sudo chmod 600 /pmpm-build-swapfile
+          sudo mkswap /pmpm-build-swapfile
+          sudo swapon /pmpm-build-swapfile
+          df -h /
+          free -h
 
-      - name: Build and push
+      - name: Build production image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: deploy/docker/Dockerfile.unified
-          push: true
+          load: true
+          push: false
           tags: |
             ${{ steps.name.outputs.image }}:main
             ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
@@ -275,7 +291,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Production smoke test
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
+        run: bash deploy/pmpm/smoke.sh "$IMAGE"
+
+      - uses: docker/login-action@v3
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish verified image
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+        run: |
+          docker push "$IMAGE:sha-$GITHUB_SHA"
+          docker push "$IMAGE:main"
+
       - name: Summary
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         run: |
           {
             echo "### Image pushed"

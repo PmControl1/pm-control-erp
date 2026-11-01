@@ -51227,6 +51227,7 @@ const resource = {
     "boq.import_error.column_mapping_out_of_range": "Съпоставянето на колони назовава колона {{column}}, но редът със заглавия има само {{width}} колони.",
     "boq.import_error.column_mapping_shared_target": "Съпоставянето насочва колони {{columns}} всички към {{field}}. Съпоставете останалите с друго поле или ги пропуснете.",
     "boq.import_error.spreadsheet_empty_file": "Файлът е празен.",
+    "boq.import_error.spreadsheet_currency_ambiguous": "Сметката съдържа смесени или неясни валути. Посочете една и съща валута във всички ценови колони и работни листове преди импортиране. Не са импортирани цени.",
     "boq.import_error.spreadsheet_no_header": "Файлът е празен или няма ред със заглавия.",
     "boq.import_error.spreadsheet_no_worksheets": "Работната книга няма листове.",
     "boq.import_error.spreadsheet_format_unknown": "Това не е електронна таблица, която импортът може да прочете (.xlsx, .xls или .csv).",
