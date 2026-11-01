@@ -77,23 +77,25 @@ counts_sql="select 'users', count(*) from oe_users_user union all select 'projec
 # Fully validate every snapshot in an isolated database before offering to
 # replace live data. A readable archive header alone does not prove restore.
 echo "== Restoring the database into a throwaway PostgreSQL"
-docker run -d --name "$test_container" -e POSTGRES_USER=oe -e POSTGRES_PASSWORD=restore-test \
+docker run -d --name "$test_container" -e POSTGRES_USER=oe -e POSTGRES_PASSWORD=restore-test -e PGPASSWORD=restore-test \
   -e POSTGRES_DB=openestimate "$PG_IMAGE" > /dev/null
+# The image initializes through a temporary socket-only server. Require TCP
+# so readiness cannot succeed before the final PostgreSQL server starts.
 ready=false
 for _ in $(seq 1 30); do
-  if docker exec "$test_container" pg_isready -U oe -d openestimate > /dev/null 2>&1; then
+  if docker exec "$test_container" pg_isready -h 127.0.0.1 -U oe -d openestimate > /dev/null 2>&1; then
     ready=true
     break
   fi
   sleep 2
 done
 [ "$ready" = true ] || { echo "Restore-test PostgreSQL did not become ready." >&2; exit 1; }
-docker exec -i "$test_container" pg_restore -U oe -d openestimate --no-owner --exit-on-error < "$dump"
+docker exec -i "$test_container" pg_restore -h 127.0.0.1 -U oe -d openestimate --no-owner --exit-on-error < "$dump"
 
 if [ "$mode" = "test" ]; then
   echo ""
   echo "Restored copy:"
-  docker exec "$test_container" psql -U oe -d openestimate -At -F ': ' -c "$counts_sql"
+  docker exec "$test_container" psql -h 127.0.0.1 -U oe -d openestimate -At -F ': ' -c "$counts_sql"
   echo "Live platform now:"
   docker compose exec -T postgres psql -U oe -d openestimate -At -F ': ' -c "$counts_sql" || true
   echo "Live files: $(docker run --rm -v "$FILES_VOLUME":/d:ro alpine:3 sh -c 'find /d -type f | wc -l') files."

@@ -33,10 +33,11 @@ cp "$here/docker-compose.yml" "$here/Caddyfile" "$work/"
 # Explicit exports also override any developer .env values inherited by CI.
 export PMPM_IMAGE="${image%:*}" PMPM_IMAGE_TAG="${image##*:}"
 export PMPM_DOMAIN=smoke.example.com PMPM_ACME_EMAIL=smoke@example.com
-export POSTGRES_PASSWORD="$(openssl rand -hex 32)"
-export JWT_SECRET="$(openssl rand -hex 32)"
+POSTGRES_PASSWORD="$(openssl rand -hex 32)"
+JWT_SECRET="$(openssl rand -hex 32)"
+export POSTGRES_PASSWORD JWT_SECRET
 export SMTP_FROM=smoke@example.com PMPM_REGISTRATION_MODE=closed
-export PMPM_EMAIL_BACKEND=console SMTP_HOST= SMTP_PORT=587 SMTP_USER= SMTP_PASSWORD=
+export PMPM_EMAIL_BACKEND=console SMTP_HOST='' SMTP_PORT=587 SMTP_USER='' SMTP_PASSWORD=''
 export LOG_LEVEL=INFO
 : > "$work/.env"
 

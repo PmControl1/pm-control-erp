@@ -122,6 +122,12 @@ class MaintenanceScripts(unittest.TestCase):
         result = self.run_script('restore.sh', '--test')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('RESTORE TEST PASSED', result.stdout)
+        for command in self.commands():
+            if command[0] == 'exec' and any(client in command for client in ['pg_isready', 'pg_restore', 'psql']):
+                self.assertIn('-h', command)
+                self.assertEqual(command[command.index('-h') + 1], '127.0.0.1')
+        test_start = next(command for command in self.commands() if command[:2] == ['run', '-d'])
+        self.assertIn('PGPASSWORD=restore-test', test_start)
         self.assertNotIn(['compose', 'stop', 'app'], self.commands())
         self.assertFalse(any('dropdb' in command for command in self.commands()))
 
