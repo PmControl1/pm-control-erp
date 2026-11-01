@@ -23,8 +23,28 @@ updates:
       interval: "monthly"
     open-pull-requests-limit: 3
     groups:
+      # Keep each runtime/library family in one update pull request.
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      ag-grid:
+        patterns: ["ag-grid-react", "ag-grid-community"]
       minor-and-patch:
         update-types: ["minor", "patch"]
+    # Defer these coordinated major migrations until after the Bulgarian pilot.
+    # Remove the relevant rules only as part of a tested family-wide migration.
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ag-grid-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ag-grid-community"
+        update-types: ["version-update:semver-major"]
     labels: ["dependencies", "frontend"]
     commit-message:
       prefix: "chore"
