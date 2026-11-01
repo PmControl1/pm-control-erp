@@ -69,7 +69,9 @@ const en = readPairs('en.ts');
 
 describe('every shipped pack is named in the reader language', () => {
   it('finds the packs', () => {
-    expect(PACKS.length).toBeGreaterThan(40);
+    // PM Project Management ships the Bulgaria pack and three sector packs, not
+    // the original 40+; any pack found still proves the tree was read.
+    expect(PACKS.length).toBeGreaterThan(0);
   });
 
   it('en.ts names every pack that is not a proper name', () => {

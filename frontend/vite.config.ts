@@ -619,10 +619,17 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
-    // PM Project Management: the update check against the original project's
-    // releases is switched off (branding/apply_branding.py), so its tests have
-    // nothing to test.
-    exclude: [...configDefaults.exclude, 'src/shared/ui/__tests__/updateNotice.test.tsx'],
+    // PM Project Management: the rebrand switches off the update check against
+    // the original project's releases, and the bug reports to its tracker and
+    // mailbox (GITHUB_REPO and BRAND_SUPPORT_EMAIL are empty until the firm
+    // sets its own), so the tests of those features have nothing to test.
+    exclude: [
+      ...configDefaults.exclude,
+      'src/shared/ui/__tests__/updateNotice.test.tsx',
+      'src/app/layout/BugReportMenu.test.tsx',
+      'src/app/layout/BugReportMenuLinks.test.tsx',
+      'src/app/layout/BugReportLanguage.test.tsx',
+    ],
     css: false,
     // The default 5s per-test timeout is too tight for the few tests that
     // build a real xlsx/PDF artifact (the first one pays a one-time lazy
