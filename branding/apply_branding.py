@@ -142,6 +142,7 @@ BRAND_TESTS = [
         "backend/tests/unit/test_pack_install_says_what_it_did.py",
         "frontend/src/features/onboarding/__tests__/OnboardingWizard.flow.test.tsx",
         "frontend/src/modules/gaeb-exchange/GAEBExchangeModule.test.tsx",
+        "frontend/src/features/bim/__tests__/converterPackageMissing.test.ts",
     )
 ]
 
