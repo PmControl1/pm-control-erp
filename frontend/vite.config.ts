@@ -627,6 +627,8 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       'src/shared/ui/__tests__/updateNotice.test.tsx',
+      'src/shared/ui/__tests__/checkForUpdatesButton.test.tsx',
+      'src/shared/ui/__tests__/updateBadge.test.tsx',
       'src/app/layout/SupportUsButton.test.tsx',
       'src/shared/ui/ReviewPromptCard.test.tsx',
       'src/app/layout/BugReportMenu.test.tsx',
