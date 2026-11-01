@@ -294,7 +294,10 @@ ENV SERVE_FRONTEND=true \
 EXPOSE 8080
 VOLUME ["/data"]
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+# First boot loads the modules and builds the full route table before the
+# HTTP port opens. Allow that initialization without counting failed probes;
+# readiness still requires /api/health, and Compose enforces its wait timeout.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
