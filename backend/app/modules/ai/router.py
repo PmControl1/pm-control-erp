@@ -235,7 +235,6 @@ async def update_ai_settings(
     return await service.update_ai_settings(user_id, data)
 
 
-
 # ── Internal company AI pilot (single-company deployments ONLY) ────────────
 #
 # No Tenant/Organization entity exists yet. This is intentionally opt-in,
