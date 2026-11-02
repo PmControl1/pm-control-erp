@@ -31,6 +31,7 @@ from __future__ import annotations
 import logging
 import re
 import uuid
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from sqlalchemy import false as sql_false
@@ -997,6 +998,63 @@ async def _drop_unreadable_cost_hits(
     return out
 
 
+async def _drop_unreadable_document_hits(
+    session: AsyncSession,
+    user_id: str | None,
+    chosen: list[str],
+    rankings: list[list[VectorHit]],
+) -> list[list[VectorHit]]:
+    """Drop the document hits in folders the caller may not read.
+
+    The project fence is not enough for documents: a project member kept
+    out of a restricted folder still passes it. Each hit is checked as
+    ``GET /documents/{id}`` would check it. Without a user nothing is
+    dropped, matching the unrestricted fence above.
+    """
+    if user_id is None:
+        return list(rankings)
+    from app.modules.documents.access import readable_document_ids  # noqa: PLC0415
+
+    out: list[list[VectorHit]] = []
+    for collection, ranking in zip(chosen, rankings, strict=False):
+        if collection == COLLECTION_DOCUMENTS and ranking:
+            allowed = await readable_document_ids(session, user_id, [hit.id for hit in ranking])
+            ranking = [hit for hit in ranking if hit.id in allowed]
+        out.append(ranking)
+    return out
+
+
+async def _fill_readable_document_ranking(
+    session: AsyncSession,
+    user_id: str,
+    fetch: Callable[[int], Awaitable[list[VectorHit]]],
+    *,
+    limit: int,
+    allowed_project_ids: set[uuid.UUID] | None,
+    initial_hits: list[VectorHit] | None = None,
+) -> list[VectorHit]:
+    """Fill a document ranking after project and folder access checks.
+
+    SQL and vector retrievers both expose ranked prefixes. Keep expanding
+    the prefix until enough readable hits survive, or fewer candidates than
+    requested prove it is exhausted. A fixed over-fetch cannot guarantee
+    this when restricted documents occupy all of the nearest matches.
+    """
+    if limit <= 0:
+        return []
+    fetch_limit = limit
+    candidates = initial_hits
+    while True:
+        if candidates is None:
+            candidates = await fetch(fetch_limit)
+        scoped = _filter_vector_hits_by_access([candidates], allowed_project_ids)
+        (readable,) = await _drop_unreadable_document_hits(session, user_id, [COLLECTION_DOCUMENTS], scoped)
+        if len(readable) >= limit or len(candidates) < fetch_limit:
+            return readable[:limit]
+        fetch_limit *= 2
+        candidates = None
+
+
 async def unified_search_service(
     query: str,
     *,
@@ -1054,20 +1112,63 @@ async def unified_search_service(
         allowed_project_ids = None if project_id else await _accessible_project_ids(session, user_id)
         for collection in chosen:
             try:
-                hits = await _sql_search_collection(
-                    session,
-                    collection,
-                    query,
-                    project_id=project_id,
-                    tenant_id=tenant_id,
-                    allowed_project_ids=allowed_project_ids,
-                    limit=limit_per_collection,
-                )
+                if collection == COLLECTION_DOCUMENTS and user_id is not None:
+
+                    async def fetch_sql(fetch_limit: int) -> list[VectorHit]:
+                        return await _sql_search_collection(
+                            session,
+                            COLLECTION_DOCUMENTS,
+                            query,
+                            project_id=project_id,
+                            tenant_id=tenant_id,
+                            allowed_project_ids=allowed_project_ids,
+                            limit=fetch_limit,
+                        )
+
+                    hits = await _fill_readable_document_ranking(
+                        session,
+                        user_id,
+                        fetch_sql,
+                        limit=limit_per_collection,
+                        allowed_project_ids=allowed_project_ids,
+                    )
+                else:
+                    hits = await _sql_search_collection(
+                        session,
+                        collection,
+                        query,
+                        project_id=project_id,
+                        tenant_id=tenant_id,
+                        allowed_project_ids=allowed_project_ids,
+                        limit=limit_per_collection,
+                    )
             except Exception as exc:
                 logger.debug("_sql_search_collection(%s) failed: %s", collection, exc)
                 hits = []
             sql_rankings.append(hits)
+        if user_id is not None and COLLECTION_DOCUMENTS in chosen:
+
+            async def fetch_vectors(fetch_limit: int) -> list[VectorHit]:
+                return await search_collection(
+                    COLLECTION_DOCUMENTS,
+                    query,
+                    project_id=project_id,
+                    tenant_id=tenant_id,
+                    limit=fetch_limit,
+                )
+
+            index = chosen.index(COLLECTION_DOCUMENTS)
+            vector_rankings[index] = await _fill_readable_document_ranking(
+                session,
+                user_id,
+                fetch_vectors,
+                limit=limit_per_collection,
+                allowed_project_ids=allowed_project_ids,
+                initial_hits=vector_rankings[index],
+            )
         vector_rankings = await _drop_unreadable_cost_hits(session, chosen, vector_rankings)
+        vector_rankings = await _drop_unreadable_document_hits(session, user_id, chosen, vector_rankings)
+        sql_rankings = await _drop_unreadable_document_hits(session, user_id, chosen, sql_rankings)
 
     # Apply the same access fence to the vector track. For a single
     # authorised project_id the vector layer already filtered on the

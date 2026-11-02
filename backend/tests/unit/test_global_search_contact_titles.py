@@ -26,6 +26,15 @@ from app.core.global_search import global_search
 from app.modules.contacts.models import Contact
 from tests._pg import transactional_session
 
+#: The scope of an admin searching everything (``global_search_router``
+#: resolves a real caller's); these tests are about titles, not access.
+UNRESTRICTED = {
+    "user_id": "00000000-0000-0000-0000-000000000000",
+    "project_ids": None,
+    "may_read": lambda _p: True,
+    "contact_owner": None,
+}
+
 
 @pytest_asyncio.fixture
 async def session() -> AsyncIterator[AsyncSession]:
@@ -48,7 +57,7 @@ async def test_a_contact_found_by_email_is_named_by_it(session: AsyncSession) ->
     )
     await session.flush()
 
-    hits = _contacts(await global_search(session, address))
+    hits = _contacts(await global_search(session, address, **UNRESTRICTED))
 
     assert len(hits) == 1, "the contact is findable by its email; that part already worked"
     assert hits[0]["title"] == address
@@ -74,7 +83,7 @@ async def test_a_company_is_still_named_by_its_company_name(session: AsyncSessio
     )
     await session.flush()
 
-    hits = _contacts(await global_search(session, token))
+    hits = _contacts(await global_search(session, token, **UNRESTRICTED))
 
     assert len(hits) == 1
     assert hits[0]["title"] == f"Stadtwerke Kiel {token}"
@@ -95,7 +104,7 @@ async def test_a_person_is_named_before_their_email(session: AsyncSession) -> No
     )
     await session.flush()
 
-    hits = _contacts(await global_search(session, token))
+    hits = _contacts(await global_search(session, token, **UNRESTRICTED))
 
     assert len(hits) == 1
     assert hits[0]["title"] == f"Anna Schmidt{token}"

@@ -194,6 +194,8 @@ async def _tool_search_documents(
                 q_clean,
                 mode="content",
                 limit=8,
+                # Restricted folders stay out of the AI's context too.
+                user_id=user_uuid,
             )
     except Exception as exc:  # pragma: no cover - DB / module unavailable
         logger.debug("search_documents unavailable: %s", exc)

@@ -41,6 +41,7 @@ from app.dependencies import (
     SessionDep,
     verify_project_access,
 )
+from app.modules.documents.access import require_document_access
 from app.modules.documents.schemas import (
     DocumentActivityListResponse,
     DocumentActivityResponse,
@@ -1781,7 +1782,7 @@ async def download_document(
     case-insensitive filesystems and symlinks cannot escape ``UPLOAD_BASE``.
     """
     doc = await service.get_document(document_id)
-    await verify_project_access(doc.project_id, user_id, session)
+    await require_document_access(session, doc, user_id, "read")
     upload_base = Path(UPLOAD_BASE).resolve()
     meta = getattr(doc, "metadata_", None) or {}
     is_demo = bool(meta.get("is_demo"))
@@ -1928,7 +1929,7 @@ async def update_document(
     (Gate A / B / C). A non-state PATCH (rename, retag, …) is unaffected.
     """
     existing = await service.get_document(document_id)
-    await verify_project_access(existing.project_id, user_id, session)
+    await require_document_access(session, existing, user_id, "write")
     doc = await service.update_document(
         document_id,
         data,
@@ -2154,7 +2155,7 @@ async def list_document_activity(
     from app.modules.documents.activity_service import list_activity
 
     existing = await service.get_document(document_id)
-    await verify_project_access(existing.project_id, user_id, session)
+    await require_document_access(session, existing, user_id, "read")
     rows, total = await list_activity(session, document_id, limit=limit)
     return DocumentActivityListResponse(
         items=[DocumentActivityResponse.model_validate(r) for r in rows],
@@ -2191,7 +2192,8 @@ async def create_document_share_link(
     )
 
     existing = await service.get_document(document_id)
-    await verify_project_access(existing.project_id, user_id, session)
+    # Sharing hands the file to people outside the project: editor or above.
+    await require_document_access(session, existing, user_id, "write")
 
     try:
         created_by_uuid = uuid.UUID(str(user_id))
@@ -2233,7 +2235,8 @@ async def list_document_share_links(
     )
 
     existing = await service.get_document(document_id)
-    await verify_project_access(existing.project_id, user_id, session)
+    # The list carries working tokens, so seeing it is as good as sharing.
+    await require_document_access(session, existing, user_id, "write")
     links = await list_share_links_for_document(session, document_id)
     return [
         ShareLinkListItem(
@@ -2270,7 +2273,7 @@ async def revoke_document_share_link(
     from app.modules.documents.share_service import revoke_share_link
 
     existing = await service.get_document(document_id)
-    await verify_project_access(existing.project_id, user_id, session)
+    await require_document_access(session, existing, user_id, "write")
     await revoke_share_link(session, link_id=link_id, document_id=document_id)
 
 
@@ -2323,6 +2326,7 @@ async def documents_similar(
     # sibling /{id}/* endpoint enforces it.
     if row.project_id is not None:
         await _verify_project_membership_or_404(row.project_id, _user_id, session)
+        await require_document_access(session, row, _user_id, "read")
 
     project_id = str(row.project_id) if row.project_id is not None else None
     # Restrict cross-project hits to projects the caller may access so the
@@ -2337,6 +2341,12 @@ async def documents_similar(
         limit=limit,
         allowed_project_ids=allowed,
     )
+    # A hit's text is the document's embedded content, so a document in a
+    # folder the caller cannot open is left out, not just its link.
+    from app.modules.documents.access import readable_document_ids
+
+    readable = await readable_document_ids(session, _user_id, [h.id for h in hits])
+    hits = [h for h in hits if h.id in readable]
     return {
         "source_id": str(document_id),
         "limit": limit,
