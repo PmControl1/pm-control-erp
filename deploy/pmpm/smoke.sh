@@ -115,6 +115,10 @@ worker, worker_headers = request("/sw.js", origin="http://caddy")
 assert "javascript" in worker_headers.get("Content-Type", ""), dict(worker_headers)
 assert b"oce-api" not in worker, "The built service worker still has a shared authenticated API cache"
 assert api("/api/demo/catalog") == [], "Demo projects are offered in production"
+# Compose's --wait only proves /api/health answered 200, which it also does
+# while reporting "degraded". deploy.sh requires "healthy"; so must the image.
+health = api("/api/health")
+assert health["status"] == "healthy" and health["database"] == "ok", health
 
 email = "pilot-smoke@example.com"
 password = "Pilot1!" + secrets.token_hex(24)
@@ -145,5 +149,8 @@ with urlopen(request, timeout=30) as response:
 request = Request("http://127.0.0.1:8080/api/v1/users/me/", headers={"Authorization": f"Bearer {token}"})
 with urlopen(request, timeout=30) as response:
     assert json.load(response)["id"] == saved["id"]
-print("Database and /data files survived container replacement.")
+with urlopen("http://127.0.0.1:8080/api/health", timeout=30) as response:
+    health = json.load(response)
+assert health["status"] == "healthy", health
+print("Database and /data files survived container replacement; still healthy.")
 PY
