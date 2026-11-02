@@ -179,7 +179,7 @@ const AI_PROVIDERS: ProviderInfo[] = [
     id: 'deepseek',
     name: 'DeepSeek',
     description: 'settings.ai_desc_deepseek',
-    descriptionDefault: 'DeepSeek V3 - cost-effective AI with strong reasoning',
+    descriptionDefault: 'DeepSeek V4.1 Flash - cost-effective AI for testing',
     keyPrefix: 'sk-',
     docsUrl: 'https://platform.deepseek.com/api_keys',
     region: 'global',
@@ -458,6 +458,7 @@ export function AIConfigurationCard() {
   // Derived values for the currently selected provider.
   const defaultModel = settings?.default_models?.[selectedProvider] ?? '';
   const hasKeySet = isKeySetForProvider(settings, selectedProvider);
+  const hasSharedDeepSeek = selectedProvider === 'deepseek' && settings?.internal_shared_ai_available === true;
   const isSelfHosted = SELF_HOSTED_PROVIDERS.includes(selectedProvider);
   // Ollama authenticates by server URL alone, so its key input is hidden and
   // no key is ever sent for it (issue #244: a key the schema does not know is
@@ -679,6 +680,7 @@ export function AIConfigurationCard() {
               {AI_PROVIDERS.map((provider) => {
                 const isSelected = selectedProvider === provider.id;
                 const hasKey = isKeySetForProvider(settings, provider.id);
+                const hasCompanyAI = provider.id === 'deepseek' && settings?.internal_shared_ai_available === true;
                 const providerName = provider.nameKey
                   ? t(provider.nameKey, { defaultValue: provider.name })
                   : provider.name;
@@ -724,16 +726,30 @@ export function AIConfigurationCard() {
                     <p className="text-xs text-content-secondary pl-5.5 leading-relaxed">
                       {t(provider.description, { defaultValue: provider.descriptionDefault })}
                     </p>
-                    {hasKey && (
+                    {hasCompanyAI ? (
+                      <Badge variant="blue" size="sm" className="mt-1 ml-5.5">
+                        Company-managed access
+                      </Badge>
+                    ) : hasKey ? (
                       <Badge variant="success" size="sm" className="mt-1 ml-5.5">
                         {t('settings.ai_key_set', { defaultValue: 'Key configured' })}
                       </Badge>
-                    )}
+                    ) : null}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {hasSharedDeepSeek && (
+            <div className="rounded-lg border border-border bg-surface-secondary/40 px-4 py-3 text-sm">
+              <p className="font-medium">Your company provides DeepSeek access.</p>
+              <p className="mt-1 text-xs text-content-secondary">
+                You do not need to enter a personal key. Your administrator
+                manages access; use synthetic documents only during this pilot.
+              </p>
+            </div>
+          )}
 
           {/* API Key input - hidden for Ollama, which authenticates via the
               Server URL field below instead; optional for the
@@ -972,7 +988,7 @@ export function AIConfigurationCard() {
             timeoutInvalid ||
             // Self-hosted endpoints test against a server URL (typed or stored);
             // keyed providers need a stored or freshly entered API key.
-            (isSelfHosted ? !hasBaseUrl : !hasKeySet && !hasUnsavedKey)
+            (isSelfHosted ? !hasBaseUrl : !hasKeySet && !hasUnsavedKey && !hasSharedDeepSeek)
           }
           title={
             baseUrlTouched || modelTouched || hasUnsavedKey || hasUnsavedOptions
