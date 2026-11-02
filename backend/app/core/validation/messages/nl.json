@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "verklaring vrijwaring werkgeversaansprakelijkheid",
     "insurance": "verzekeringsbewijs",
     "license": "aannemersvergunning"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "De begroting heeft geen ДДС-regel; een КСС sluit af met \"Общо без ДДС\", \"ДДС 20 %\" en \"Всичко с ДДС\"",
+      "suggestion": "Voeg als laatste opslag een ДДС-regel van 20 % toe. Een aannemer die niet onder de ЗДДС is geregistreerd, rekent geen ДДС en kan dit negeren"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС wordt {count} keer berekend op deze begroting: {names}",
+      "suggestion": "Houd één ДДС-regel aan en schakel de andere uit"
+    },
+    "vat_rate": {
+      "fail": "ДДС-regel '{name}' rekent {rate} %; bouwwerkzaamheden worden belast met 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС-regel '{name}' is een vast bedrag; ДДС is 20 % van het totaal vóór belasting",
+      "suggestion": "Stel de ДДС-regel in als een percentage van 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС-regel '{name}' wordt alleen over de directe kosten berekend en laat {names} buiten beschouwing; ДДС is verschuldigd over het hele \"Общо без ДДС\"",
+      "after": "{names} komt na ДДС-regel '{name}', draagt dus geen ДДС en valt buiten \"Всичко с ДДС\"",
+      "suggestion": "Maak ДДС de laatste opslagregel en pas die cumulatief toe, op alles erboven"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Regel {ordinal} van de количествена сметка '{bill}' ({description}) ontbreekt in deze КСС",
+      "extra": "Regel {ordinal} ({description}) staat niet in de количествена сметка '{bill}'",
+      "description": "Regel {ordinal}: de omschrijving wijkt af van de количествена сметка ('{description}' in plaats van '{tender_description}')",
+      "unit": "Regel {ordinal}: eenheid {unit} in plaats van {tender_unit} volgens de количествена сметка",
+      "quantity": "Regel {ordinal}: hoeveelheid {quantity} in plaats van {tender_quantity} volgens de количествена сметка",
+      "suggestion": "Prijs de количествена сметка zoals uitgegeven: laat elke omschrijving, eenheid en hoeveelheid ongewijzigd en voeg geen regels toe. Leg afwijkingen in plaats daarvan voor aan de aanbestedende dienst",
+      "tender_missing": "Deze begroting is gekoppeld aan een количествена сметка die niet meer in het project bestaat",
+      "tender_missing_suggestion": "Kies de количествена сметка opnieuw in de kop van de begroting of verwijder de koppeling",
+      "unmatched": "De regels van deze КСС kunnen niet aan de количествена сметка '{bill}' worden gekoppeld: de nummering herhaalt zich of ontbreekt",
+      "unmatched_suggestion": "Nummer de regels zoals de количествена сметка ze nummert en valideer opnieuw"
+    }
   }
 }

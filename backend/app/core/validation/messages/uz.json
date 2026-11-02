@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "ish beruvchilar javobgarligi bo'yicha qarzi yo'qligi haqidagi ma'lumotnoma",
     "insurance": "sug'urta guvohnomasi",
     "license": "pudratchi litsenziyasi"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Smetada ДДС qatori yoʻq; КСС \"Общо без ДДС\", \"ДДС 20 %\" va \"Всичко с ДДС\" qatorlari bilan yakunlanadi",
+      "suggestion": "Oxirgi ustama sifatida 20 % ДДС qatorini qoʻshing. ЗДДС boʻyicha roʻyxatdan oʻtmagan pudratchi ДДС hisoblamaydi va buni eʼtiborsiz qoldirishi mumkin"
+    },
+    "vat_charged_once": {
+      "fail": "Bu smetada ДДС {count} marta hisoblangan: {names}",
+      "suggestion": "Bitta ДДС qatorini qoldirib, qolganlarini oʻchiring"
+    },
+    "vat_rate": {
+      "fail": "'{name}' ДДС qatori {rate} % hisoblaydi; qurilish ishlariga 20 % stavka qoʻllanadi (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "'{name}' ДДС qatori qatʼiy summa; ДДС soliqdan oldingi jami summaning 20 % ini tashkil etadi",
+      "suggestion": "ДДС qatorini 20 foiz qilib belgilang"
+    },
+    "vat_on_whole_total": {
+      "base": "'{name}' ДДС qatori faqat bevosita xarajatlarga hisoblanadi va {names} ni qamramaydi; ДДС butun \"Общо без ДДС\" summasiga toʻlanadi",
+      "after": "{names} '{name}' ДДС qatoridan keyin keladi, shuning uchun unga ДДС qoʻllanmaydi va u \"Всичко с ДДС\" dan tashqarida qoladi",
+      "suggestion": "ДДС ni oxirgi ustama qatori qiling va uni yuqoridagi hamma narsaga jamlab qoʻllang"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "'{bill}' количествена сметка ning {ordinal}-qatori ({description}) bu КСС da yoʻq",
+      "extra": "{ordinal}-qator ({description}) '{bill}' количествена сметка da yoʻq",
+      "description": "{ordinal}-qator: tavsif количествена сметка dan farq qiladi ('{tender_description}' oʻrniga '{description}')",
+      "unit": "{ordinal}-qator: количествена сметка boʻyicha {tender_unit} oʻrniga {unit} birligi",
+      "quantity": "{ordinal}-qator: количествена сметка boʻyicha {tender_quantity} oʻrniga {quantity} miqdor",
+      "suggestion": "Количествена сметка ni berilgan holicha baholang: har bir tavsif, birlik va miqdorni saqlang va qator qoʻshmang. Nomuvofiqliklarni buyurtmachiga savol sifatida yuboring",
+      "tender_missing": "Bu smeta loyihada endi mavjud boʻlmagan количествена сметка bilan bogʻlangan",
+      "tender_missing_suggestion": "Smeta sarlavhasida количествена сметка ni qayta tanlang yoki bogʻlanishni olib tashlang",
+      "unmatched": "Bu КСС qatorlarini '{bill}' количествена сметка bilan moslab boʻlmaydi: raqamlash takrorlanadi yoki yoʻq",
+      "unmatched_suggestion": "Qatorlarni количествена сметка dagidek raqamlang va qayta tekshiring"
+    }
   }
 }

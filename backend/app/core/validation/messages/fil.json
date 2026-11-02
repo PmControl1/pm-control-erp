@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "sertipiko ng clearance sa pananagutan ng employer",
     "insurance": "sertipiko ng insurance",
     "license": "lisensya ng kontratista"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Walang linya ng ДДС ang bill na ito; nagsasara ang КСС sa \"Общо без ДДС\", \"ДДС 20 %\" at \"Всичко с ДДС\"",
+      "suggestion": "Magdagdag ng linya ng ДДС na 20 % bilang huling markup. Ang kontratistang hindi rehistrado sa ilalim ng ЗДДС ay hindi naniningil ng ДДС at maaaring balewalain ito"
+    },
+    "vat_charged_once": {
+      "fail": "Sinisingil ang ДДС nang {count} beses sa bill na ito: {names}",
+      "suggestion": "Magtira ng isang linya ng ДДС at i-off ang iba"
+    },
+    "vat_rate": {
+      "fail": "Naniningil ng {rate} % ang linya ng ДДС na '{name}'; ang mga gawaing konstruksiyon ay may buwis na 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Nakapirming halaga ang linya ng ДДС na '{name}'; ang ДДС ay 20 % ng kabuuan bago ang buwis",
+      "suggestion": "Itakda ang linya ng ДДС bilang porsiyentong 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Sa direktang gastos lang sinisingil ang linya ng ДДС na '{name}' at hindi kasama ang {names}; dapat bayaran ang ДДС sa buong \"Общо без ДДС\"",
+      "after": "Nasa likod ng linya ng ДДС na '{name}' ang {names}, kaya wala itong ДДС at nasa labas ng \"Всичко с ДДС\"",
+      "suggestion": "Gawing huling linya ng markup ang ДДС at ilapat ito nang kumulatibo, sa lahat ng nasa itaas nito"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Nawawala sa КСС na ito ang linya {ordinal} ng количествена сметка na '{bill}' ({description})",
+      "extra": "Wala sa количествена сметка na '{bill}' ang linya {ordinal} ({description})",
+      "description": "Linya {ordinal}: iba ang paglalarawan sa количествена сметка ('{description}' sa halip na '{tender_description}')",
+      "unit": "Linya {ordinal}: yunit na {unit} sa halip na {tender_unit} ayon sa количествена сметка",
+      "quantity": "Linya {ordinal}: dami na {quantity} sa halip na {tender_quantity} ayon sa количествена сметка",
+      "suggestion": "Presyuhan ang количествена сметка gaya ng pagkakalabas nito: panatilihin ang bawat paglalarawan, yunit at dami at huwag magdagdag ng linya. Sa halip, iharap ang anumang pagkakaiba sa contracting authority",
+      "tender_missing": "Naka-link ang bill na ito sa isang количествена сметка na wala na sa proyekto",
+      "tender_missing_suggestion": "Piliin muli ang количествена сметка sa header ng bill, o alisin ang link",
+      "unmatched": "Hindi maitugma ang mga linya ng КСС na ito sa количествена сметка na '{bill}': umuulit o wala ang pagnunumero",
+      "unmatched_suggestion": "Lagyan ng numero ang mga linya gaya ng pagnunumero ng количествена сметка, saka i-validate muli"
+    }
   }
 }

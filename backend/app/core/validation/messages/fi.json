@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "työnantajan vastuun selvitystodistus",
     "insurance": "vakuutustodistus",
     "license": "urakoitsijan lupa"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Laskelmassa ei ole ДДС-riviä; КСС päättyy riveihin \"Общо без ДДС\", \"ДДС 20 %\" ja \"Всичко с ДДС\"",
+      "suggestion": "Lisää viimeiseksi lisäykseksi 20 %:n ДДС-rivi. Urakoitsija, jota ei ole rekisteröity ЗДДС:n mukaan, ei peri ДДС:tä ja voi ohittaa tämän"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС peritään tässä laskelmassa {count} kertaa: {names}",
+      "suggestion": "Säilytä yksi ДДС-rivi ja poista muut käytöstä"
+    },
+    "vat_rate": {
+      "fail": "ДДС-rivi '{name}' perii {rate} %; rakennustyöt verotetaan 20 %:lla (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС-rivi '{name}' on kiinteä summa; ДДС on 20 % verottomasta loppusummasta",
+      "suggestion": "Aseta ДДС-riville prosenttiosuus 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС-rivi '{name}' lasketaan vain välittömistä kustannuksista ja jättää pois kohdat {names}; ДДС maksetaan koko summasta \"Общо без ДДС\"",
+      "after": "{names} tulee ДДС-rivin '{name}' jälkeen, joten siitä ei peritä ДДС:tä ja se jää summan \"Всичко с ДДС\" ulkopuolelle",
+      "suggestion": "Tee ДДС:stä viimeinen lisäysrivi ja sovella sitä kumulatiivisesti kaikkeen sen yläpuolella olevaan"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Rivi {ordinal} laskelmasta количествена сметка '{bill}' ({description}) puuttuu tästä КСС:stä",
+      "extra": "Rivi {ordinal} ({description}) ei ole laskelmassa количествена сметка '{bill}'",
+      "description": "Rivi {ordinal}: kuvaus poikkeaa laskelmasta количествена сметка ('{description}' eikä '{tender_description}')",
+      "unit": "Rivi {ordinal}: yksikkö {unit} eikä laskelman количествена сметка mukainen {tender_unit}",
+      "quantity": "Rivi {ordinal}: määrä {quantity} eikä laskelman количествена сметка mukainen {tender_quantity}",
+      "suggestion": "Hinnoittele количествена сметка sellaisena kuin se on annettu: säilytä jokainen kuvaus, yksikkö ja määrä äläkä lisää rivejä. Vie poikkeamat sen sijaan hankintayksikön tietoon",
+      "tender_missing": "Tämä laskelma on linkitetty laskelmaan количествена сметка, jota ei enää ole projektissa",
+      "tender_missing_suggestion": "Valitse количествена сметка uudelleen laskelman otsikossa tai poista linkki",
+      "unmatched": "Tämän КСС:n rivejä ei voi yhdistää laskelman количествена сметка '{bill}' riveihin: numerointi toistuu tai puuttuu",
+      "unmatched_suggestion": "Numeroi rivit samoin kuin количествена сметка ja tarkista uudelleen"
+    }
   }
 }

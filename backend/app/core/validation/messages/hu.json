@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "munkáltatói felelősségi tartozásmentességi igazolás",
     "insurance": "biztosítási igazolás",
     "license": "vállalkozói engedély"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "A költségvetésben nincs ДДС sor; a КСС az \"Общо без ДДС\", a \"ДДС 20 %\" és a \"Всичко с ДДС\" sorokkal zárul",
+      "suggestion": "Adjon hozzá utolsó pótlékként egy 20 %-os ДДС sort. A ЗДДС szerint nem regisztrált kivitelező nem számít fel ДДС-t, és figyelmen kívül hagyhatja ezt"
+    },
+    "vat_charged_once": {
+      "fail": "A ДДС {count} alkalommal szerepel ebben a költségvetésben: {names}",
+      "suggestion": "Tartson meg egy ДДС sort, a többit kapcsolja ki"
+    },
+    "vat_rate": {
+      "fail": "A(z) '{name}' ДДС sor {rate} %-ot számít fel; az építési munkák adókulcsa 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "A(z) '{name}' ДДС sor fix összeg; a ДДС az adó előtti végösszeg 20 %-a",
+      "suggestion": "Állítsa a ДДС sort 20-as százalékra"
+    },
+    "vat_on_whole_total": {
+      "base": "A(z) '{name}' ДДС sor csak a közvetlen költségekre vetül, és kihagyja ezeket: {names}; a ДДС a teljes \"Общо без ДДС\" összeg után jár",
+      "after": "{names} a(z) '{name}' ДДС sor után következik, ezért nem terheli ДДС, és kívül esik a \"Всичко с ДДС\" összegen",
+      "suggestion": "Tegye a ДДС-t az utolsó pótléksorrá, és alkalmazza halmozottan, minden felette lévőre"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "A(z) '{bill}' количествена сметка {ordinal}. tétele ({description}) hiányzik ebből a КСС-ből",
+      "extra": "A(z) {ordinal}. tétel ({description}) nem szerepel a(z) '{bill}' количествена сметка-ban",
+      "description": "{ordinal}. tétel: a megnevezés eltér a количествена сметка-tól ('{description}' a(z) '{tender_description}' helyett)",
+      "unit": "{ordinal}. tétel: {unit} mértékegység a количествена сметка szerinti {tender_unit} helyett",
+      "quantity": "{ordinal}. tétel: {quantity} mennyiség a количествена сметка szerinti {tender_quantity} helyett",
+      "suggestion": "Árazza be a количествена сметка-t úgy, ahogy kiadták: minden megnevezést, mértékegységet és mennyiséget tartson meg, és ne vegyen fel új tételt. Az eltéréseket inkább jelezze az ajánlatkérőnek",
+      "tender_missing": "Ez a költségvetés egy olyan количествена сметка-hoz kapcsolódik, amely már nem létezik a projektben",
+      "tender_missing_suggestion": "Válassza ki újra a количествена сметка-t a költségvetés fejlécében, vagy szüntesse meg a kapcsolatot",
+      "unmatched": "Ennek a КСС-nek a tételei nem párosíthatók a(z) '{bill}' количествена сметка tételeivel: a számozás ismétlődik vagy hiányzik",
+      "unmatched_suggestion": "Számozza a tételeket úgy, ahogy a количествена сметка számozza őket, majd ellenőrizze újra"
+    }
   }
 }

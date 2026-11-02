@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "giấy xác nhận hoàn thành trách nhiệm của người sử dụng lao động",
     "insurance": "giấy chứng nhận bảo hiểm",
     "license": "giấy phép nhà thầu"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Bảng dự toán không có dòng ДДС; một КСС kết thúc bằng \"Общо без ДДС\", \"ДДС 20 %\" và \"Всичко с ДДС\"",
+      "suggestion": "Thêm một dòng ДДС 20 % làm khoản cộng thêm cuối cùng. Nhà thầu không đăng ký theo ЗДДС thì không tính ДДС và có thể bỏ qua cảnh báo này"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС được tính {count} lần trong bảng này: {names}",
+      "suggestion": "Giữ một dòng ДДС và tắt các dòng còn lại"
+    },
+    "vat_rate": {
+      "fail": "Dòng ДДС '{name}' tính {rate} %; công trình xây dựng chịu thuế 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Dòng ДДС '{name}' là số tiền cố định; ДДС bằng 20 % tổng trước thuế",
+      "suggestion": "Đặt dòng ДДС theo tỷ lệ phần trăm là 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Dòng ДДС '{name}' chỉ tính trên chi phí trực tiếp và bỏ sót {names}; ДДС phải tính trên toàn bộ \"Общо без ДДС\"",
+      "after": "{names} nằm sau dòng ДДС '{name}' nên không chịu ДДС và nằm ngoài \"Всичко с ДДС\"",
+      "suggestion": "Đặt ДДС là dòng cộng thêm cuối cùng và áp dụng lũy kế trên mọi thứ phía trên"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Dòng {ordinal} của количествена сметка '{bill}' ({description}) bị thiếu trong КСС này",
+      "extra": "Dòng {ordinal} ({description}) không có trong количествена сметка '{bill}'",
+      "description": "Dòng {ordinal}: mô tả khác với количествена сметка ('{description}' thay vì '{tender_description}')",
+      "unit": "Dòng {ordinal}: đơn vị {unit} thay vì {tender_unit} theo количествена сметка",
+      "quantity": "Dòng {ordinal}: khối lượng {quantity} thay vì {tender_quantity} theo количествена сметка",
+      "suggestion": "Định giá количествена сметка đúng như khi phát hành: giữ nguyên mọi mô tả, đơn vị và khối lượng, không thêm dòng. Thay vào đó, hãy nêu mọi sai khác với bên mời thầu",
+      "tender_missing": "Bảng này được liên kết với một количествена сметка không còn trong dự án",
+      "tender_missing_suggestion": "Chọn lại количествена сметка ở phần đầu bảng hoặc gỡ liên kết",
+      "unmatched": "Không thể đối chiếu các dòng của КСС này với количествена сметка '{bill}': số thứ tự bị trùng hoặc thiếu",
+      "unmatched_suggestion": "Đánh số các dòng như количествена сметка rồi kiểm tra lại"
+    }
   }
 }

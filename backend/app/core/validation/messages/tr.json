@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "işveren sorumluluğu borcu yoktur belgesi",
     "insurance": "sigorta belgesi",
     "license": "yüklenici ruhsatı"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Keşifte ДДС satırı yok; bir КСС \"Общо без ДДС\", \"ДДС 20 %\" ve \"Всичко с ДДС\" satırlarıyla kapanır",
+      "suggestion": "Son ek olarak %20 ДДС satırı ekleyin. ЗДДС kapsamında kayıtlı olmayan bir yüklenici ДДС almaz ve bunu dikkate almayabilir"
+    },
+    "vat_charged_once": {
+      "fail": "Bu keşifte ДДС {count} kez uygulanıyor: {names}",
+      "suggestion": "Tek bir ДДС satırı bırakıp diğerlerini kapatın"
+    },
+    "vat_rate": {
+      "fail": "'{name}' ДДС satırı %{rate} uyguluyor; inşaat işleri %20 oranında vergilendirilir (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "'{name}' ДДС satırı sabit bir tutar; ДДС vergi öncesi toplamın %20'sidir",
+      "suggestion": "ДДС satırını %20 olarak yüzde türünde ayarlayın"
+    },
+    "vat_on_whole_total": {
+      "base": "'{name}' ДДС satırı yalnızca doğrudan maliyete uygulanıyor ve {names} dışarıda kalıyor; ДДС \"Общо без ДДС\" tutarının tamamı üzerinden ödenir",
+      "after": "{names}, '{name}' ДДС satırından sonra geliyor; bu yüzden ДДС taşımıyor ve \"Всичко с ДДС\" dışında kalıyor",
+      "suggestion": "ДДС'yi son ek satırı yapın ve üstündeki her şeye kümülatif olarak uygulayın"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "'{bill}' количествена сметка belgesinin {ordinal} numaralı satırı ({description}) bu КСС'de eksik",
+      "extra": "{ordinal} numaralı satır ({description}) '{bill}' количествена сметка belgesinde yok",
+      "description": "Satır {ordinal}: tanım количествена сметка belgesinden farklı ('{tender_description}' yerine '{description}')",
+      "unit": "Satır {ordinal}: количествена сметка belgesindeki {tender_unit} yerine {unit} birimi",
+      "quantity": "Satır {ordinal}: количествена сметка belgesindeki {tender_quantity} yerine {quantity} miktar",
+      "suggestion": "Количествена сметка belgesini yayımlandığı haliyle fiyatlandırın: her tanımı, birimi ve miktarı koruyun ve satır eklemeyin. Farklılıkları bunun yerine idareye iletin",
+      "tender_missing": "Bu keşif, projede artık bulunmayan bir количествена сметка belgesine bağlı",
+      "tender_missing_suggestion": "Keşif başlığında количествена сметка belgesini yeniden seçin ya da bağlantıyı kaldırın",
+      "unmatched": "Bu КСС'nin satırları '{bill}' количествена сметка belgesiyle eşleştirilemiyor: numaralandırma tekrar ediyor ya da eksik",
+      "unmatched_suggestion": "Satırları количествена сметка belgesindeki gibi numaralandırın ve yeniden doğrulayın"
+    }
   }
 }

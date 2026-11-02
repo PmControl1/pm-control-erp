@@ -496,12 +496,23 @@ def _plan(
     if rule_sets:
         counts = _rule_set_severities(rule_sets)
         n_errors = sum(c.get("error", 0) for c in counts.values())
+        # The per-line consequence only holds for a set that checks classification
+        # codes; a set like ``bulgaria`` checks the tax lines and the tender bill.
+        try:
+            from app.modules.boq.router import _CLASSIFICATION_CODE_SETS as code_sets
+        except Exception:  # noqa: BLE001 - the wording is optional, the warning is not
+            code_sets = {}
+        per_line = (
+            " - a bill carrying no classification codes fails one per line"
+            if any(name in code_sets for name in rule_sets)
+            else ""
+        )
         warnings.append(
             f"Validation rule set(s) {', '.join(rule_sets)} will be switched on for every project "
             f"created from here on while this pack is active ({n_errors} error-severity rule(s) "
-            "among them will block a bill of quantities that fails them - a bill carrying no "
-            "classification codes fails one per line). Existing projects keep the rule sets they "
-            "already carry, and so does this pack's demo project, which ships its own."
+            f"among them will block a bill of quantities that fails them{per_line}). Existing "
+            "projects keep the rule sets they already carry, and so does this pack's demo project, "
+            "which ships its own."
         )
     if m.default_currency:
         warnings.append(

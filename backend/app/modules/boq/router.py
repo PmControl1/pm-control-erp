@@ -3631,9 +3631,13 @@ _COUNTRY_RULE_SETS: dict[str, list[str]] = {
     "GR": ["greece", "din276"],
     "UA": ["ukraine", "din276"],
     "HR": ["din276"],
-    # Bulgaria, with its country pack: a КСС is mapped onto DIN 276, the
-    # registry's answer for BG, and a project without the pack ran nothing.
-    "BG": ["din276"],
+    # Bulgaria. A КСС is grouped by kind of work and carries no DIN 276 cost
+    # group, so the din276 row this used to be failed every line of an
+    # ordinary КСС with an error. The bulgaria set checks what a tender reads
+    # instead: the КСС keeps its количествена сметка, and ДДС is one 20 % line
+    # on the whole total. A project that names DIN 276 as its standard still
+    # gets din276 through ``_STANDARD_RULE_SETS``.
+    "BG": ["bulgaria"],
     "CZ": ["din276"],
     "BE": ["din276"],
     "PL": ["poland"],
@@ -4024,6 +4028,8 @@ async def validate_boq(
     from app.modules.boq.markup_rule_inputs import markup_amounts_for_rules
 
     markup_context = await markup_amounts_for_rules(service, boq_id, markups_data)
+    # The количествена сметка a Bulgarian КСС names, for the bulgaria rule set.
+    from app.modules.boq.kss_tender import with_kss_tender_bill
 
     # Determine rule sets from project config. Empty classification /
     # region means "no preference"; the rule registry resolves to a
@@ -4049,7 +4055,11 @@ async def validate_boq(
             await with_project_context(
                 session,
                 boq_data.project_id,
-                {"positions": positions_data, "markups": markups_data, **markup_context},
+                await with_kss_tender_bill(
+                    session,
+                    boq_id,
+                    {"positions": positions_data, "markups": markups_data, **markup_context},
+                ),
             ),
             rule_sets,
         ),

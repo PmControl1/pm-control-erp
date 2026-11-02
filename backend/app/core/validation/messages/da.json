@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "udtalelse om arbejdsgiveransvar",
     "insurance": "forsikringsbevis",
     "license": "entreprenørlicens"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Overslaget har ingen ДДС-linje; en КСС afsluttes med \"Общо без ДДС\", \"ДДС 20 %\" og \"Всичко с ДДС\"",
+      "suggestion": "Tilføj en ДДС-linje på 20 % som sidste tillæg. En entreprenør, der ikke er registreret efter ЗДДС, opkræver ikke ДДС og kan se bort fra dette"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС opkræves {count} gange i dette overslag: {names}",
+      "suggestion": "Behold én ДДС-linje og slå de andre fra"
+    },
+    "vat_rate": {
+      "fail": "ДДС-linjen '{name}' opkræver {rate} %; byggearbejder beskattes med 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС-linjen '{name}' er et fast beløb; ДДС er 20 % af summen før afgift",
+      "suggestion": "Angiv ДДС-linjen som en procentsats på 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС-linjen '{name}' beregnes kun af de direkte omkostninger og udelader {names}; ДДС skal beregnes af hele \"Общо без ДДС\"",
+      "after": "{names} kommer efter ДДС-linjen '{name}', så den bærer ingen ДДС og falder uden for \"Всичко с ДДС\"",
+      "suggestion": "Gør ДДС til den sidste tillægslinje, og anvend den kumulativt på alt ovenover"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Linje {ordinal} i количествена сметка '{bill}' ({description}) mangler i denne КСС",
+      "extra": "Linje {ordinal} ({description}) findes ikke i количествена сметка '{bill}'",
+      "description": "Linje {ordinal}: beskrivelsen afviger fra количествена сметка ('{description}' i stedet for '{tender_description}')",
+      "unit": "Linje {ordinal}: enhed {unit} i stedet for {tender_unit} i количествена сметка",
+      "quantity": "Linje {ordinal}: mængde {quantity} i stedet for {tender_quantity} i количествена сметка",
+      "suggestion": "Prissæt количествена сметка som udstedt: behold hver beskrivelse, enhed og mængde, og tilføj ingen linjer. Rejs i stedet uoverensstemmelser over for ordregiveren",
+      "tender_missing": "Dette overslag er knyttet til en количествена сметка, der ikke længere findes i projektet",
+      "tender_missing_suggestion": "Vælg количествена сметка igen i overslagets hoved, eller fjern koblingen",
+      "unmatched": "Linjerne i denne КСС kan ikke matches med количествена сметка '{bill}': nummereringen gentages eller mangler",
+      "unmatched_suggestion": "Nummerér linjerne, som количествена сметка nummererer dem, og valider igen"
+    }
   }
 }

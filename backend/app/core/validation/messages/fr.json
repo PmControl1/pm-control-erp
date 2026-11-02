@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "attestation de régularité de la responsabilité des employeurs",
     "insurance": "attestation d'assurance",
     "license": "licence d'entrepreneur"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Le bordereau n'a aucune ligne ДДС ; une КСС se clôt par « Общо без ДДС », « ДДС 20 % » et « Всичко с ДДС »",
+      "suggestion": "Ajoutez une ligne ДДС à 20 % comme dernière majoration. Un entrepreneur non assujetti au ЗДДС ne facture pas de ДДС et peut ignorer ce point"
+    },
+    "vat_charged_once": {
+      "fail": "La ДДС est facturée {count} fois sur ce bordereau : {names}",
+      "suggestion": "Gardez une seule ligne ДДС et désactivez les autres"
+    },
+    "vat_rate": {
+      "fail": "La ligne ДДС '{name}' applique {rate} % ; les travaux de construction sont taxés à 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "La ligne ДДС '{name}' est un montant fixe ; la ДДС représente 20 % du total hors taxe",
+      "suggestion": "Définissez la ligne ДДС comme un pourcentage de 20"
+    },
+    "vat_on_whole_total": {
+      "base": "La ligne ДДС '{name}' ne porte que sur le coût direct et omet {names} ; la ДДС est due sur la totalité de « Общо без ДДС »",
+      "after": "{names} vient après la ligne ДДС '{name}' : elle ne supporte donc pas de ДДС et reste hors de « Всичко с ДДС »",
+      "suggestion": "Placez la ДДС en dernière ligne de majoration et appliquez-la de façon cumulative, sur tout ce qui précède"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "La ligne {ordinal} de la количествена сметка '{bill}' ({description}) manque dans cette КСС",
+      "extra": "La ligne {ordinal} ({description}) ne figure pas dans la количествена сметка '{bill}'",
+      "description": "Ligne {ordinal} : la désignation diffère de la количествена сметка ('{description}' au lieu de '{tender_description}')",
+      "unit": "Ligne {ordinal} : unité {unit} au lieu de {tender_unit} dans la количествена сметка",
+      "quantity": "Ligne {ordinal} : quantité {quantity} au lieu de {tender_quantity} dans la количествена сметка",
+      "suggestion": "Chiffrez la количествена сметка telle qu'émise : conservez chaque désignation, unité et quantité et n'ajoutez aucune ligne. Signalez plutôt tout écart au pouvoir adjudicateur",
+      "tender_missing": "Ce bordereau est lié à une количествена сметка qui n'existe plus dans le projet",
+      "tender_missing_suggestion": "Choisissez de nouveau la количествена сметка dans l'en-tête du bordereau, ou supprimez le lien",
+      "unmatched": "Les lignes de cette КСС ne peuvent pas être rapprochées de la количествена сметка '{bill}' : la numérotation se répète ou manque",
+      "unmatched_suggestion": "Numérotez les lignes comme la количествена сметка, puis relancez la validation"
+    }
   }
 }

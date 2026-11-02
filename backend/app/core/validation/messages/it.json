@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "certificato di liberatoria sulla responsabilità dei datori di lavoro",
     "insurance": "certificato assicurativo",
     "license": "licenza dell'appaltatore"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Il computo non ha una riga ДДС; una КСС si chiude con «Общо без ДДС», «ДДС 20 %» e «Всичко с ДДС»",
+      "suggestion": "Aggiungi una riga ДДС al 20 % come ultima maggiorazione. Un'impresa non registrata ai sensi della ЗДДС non applica la ДДС e può ignorare l'avviso"
+    },
+    "vat_charged_once": {
+      "fail": "La ДДС è applicata {count} volte su questo computo: {names}",
+      "suggestion": "Mantieni una sola riga ДДС e disattiva le altre"
+    },
+    "vat_rate": {
+      "fail": "La riga ДДС '{name}' applica il {rate} %; i lavori edili sono tassati al 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "La riga ДДС '{name}' è un importo fisso; la ДДС è il 20 % del totale al netto d'imposta",
+      "suggestion": "Imposta la riga ДДС come percentuale pari a 20"
+    },
+    "vat_on_whole_total": {
+      "base": "La riga ДДС '{name}' si applica solo al costo diretto ed esclude {names}; la ДДС è dovuta sull'intero «Общо без ДДС»",
+      "after": "{names} viene dopo la riga ДДС '{name}', quindi non sconta la ДДС e resta fuori da «Всичко с ДДС»",
+      "suggestion": "Metti la ДДС come ultima riga di maggiorazione e applicala in modo cumulativo, su tutto ciò che la precede"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "La riga {ordinal} della количествена сметка '{bill}' ({description}) manca in questa КСС",
+      "extra": "La riga {ordinal} ({description}) non è nella количествена сметка '{bill}'",
+      "description": "Riga {ordinal}: la descrizione differisce dalla количествена сметка ('{description}' invece di '{tender_description}')",
+      "unit": "Riga {ordinal}: unità {unit} invece di {tender_unit} secondo la количествена сметка",
+      "quantity": "Riga {ordinal}: quantità {quantity} invece di {tender_quantity} secondo la количествена сметка",
+      "suggestion": "Prezza la количествена сметка così come emessa: mantieni ogni descrizione, unità e quantità e non aggiungere righe. Segnala eventuali discrepanze alla stazione appaltante",
+      "tender_missing": "Questo computo è collegato a una количествена сметка che non esiste più nel progetto",
+      "tender_missing_suggestion": "Scegli di nuovo la количествена сметка nell'intestazione del computo oppure rimuovi il collegamento",
+      "unmatched": "Le righe di questa КСС non si possono abbinare alla количествена сметка '{bill}': la numerazione si ripete o manca",
+      "unmatched_suggestion": "Numera le righe come la количествена сметка e ripeti la validazione"
+    }
   }
 }

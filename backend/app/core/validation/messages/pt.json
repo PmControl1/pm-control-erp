@@ -1290,5 +1290,37 @@
     "employers_liability_clearance": "certidão negativa de responsabilidade dos empregadores",
     "insurance": "certificado de seguro",
     "license": "licença do empreiteiro"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "O orçamento não tem linha de ДДС; uma КСС fecha com «Общо без ДДС», «ДДС 20 %» e «Всичко с ДДС»",
+      "suggestion": "Adicione uma linha de ДДС a 20 % como último acréscimo. Um empreiteiro não registado ao abrigo da ЗДДС não cobra ДДС e pode ignorar este aviso"
+    },
+    "vat_charged_once": {
+      "fail": "O ДДС é cobrado {count} vezes neste orçamento: {names}",
+      "suggestion": "Mantenha uma linha de ДДС e desative as restantes"
+    },
+    "vat_rate": {
+      "fail": "A linha de ДДС '{name}' aplica {rate} %; as obras de construção são tributadas a 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "A linha de ДДС '{name}' é um valor fixo; o ДДС é 20 % do total antes de impostos",
+      "suggestion": "Defina a linha de ДДС como uma percentagem de 20"
+    },
+    "vat_on_whole_total": {
+      "base": "A linha de ДДС '{name}' incide apenas sobre o custo direto e deixa de fora {names}; o ДДС é devido sobre todo o «Общо без ДДС»",
+      "after": "{names} vem depois da linha de ДДС '{name}', pelo que não leva ДДС e fica fora de «Всичко с ДДС»",
+      "suggestion": "Coloque o ДДС como última linha de acréscimo e aplique-o de forma cumulativa, sobre tudo o que está acima"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "A linha {ordinal} da количествена сметка '{bill}' ({description}) falta nesta КСС",
+      "extra": "A linha {ordinal} ({description}) não consta da количествена сметка '{bill}'",
+      "description": "Linha {ordinal}: a descrição difere da количествена сметка ('{description}' em vez de '{tender_description}')",
+      "unit": "Linha {ordinal}: unidade {unit} em vez de {tender_unit} na количествена сметка",
+      "quantity": "Linha {ordinal}: quantidade {quantity} em vez de {tender_quantity} na количествена сметка",
+      "suggestion": "Orce a количествена сметка tal como foi emitida: mantenha cada descrição, unidade e quantidade e não acrescente linhas. Coloque qualquer discrepância à entidade adjudicante",
+      "tender_missing": "Este orçamento está ligado a uma количествена сметка que já não existe no projeto",
+      "tender_missing_suggestion": "Escolha novamente a количествена сметка no cabeçalho do orçamento ou remova a ligação",
+      "unmatched": "As linhas desta КСС não podem ser associadas à количествена сметка '{bill}': a numeração repete-se ou falta",
+      "unmatched_suggestion": "Numere as linhas como a количествена сметка as numera e valide novamente"
+    }
   }
 }

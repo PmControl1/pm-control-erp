@@ -842,8 +842,14 @@ class ValidationModuleService:
         positions = await self._load_boq_positions(boq_id, project_id)
         header = await self._load_boq_header(boq_id, project_id)
         markups = await self._load_boq_markups(boq_id)
+        from app.modules.boq.kss_tender import with_kss_tender_bill
+
         return await with_project_context(
             self.session,
             project_id,
-            {"boq": header, "positions": positions, "markups": markups},
+            await with_kss_tender_bill(
+                self.session,
+                boq_id,
+                {"boq": header, "positions": positions, "markups": markups},
+            ),
         )
