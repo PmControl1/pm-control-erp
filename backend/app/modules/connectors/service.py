@@ -4,8 +4,9 @@
 
 The pure normalization + dedup logic lives in
 :mod:`app.modules.connectors.storage_connector`. This service supplies the IO
-(walking the directory) and the persistence (creating a referencing
-:class:`~app.modules.documents.models.Document` per new file and publishing the
+(walking the directory) and the persistence (copying each new file into managed
+document storage, creating a :class:`~app.modules.documents.models.Document`
+for the copy and publishing the
 standard ``documents.document.created`` event so the file is indexed for search
 and shows on the timeline like any other document).
 
@@ -16,9 +17,11 @@ creates nothing.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import mimetypes
 import os
+import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -100,6 +103,32 @@ def _validate_root_path(root_path: str) -> str:
     if not is_within_base(base, resolved):
         raise ValueError("root_path must be inside the connectors base directory")
     return stripped
+
+
+def _copy_into_managed_storage(original: Path, project_id: uuid.UUID) -> tuple[Path, int]:
+    """Copy a watched-folder file to where uploads live; return the copy and its size.
+
+    Same layout as a normal upload (``UPLOAD_BASE/<project>/<uuid>_<name>``),
+    so the document is an ordinary managed file: download, revisions and delete
+    act on the copy and never on the original in the watched folder.
+    """
+    from app.modules.documents.service import UPLOAD_BASE, _sanitize_filename
+
+    upload_dir = UPLOAD_BASE / str(project_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    stored = upload_dir / f"{uuid.uuid4().hex[:12]}_{_sanitize_filename(original.name)}"
+    try:
+        shutil.copyfile(original, stored)
+        return stored, stored.stat().st_size
+    except OSError:
+        # A failed copy can have written bytes already. There is no Document
+        # row to own them, and a retry picks a new name, so remove the partial
+        # destination before propagating the failure to the sync result.
+        try:
+            stored.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("connectors: could not remove failed copy %s", stored, exc_info=True)
+        raise
 
 
 def _iso_now() -> str:
@@ -265,14 +294,27 @@ class ConnectorService:
         )
 
         created_ids: list[str] = []
+        failed: list[dict[str, str]] = []
         for inc in plan.to_create:
+            # The document gets its own copy in managed storage. It used to
+            # point at the file in the watched folder, so deleting the document
+            # in the app unlinked the user's original there. The original's
+            # path stays in the marker below, which is what dedup keys on.
+            try:
+                stored, stored_size = await asyncio.to_thread(
+                    _copy_into_managed_storage, Path(inc.external_id), source.project_id
+                )
+            except OSError as exc:
+                logger.warning("connectors: could not copy %s into storage: %s", inc.external_id, exc)
+                failed.append({"name": inc.name or "", "error": "could_not_copy"})
+                continue
             document = Document(
                 project_id=source.project_id,
                 name=(inc.name or "(unnamed)")[:255],
                 category="other",
-                file_size=inc.size_bytes,
+                file_size=stored_size,
                 mime_type=(inc.content_type or "")[:100],
-                file_path=inc.external_id[:500],
+                file_path=str(stored),
                 uploaded_by=user_id or "",
                 metadata_={
                     CONNECTOR_META_KEY: {
@@ -289,17 +331,21 @@ class ConnectorService:
             created_ids.append(str(document.id))
             self._publish_created(source.project_id, document)
 
+        # A file that could not be copied is not counted as created and is not
+        # recorded, so the next sync tries it again.
         result = {
             "source_id": str(source.id),
-            "created": plan.created_count,
+            "created": len(created_ids),
             "duplicate": plan.duplicate_count,
             "already_known": plan.known_count,
             "total": plan.total_count,
             "created_document_ids": created_ids,
+            "failed": failed,
         }
         source.last_synced_at = _iso_now()
         source.last_result = {
-            "created": plan.created_count,
+            "created": len(created_ids),
+            "failed": len(failed),
             "duplicate": plan.duplicate_count,
             "already_known": plan.known_count,
             "total": plan.total_count,

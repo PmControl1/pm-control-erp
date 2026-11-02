@@ -82,6 +82,7 @@ async def test_sync_empty_folder_creates_nothing(session: AsyncSession, tmp_path
         "already_known": 0,
         "total": 0,
         "created_document_ids": [],
+        "failed": [],
     }
     assert await _docs_for(session, proj.id) == []
     # Even an empty sync stamps the source so the UI shows it ran.
