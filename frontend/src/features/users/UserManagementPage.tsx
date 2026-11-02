@@ -46,7 +46,7 @@ import { usersGuide } from './usersGuide';
 import { useConfirm } from '@/shared/hooks/useConfirm';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
-import { apiGet } from '@/shared/lib/api';
+import { apiGet, apiPatch } from '@/shared/lib/api';
 import {
   fetchUsers,
   updateUser,
@@ -63,6 +63,12 @@ import { getIntlLocale } from '@/shared/lib/formatters';
 
 const inputCls =
   'h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm focus:outline-none focus:ring-2 focus:ring-oe-blue/30 focus:border-oe-blue';
+
+type InternalPilotAIStatus = {
+  enabled: boolean;
+  key_set: boolean;
+  grants: Record<string, boolean>;
+};
 
 /* ── Role + module config ───────────────────────────────────────────────
  *
@@ -764,6 +770,28 @@ export function UserManagementPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [accessUser, setAccessUser] = useState<User | null>(null);
 
+  const { data: internalAI } = useQuery({
+    queryKey: ['internal-company-ai-access'],
+    queryFn: () => apiGet<InternalPilotAIStatus>('/v1/ai/internal-pilot/access/'),
+    enabled: isAdmin,
+    retry: false,
+  });
+
+  const internalAIMut = useMutation({
+    mutationFn: ({ userId, enabled }: { userId: string; enabled: boolean }) =>
+      apiPatch<{ user_id: string; granted: boolean }>(
+        `/v1/ai/internal-pilot/access/${userId}`,
+        { enabled },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['internal-company-ai-access'] });
+      addToast({ type: 'success', title: 'Company AI access updated' });
+    },
+    onError: (e: Error) => {
+      addToast({ type: 'error', title: 'Could not change company AI access', message: e.message });
+    },
+  });
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users', filterActive],
     queryFn: () =>
@@ -988,6 +1016,51 @@ export function UserManagementPage() {
             'Invite team members, assign their role and tune which modules each person can reach. Roles set here decide what every user sees and can do across the platform; for the rules behind those roles and approval steps, open Governance.',
         })}
       </DismissibleInfo>
+
+
+      {/* Opt-in internal company pilot — never shown on customer deployments. */}
+      {isAdmin && internalAI?.enabled && (
+        <Card className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck size={17} className="text-oe-blue" />
+            <h3 className="text-sm font-semibold">Shared company AI — internal test</h3>
+          </div>
+          <p className="text-xs text-content-secondary mb-3">
+            Only synthetic documents. Access is explicitly granted per employee;
+            the DeepSeek key stays on the server and is never shown to users.
+            This pilot must not be enabled for external customers.
+          </p>
+          {!internalAI.key_set && (
+            <p className="text-xs text-semantic-error mb-3">
+              No company DeepSeek key is configured. Set PMPM_INTERNAL_DEEPSEEK_API_KEY
+              securely on the server before testing.
+            </p>
+          )}
+          <div className="space-y-2">
+            {users.filter((u) => u.is_active).map((u) => {
+              const granted = internalAI.grants[u.id] === true;
+              return (
+                <div key={u.id} className="flex items-center justify-between gap-3 rounded border border-border px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{u.full_name}</p>
+                    <p className="text-xs text-content-tertiary truncate">
+                      {u.email} · {u.role}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={internalAIMut.isPending || (u.role === 'viewer' && !granted)}
+                    className="shrink-0 rounded border border-border px-3 py-1 text-xs font-medium hover:bg-surface-secondary disabled:opacity-50"
+                    onClick={() => internalAIMut.mutate({ userId: u.id, enabled: !granted })}
+                  >
+                    {granted ? 'Revoke shared AI' : 'Allow shared AI'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

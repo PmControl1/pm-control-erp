@@ -65,6 +65,10 @@ services:
       # After that, the admin creates everyone else's account.
       REGISTRATION_MODE: ${PMPM_REGISTRATION_MODE:-closed}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Opt-in internal-company testing only. Grants are stored per user,
+      # the key stays in the backend, and external signups must be disabled.
+      PMPM_INTERNAL_AI_PILOT: ${PMPM_INTERNAL_AI_PILOT:-false}
+      PMPM_INTERNAL_DEEPSEEK_API_KEY: ${PMPM_INTERNAL_DEEPSEEK_API_KEY:-}
       # Email (password resets, invitations). "console" only logs them; set
       # smtp and the SMTP_* lines in .env to really send.
       EMAIL_BACKEND: ${PMPM_EMAIL_BACKEND:-console}

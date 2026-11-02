@@ -20,6 +20,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Response, UploadFile, status
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ from app.core.validation.messages import translate
 from app.dependencies import (
     CurrentUserId,
     RequirePermission,
+    RequireRole,
     SessionDep,
     check_ai_rate_limit,
     verify_project_access,
@@ -59,6 +61,12 @@ from app.modules.ai.schemas import (
     QuickEstimateRequest,
 )
 from app.modules.ai.service import AIService
+from app.modules.ai.internal_pilot import (
+    ACCESS_FLAG,
+    internal_pilot_credential,
+    internal_pilot_enabled,
+    internal_pilot_key_set,
+)
 
 router = APIRouter(tags=["ai"])
 
@@ -227,6 +235,84 @@ async def update_ai_settings(
     return await service.update_ai_settings(user_id, data)
 
 
+
+# ── Internal company AI pilot (single-company deployments ONLY) ────────────
+#
+# No Tenant/Organization entity exists yet. This is intentionally opt-in,
+# default-deny, admin-granted, and MUST NOT be enabled on customer SaaS.
+# Only boolean grants and configuration status are exposed; never the key.
+
+
+class InternalPilotAccessUpdate(BaseModel):
+    enabled: bool
+
+
+@router.get(
+    "/internal-pilot/access/",
+    dependencies=[Depends(RequireRole("admin"))],
+)
+async def get_internal_pilot_access(session: SessionDep) -> dict:
+    """List internal pilot grants for administrators (no credentials returned)."""
+    from sqlalchemy import select
+
+    from app.modules.ai.models import AISettings
+
+    rows = (await session.execute(select(AISettings.user_id, AISettings.metadata_))).all()
+    grants = {
+        str(user_id): isinstance(meta, dict) and meta.get(ACCESS_FLAG) is True
+        for user_id, meta in rows
+    }
+    return {
+        "enabled": internal_pilot_enabled(),
+        "key_set": internal_pilot_key_set(),
+        "grants": grants,
+    }
+
+
+@router.patch(
+    "/internal-pilot/access/{target_user_id}",
+    dependencies=[Depends(RequireRole("admin"))],
+)
+async def update_internal_pilot_access(
+    target_user_id: uuid.UUID,
+    body: InternalPilotAccessUpdate,
+    session: SessionDep,
+) -> dict:
+    """Grant/revoke use of the server-held DeepSeek key for one internal user."""
+    from app.modules.ai.models import AISettings
+    from app.modules.ai.repository import AISettingsRepository
+    from app.modules.users.repository import UserRepository
+
+    if not internal_pilot_enabled():
+        raise HTTPException(
+            status_code=409,
+            detail="Internal company AI mode is disabled or unsafe (registration/demo settings).",
+        )
+    target = await UserRepository(session).get_by_id(target_user_id)
+    if target is None or not target.is_active:
+        raise HTTPException(status_code=404, detail="Active employee account not found")
+    if body.enabled and target.role == "viewer":
+        raise HTTPException(status_code=422, detail="AI access requires Editor role or higher")
+
+    repo = AISettingsRepository(session)
+    settings = await repo.get_by_user_id(target_user_id)
+    if settings is None:
+        settings = AISettings(
+            user_id=target_user_id,
+            preferred_model="deepseek-flash",
+            metadata_={ACCESS_FLAG: body.enabled},
+        )
+        await repo.create(settings)
+    else:
+        meta = dict(settings.metadata_ or {})
+        meta[ACCESS_FLAG] = body.enabled
+        await repo.update_fields(settings.id, metadata_=meta)
+
+    # Existing per-user AI credentials are unaffected by revoking this grant.
+    # The next request resolves the effective key from fresh database settings.
+    return {"user_id": str(target_user_id), "granted": body.enabled}
+
+
 # ── Test API key ──────────────────────────────────────────────────────────────
 
 
@@ -280,13 +366,18 @@ async def test_ai_connection(
         raw = None
     else:
         raw = getattr(settings, f"{provider}_api_key", None) if settings else None
-        if not raw:
-            return {
-                "success": False,
-                "message": f"No API key configured for {provider}. Please save your key first.",
-                "latency_ms": None,
-            }
-        api_key = decrypt_secret(raw) or ""
+        if raw:
+            api_key = decrypt_secret(raw) or ""
+        else:
+            # Only an admin-granted, single-company pilot member may test
+            # the central DeepSeek key. No plaintext key is returned to UI.
+            api_key = internal_pilot_credential(settings) if provider == "deepseek" else None
+            if not api_key:
+                return {
+                    "success": False,
+                    "message": f"No API key configured for {provider}. Please save your key first.",
+                    "latency_ms": None,
+                }
     if raw and not api_key:
         return {
             "success": False,

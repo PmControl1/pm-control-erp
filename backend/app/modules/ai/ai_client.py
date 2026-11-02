@@ -20,6 +20,8 @@ from typing import Any
 
 import httpx
 
+from app.modules.ai.internal_pilot import internal_pilot_credential, internal_pilot_enabled
+
 logger = logging.getLogger(__name__)
 
 # ── Model defaults ───────────────────────────────────────────────────────────
@@ -71,7 +73,7 @@ KIMI_MODEL = "kimi-latest"
 OPENROUTER_MODEL = "anthropic/claude-sonnet-4"
 MISTRAL_MODEL = "mistral-large-latest"
 GROQ_MODEL = "llama-3.3-70b-versatile"
-DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_MODEL = "deepseek-flash"
 
 #: The runtimes a user hosts themselves rather than calling over the internet.
 #: Naming the pair once is not tidiness: three separate decisions read it, and
@@ -1589,6 +1591,15 @@ def _resolve_provider_and_key(settings: Any, preferred_model: str | None) -> tup
         for local_provider in SELF_HOSTED_PROVIDERS:
             if local_provider in configured:
                 return local_provider, self_hosted_api_key(settings, local_provider)
+
+    # A company-owned pilot key is available only to explicitly approved users.
+    # In this mode we also block the legacy unrestricted environment-key
+    # fallback, which would otherwise bypass the administrator's grants.
+    company_key = internal_pilot_credential(settings)
+    if company_key:
+        return "deepseek", company_key
+    if internal_pilot_enabled():
+        raise ValueError("No personal AI key or approved internal company AI access.")
 
     # Fallback to environment variables / ~/.openestimate/config.json. Tried
     # AFTER the DB (an explicitly-saved key wins) but BEFORE raising - a working

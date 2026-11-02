@@ -520,7 +520,10 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
     )
     has_cloud_key = any(_usable(getattr(settings, attr, None)) for attr in _CLOUD_KEY_ATTRS)
     has_local_provider = bool(ollama_url) or bool(vllm_url)
-    ai_ready = has_cloud_key or has_local_provider
+    from app.modules.ai.internal_pilot import internal_pilot_credential
+
+    company_ai_available = bool(internal_pilot_credential(settings))
+    ai_ready = has_cloud_key or has_local_provider or company_ai_available
 
     # Issue #499: per-endpoint tool calling and per-provider timeouts, read
     # back in the shape the settings page edits, plus the defaults it shows.
@@ -575,6 +578,7 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
         timeouts=timeouts,
         default_timeout_seconds=env_timeout if env_timeout is not None else AI_TIMEOUT,
         ai_ready=ai_ready,
+        internal_shared_ai_available=company_ai_available,
         preferred_model=settings.preferred_model,
         model_overrides=model_overrides,
         default_models=dict(DEFAULT_MODELS),

@@ -73,6 +73,7 @@ export interface AISettings {
    * local-only setups are not falsely treated as unconfigured.
    */
   ai_ready: boolean;
+  internal_shared_ai_available?: boolean;
   preferred_model: string;
   /** Per-provider model-id override the user has saved (provider -> model id). */
   model_overrides: Record<string, string>;

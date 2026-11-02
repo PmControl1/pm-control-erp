@@ -188,6 +188,7 @@ class AISettingsResponse(BaseModel):
     # frontend reads this instead of re-deriving readiness from individual
     # key flags, so chat / estimate gating stays in sync with the backend.
     ai_ready: bool = False
+    internal_shared_ai_available: bool = False
     preferred_model: str
     # Effective per-provider model id the platform will send (override if the
     # user set one, otherwise the built-in default). Drives the editable
