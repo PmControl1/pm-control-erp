@@ -52,6 +52,12 @@ from app.modules.ai.ai_client import (
     self_hosted_api_key,
     self_hosted_endpoints,
 )
+from app.modules.ai.internal_pilot import (
+    ACCESS_FLAG,
+    internal_pilot_credential,
+    internal_pilot_enabled,
+    internal_pilot_key_set,
+)
 from app.modules.ai.schemas import (
     AISettingsResponse,
     AISettingsUpdate,
@@ -61,12 +67,6 @@ from app.modules.ai.schemas import (
     QuickEstimateRequest,
 )
 from app.modules.ai.service import AIService
-from app.modules.ai.internal_pilot import (
-    ACCESS_FLAG,
-    internal_pilot_credential,
-    internal_pilot_enabled,
-    internal_pilot_key_set,
-)
 
 router = APIRouter(tags=["ai"])
 
