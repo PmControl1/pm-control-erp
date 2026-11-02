@@ -173,12 +173,11 @@ MANIFEST = PartnerPackManifest(
         "bg_dds",
         "bg_evro",
     ],
-    # DIN 276 is the nearest hierarchy the platform supports for a Bulgarian
-    # bill, the same choice the Croatian, Czech and Romanian packs make; it is
-    # what the classification registry already answers for BG.
-    validation_rule_sets=[
-        "din276",
-    ],
+    # No classification rule set. A Bulgarian КСС is grouped by kind of work
+    # (see ``kss_sections``) and carries no DIN 276 cost groups, so switching
+    # ``din276`` on made every line of an ordinary КСС fail an error-severity
+    # rule. New projects keep the platform default, ``boq_quality``.
+    validation_rule_sets=[],
     default_modules=[],  # empty = show all
     hidden_modules=[],
     # One Bulgarian demo so far: a residential block in Sofia, III category.
@@ -206,7 +205,6 @@ MANIFEST = PartnerPackManifest(
         "country": "BG",
         "country_name_en": "Bulgaria",
         "country_name_bg": "България",
-        "classification_standard": "din276",
         "legacy_currency": {
             "code": "BGN",
             "per_euro": "1.95583",
@@ -248,8 +246,8 @@ MANIFEST = PartnerPackManifest(
             "Currency, conversion rule, tax rates, the ЕИК check digit and the ЗУТ category "
             "list are drawn from public sources read on 2026-10-31. The category hints are "
             "summaries for choosing and the КСС section order reflects common Bulgarian practice; "
-            "both are pending review by a Bulgarian quantity surveyor (инженер-сметчик) before "
-            "they are relied on for a public tender."
+            "both are pending review by a Bulgarian construction professional who prepares КСС "
+            "before they are relied on for a public tender."
         ),
         "support_email": "info@datadrivenconstruction.io",
     },
