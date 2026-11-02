@@ -13,11 +13,12 @@ Endpoints (auto-mounted at ``/api/v1/file-versions/``):
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.dependencies import CurrentUserId, RequirePermission, SessionDep, verify_project_access
-from app.modules.file_versions.models import FILE_KINDS
+from app.modules.file_versions.models import FILE_KINDS, FileVersion
 from app.modules.file_versions.schemas import (
     FileVersionCreate,
     FileVersionResponse,
@@ -42,6 +43,65 @@ def _safe_user_uuid(user_id: str | None) -> uuid.UUID | None:
         return uuid.UUID(str(user_id))
     except (ValueError, TypeError):
         return None
+
+
+async def _require_document_version_access(
+    session: SessionDep,
+    version: FileVersion | FileVersionCreate,
+    user_id: str,
+    action: Literal["read", "write"],
+    *,
+    allow_deleted: bool = False,
+) -> bool:
+    """Authorize a live document, or omit a deleted historical reference.
+
+    Only chain traversal may omit deleted documents: their former folder is
+    unknown, so their metadata must not be returned. A directly requested
+    document or version still needs a live document and its current ACL.
+    """
+    if version.file_kind != "document":
+        return True
+
+    from app.modules.documents.access import require_document_access
+    from app.modules.documents.models import Document
+
+    try:
+        document_id = uuid.UUID(str(version.file_id))
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found") from exc
+    document = await session.get(Document, document_id)
+    if document is None and allow_deleted:
+        return False
+    # A caller-supplied project_id must not disguise a document in another project.
+    if document is None or document.project_id != version.project_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    await require_document_access(session, document, user_id, action)
+    return True
+
+
+async def _require_document_chain_access(
+    session: SessionDep,
+    service: FileVersionService,
+    version: FileVersion | FileVersionCreate,
+    user_id: str,
+    action: Literal["read", "write"],
+) -> None:
+    """Check every document affected by a chain, including older uploads.
+
+    Re-uploading the same name can create a chain with several Document ids.
+    Checking only the clicked/newest document could expose a restricted older
+    upload or supersede its version using a writable document from an open folder.
+    """
+    if version.file_kind != "document":
+        return
+    await _require_document_version_access(session, version, user_id, action)
+    chain = await service.list_chain(
+        project_id=version.project_id,
+        file_kind=version.file_kind,
+        canonical_name=version.canonical_name,
+    )
+    for member in chain:
+        await _require_document_version_access(session, member, user_id, action, allow_deleted=True)
 
 
 @router.get(
@@ -79,7 +139,12 @@ async def list_versions(
         file_kind=seed.file_kind,
         canonical_name=seed.canonical_name,
     )
-    return [_to_response(r) for r in chain]
+    await _require_document_version_access(session, seed, user_id, "read")
+    visible = []
+    for member in chain:
+        if await _require_document_version_access(session, member, user_id, "read", allow_deleted=True):
+            visible.append(_to_response(member))
+    return visible
 
 
 @router.get(
@@ -95,6 +160,7 @@ async def get_version(
 ) -> FileVersionResponse:
     row = await service.get(version_id)
     await verify_project_access(row.project_id, user_id, session)
+    await _require_document_version_access(session, row, user_id, "read")
     return _to_response(row)
 
 
@@ -112,6 +178,16 @@ async def create_version(
 ) -> FileVersionResponse:
     """Register a new version row + supersede the prior current row."""
     await verify_project_access(payload.project_id, user_id, session)
+    await _require_document_chain_access(session, service, payload, user_id, "write")
+    if payload.file_kind == "document" and payload.previous_version_id is not None:
+        previous = await service.get(payload.previous_version_id)
+        if (
+            previous.project_id != payload.project_id
+            or previous.file_kind != payload.file_kind
+            or previous.canonical_name != payload.canonical_name.strip()
+        ):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        await _require_document_version_access(session, previous, user_id, "write")
     row = await service.register_new_version(payload, uploaded_by_id=_safe_user_uuid(user_id))
     return _to_response(row)
 
@@ -134,5 +210,6 @@ async def restore_version(
     """
     target = await service.get(version_id)
     await verify_project_access(target.project_id, user_id, session)
+    await _require_document_chain_access(session, service, target, user_id, "write")
     restored = await service.restore_version(version_id, actor_id=_safe_user_uuid(user_id))
     return _to_response(restored)

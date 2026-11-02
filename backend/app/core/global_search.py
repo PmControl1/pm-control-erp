@@ -77,8 +77,6 @@ async def global_search(
     """
     if not query or not query.strip():
         return []
-    if project_ids is not None and not project_ids:
-        return []
 
     pattern = f"%{query.strip()}%"
     results: list[dict[str, Any]] = []
@@ -175,14 +173,26 @@ async def global_search(
             )
         )
         stmt = _scoped(stmt, Document.project_id, project_ids)
-        # Read past rows in folders the caller may not open, then drop them.
-        stmt = stmt.limit(limit * 4)
-        rows = (await session.execute(stmt)).scalars().all()
-        if project_ids is not None:  # an admin (None) bypasses folder permissions
-            from app.modules.documents.access import readable_document_ids
+        # A fixed over-fetch can still fill with unreadable rows. Walk stable
+        # pages until enough permitted documents survive, or the query ends.
+        stmt = stmt.order_by(Document.id)
+        rows = []
+        offset = 0
+        page_size = max(limit, 50)
+        while len(rows) < limit:
+            page = (await session.execute(stmt.offset(offset).limit(page_size))).scalars().all()
+            if not page:
+                break
+            offset += len(page)
+            if project_ids is not None:  # an admin (None) bypasses folder permissions
+                from app.modules.documents.access import readable_document_ids
 
-            readable = await readable_document_ids(session, user_id, [row.id for row in rows])
-            rows = [row for row in rows if str(row.id) in readable]
+                readable = await readable_document_ids(session, user_id, [row.id for row in page])
+                rows.extend(row for row in page if str(row.id) in readable)
+            else:
+                rows.extend(page)
+            if len(page) < page_size:
+                break
         rows = rows[:limit]
         for row in rows:
             score = _score(query, row.name, row.description)

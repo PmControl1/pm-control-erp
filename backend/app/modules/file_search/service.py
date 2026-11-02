@@ -325,12 +325,19 @@ async def search_content(
         Ranked list of :class:`SearchHit`. May be shorter than ``limit``.
     """
     q = (q or "").strip()
-    if not q:
+    if not q or limit <= 0:
         return []
     if user_id is not None:
-        # Read past the hits the caller cannot see so the page still fills.
-        hits = await search_content(session, project_id, q, kind=kind, mode=mode, limit=limit * 4)
-        return (await _readable_hits(session, user_id, hits))[:limit]
+        # Both retrievers expose ranked prefixes, not offsets. Expand that
+        # prefix until the caller's page fills or the retriever is exhausted;
+        # any fixed multiple can be consumed entirely by restricted files.
+        fetch_limit = max(limit, 1)
+        while True:
+            hits = await search_content(session, project_id, q, kind=kind, mode=mode, limit=fetch_limit)
+            readable = await _readable_hits(session, user_id, hits)
+            if len(readable) >= limit or len(hits) < fetch_limit:
+                return readable[:limit]
+            fetch_limit *= 2
 
     if mode == "filename":
         return await _search_by_filename(session, project_id, q, kind, limit)
