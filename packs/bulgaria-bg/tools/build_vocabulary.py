@@ -38,6 +38,9 @@ Rules, in order:
    modifies the next noun ("всеки BOQ пакет") the agreement belongs to that
    noun and is left alone.
 6. A handful of labels are set by hand (``MANUAL``).
+7. A string that means the designer's unpriced bill, the количествена сметка
+   a КСС is priced against, keeps the word (``DESIGNERS_BILL``): rewriting it
+   would say the КСС is priced against itself.
 
 An entry goes in the overlay only when the rules change it.
 """
@@ -92,6 +95,14 @@ _INFLECT_RE = re.compile(
 
 _LOAN_WORD = re.compile(r"(?<![\w/{.\-])(?:BOQs|BOQ|BoQ)(?![\w/}])")
 _EXCHANGE_KEY = re.compile(r"^nav\.[a-z]+_boq_exchange$")
+
+#: Strings where "количествена сметка" is the designer's unpriced bill and not
+#: the КСС the editor holds, so rule 2 must leave them alone.
+DESIGNERS_BILL: frozenset[str] = frozenset(
+    {
+        "boq.kss_tender_bill_hint",
+    }
+)
 _ADJUNCT = re.compile(r"\bКСС (позиция|позицията|позиции|позициите|ред|реда|редове|редовете)\b")
 
 AGREE: dict[str, str] = {
@@ -173,7 +184,7 @@ def _feminine(match: re.Match[str]) -> str:
 
 def fixed(key: str, value: str) -> str:
     """The value with the bill named the one way the trade names it."""
-    if _EXCHANGE_KEY.match(key):
+    if _EXCHANGE_KEY.match(key) or key in DESIGNERS_BILL:
         return value
     out = value
     for old, new in MODULE_NAMES:
