@@ -55,8 +55,16 @@ a check digit. A VAT-registered company's ДДС number is "BG" and its ЕИК.
 - **A demo project**: a residential block in Sofia (Манастирски ливади), 42
   flats over an underground garage, ЗУТ category III, priced as an all-in КСС
   at Sofia 2026 levels in EUR excluding ДДС (about 723 EUR per m2 GFA).
-- **DIN 276 rule set** for classification validation, the nearest hierarchy
-  the platform supports for a Bulgarian bill.
+- **Bulgarian rule set** (`bulgaria`), switched on for every new project and
+  for every project in Bulgaria:
+  - a КСС that names its количествена сметка in the bill header keeps every
+    description, unit and quantity of it and adds no line (ЗОП);
+  - ДДС is one line, at 20 % (ЗДДС чл. 66, ал. 1), charged on all of "Общо без
+    ДДС" with nothing added after it; a bill with no ДДС line is a warning
+    only, since a contractor below the registration threshold charges none.
+
+  No DIN 276 rule set: a КСС carries no DIN 276 cost groups, and the cost
+  group rules failed every line of one.
 - **Five reference documents** covering the КСС, the ЗУТ categories, public
   procurement under the ЗОП, ДДС and the euro changeover.
 

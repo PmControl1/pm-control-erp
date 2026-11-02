@@ -9,11 +9,15 @@
     "invoice",
     "estimate"
   ],
-  "description": "Reference document for ДДС. The standard rate is 20 % (ЗДДС чл. 66, ал. 1) and it is the rate construction works are charged at. The reduced rate of 9 % (чл. 66, ал. 2) covers hotel accommodation; the temporary 9 % on restaurant services and some foods ended on 1 January 2025. Exports and intra-EU supplies are zero-rated. The rates are on file in the platform's dated tax table (code DDS, 20 % the default since 1999-01-01) and the BG markup stack is a single ДДС line on the direct cost, because a КСС carries overheads and profit inside its unit rates. The pack prices every bill excluding ДДС and adds ДДС once, at the end. From 1 January 2026 the registration threshold is EUR 51 130 of taxable turnover in a calendar year.",
+  "description": "Reference document for ДДС. The standard rate is 20 % (ЗДДС чл. 66, ал. 1) and it is the rate construction works are charged at. The reduced rate of 9 % (чл. 66, ал. 2) covers hotel accommodation; the temporary 9 % on restaurant services and some foods ended on 1 January 2025. Exports and intra-EU supplies are zero-rated. The rates are on file in the platform's dated tax table (code DDS, 20 % the default since 1999-01-01) and the BG markup stack is a single ДДС line on the direct cost, because a КСС carries overheads and profit inside its unit rates. The pack prices every bill excluding ДДС and adds ДДС once, at the end. From 1 January 2026 the registration threshold is EUR 51 130 of taxable turnover in a calendar year. The bulgaria rule set checks that a bill carries one ДДС line, at 20 %, charged on all of \"Общо без ДДС\" and with nothing added after it; a bill with no ДДС line is a warning only, since a contractor below the threshold charges none.",
   "review_status": "Rates are taken from the НАП and from 2026 professional summaries, read on 2026-10-31. The tax treatment of a specific contract is a matter for the parties' tax advisers.",
   "severity_overrides": {},
   "enables_rule_ids": [
     "boq_quality.currency_consistency",
-    "boq_quality.total_mismatch"
+    "boq_quality.total_mismatch",
+    "bulgaria.vat_line_present",
+    "bulgaria.vat_charged_once",
+    "bulgaria.vat_rate",
+    "bulgaria.vat_on_whole_total"
   ]
 }
