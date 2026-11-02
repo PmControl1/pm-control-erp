@@ -496,10 +496,37 @@ def _generate_photo_thumbnail(
         return False
 
 
-def _remove_file(file_path_str: str) -> None:
-    """Unlink one stored file, best-effort: a failure leaves an orphan, not an error."""
+def _inside_watched_folders(file_path: Path) -> bool:
+    """Whether ``file_path`` is under the connectors' watched-folder base dir.
+
+    Files there are the user's originals, which a sync reads and never owns.
+    Fails closed: if the base cannot be determined the answer is "yes", so
+    the file is kept (an orphan is recoverable, a deleted original is not).
+    """
+    try:
+        from app.modules.connectors.service import _connectors_base_dir
+
+        file_path.resolve().relative_to(_connectors_base_dir())
+    except ValueError:
+        return False
+    except Exception:  # noqa: BLE001 - cannot tell, so keep the file
+        logger.warning("Could not check %s against the watched folders; keeping it", file_path)
+        return True
+    return True
+
+
+def _remove_file(file_path_str: str | None) -> None:
+    """Unlink one stored file, best-effort: a failure leaves an orphan, not an error.
+
+    Never unlinks inside the watched folders (see ``_inside_watched_folders``).
+    """
+    if not file_path_str:
+        return
     try:
         file_path = Path(file_path_str)
+        if _inside_watched_folders(file_path):
+            logger.warning("Not removing %s: it is an original in a watched folder", file_path)
+            return
         if file_path.exists():
             file_path.unlink()
             logger.info("File removed: %s", file_path)
@@ -1400,6 +1427,14 @@ class DocumentService:
         file_path_str = document.file_path
         project_id = document.project_id
         doc_name = document.name
+        # A watched-folder document imported before connectors copied files
+        # into managed storage points at the user's original in that folder.
+        # Deleting the document must never delete the original: drop the row,
+        # keep the file. (New imports hold their own copy, which goes as usual.)
+        marker = (document.metadata_ or {}).get("connector") if isinstance(document.metadata_, dict) else None
+        if isinstance(marker, dict) and file_path_str and file_path_str == marker.get("external_id"):
+            logger.info("Keeping watched-folder original of deleted document %s", document_id)
+            file_path_str = None
 
         # Audit log BEFORE delete - the row is wiped by the FK cascade
         # together with the document itself, but the event-bus publish

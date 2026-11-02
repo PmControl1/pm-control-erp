@@ -47,3 +47,5 @@ class SyncResultOut(BaseModel):
     total: int
     # Ids of the Document rows created this sync (for the UI to link to).
     created_document_ids: list[str]
+    # Files that could not be copied into storage this sync; retried next time.
+    failed: list[dict[str, str]] = []
