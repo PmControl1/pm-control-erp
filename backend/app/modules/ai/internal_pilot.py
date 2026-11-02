@@ -26,9 +26,7 @@ def internal_pilot_enabled() -> bool:
 
 def internal_pilot_key_set() -> bool:
     """Configuration status only. The key itself must never reach a response."""
-    return internal_pilot_enabled() and bool(
-        os.environ.get("PMPM_INTERNAL_DEEPSEEK_API_KEY", "").strip()
-    )
+    return internal_pilot_enabled() and bool(os.environ.get("PMPM_INTERNAL_DEEPSEEK_API_KEY", "").strip())
 
 
 def internal_pilot_credential(settings: Any) -> str | None:
