@@ -12,6 +12,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 DOCKER = r'''#!/usr/bin/env python3
 import json, os, pathlib, shutil, sys
 args = sys.argv[1:]
+HEALTHY = '{"status":"healthy","database":"ok"}'
 with open(os.environ['MOCK_DOCKER_LOG'], 'a') as out:
     out.write(json.dumps(args) + '\n')
 if args[:2] == ['compose', 'ps']:
@@ -22,6 +23,8 @@ if 'pg_dump' in args:
 if args and args[0] == 'exec' and 'pg_restore' in args:
     sys.stdin.read()
     if os.environ.get('MOCK_FAIL_RESTORE') == '1': sys.exit(17)
+if args[:4] == ['compose', 'exec', '-T', 'app'] and 'curl' in args:
+    print(os.environ.get('MOCK_APP_HEALTH', HEALTHY))
 if args[:4] == ['compose', 'exec', '-T', 'app'] and 'python' in args:
     sys.stdin.read()
     if os.environ.get('MOCK_NO_ADMIN') == '1': sys.exit(28)
@@ -48,6 +51,10 @@ if 'alpine:3' in args and '/r' in ' '.join(args):
 '''
 
 
+HEALTHY = '{"status":"healthy","database":"ok"}'
+DEGRADED = '{"status":"degraded","database":"error"}'
+
+
 class MaintenanceScripts(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -60,11 +67,11 @@ class MaintenanceScripts(unittest.TestCase):
             (self.root / name).chmod(0o700)
         (self.root / '.env').write_text("PMPM_DOMAIN=erp.example.test\nPMPM_IMAGE_TAG=main\nRESTIC_REPOSITORY=s3:https://example.test/bucket\nRESTIC_PASSWORD='synthetic password'\nPOSTGRES_PASSWORD=synthetic\nJWT_SECRET=synthetic\nSMTP_FROM=test@example.test\nBACKUP_STAGING='" + str(self.root / 'staging') + "'\n")
         (self.bin / 'docker').write_text(DOCKER)
-        (self.bin / 'curl').write_text('#!/bin/sh\n[ "${MOCK_FAIL_TLS:-0}" != 1 ]\n')
+        (self.bin / 'curl').write_text('#!/bin/sh\n[ "${MOCK_FAIL_TLS:-0}" != 1 ] || exit 7\nprintf \'%s\\n\' "${MOCK_PUBLIC_HEALTH:-$HEALTHY_JSON}"\n')
         (self.bin / 'sleep').write_text('#!/bin/sh\nexit 0\n')
         for p in self.bin.iterdir(): p.chmod(0o700)
         self.log = self.root / 'docker.jsonl'
-        self.env = {**os.environ, 'PATH': str(self.bin) + ':' + os.environ['PATH'], 'MOCK_DOCKER_LOG': str(self.log)}
+        self.env = {**os.environ, 'PATH': str(self.bin) + ':' + os.environ['PATH'], 'MOCK_DOCKER_LOG': str(self.log), 'HEALTHY_JSON': HEALTHY}
         self.env.pop('PMPM_MAINTENANCE_LOCKED', None)
 
     def run_script(self, name, *args, input='', **env):
@@ -165,6 +172,43 @@ class MaintenanceScripts(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('PMPM_IMAGE_TAG=main', (self.root / '.env').read_text())
         self.assertNotIn('Open https://', result.stdout)
+
+    # /api/health answers HTTP 200 while it reports "degraded" (database down,
+    # module missing, frontend gone), so a 200 alone must never count as up.
+
+    def test_degraded_app_never_starts_public_proxy(self):
+        result = self.run_script('deploy.sh', 'sha-new', MOCK_APP_HEALTH=DEGRADED)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('did not report healthy', result.stderr)
+        self.assertIn('"database":"error"', result.stderr)
+        self.assertNotIn(['compose', 'up', '-d', 'caddy'], self.commands())
+        self.assertIn('PMPM_IMAGE_TAG=main', (self.root / '.env').read_text())
+
+    def test_degraded_public_endpoint_does_not_report_success_or_persist_tag(self):
+        result = self.run_script('deploy.sh', 'sha-new', MOCK_PUBLIC_HEALTH=DEGRADED)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Last public /api/health: ' + DEGRADED, result.stderr)
+        self.assertIn('PMPM_IMAGE_TAG=main', (self.root / '.env').read_text())
+        self.assertNotIn('Open https://', result.stdout)
+
+    def test_silent_app_is_not_healthy(self):
+        result = self.run_script('deploy.sh', MOCK_APP_HEALTH='')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('<no answer>', result.stderr)
+        self.assertNotIn(['compose', 'up', '-d', 'caddy'], self.commands())
+
+    def test_healthy_deploy_reports_the_health_it_saw(self):
+        result = self.run_script('deploy.sh', 'sha-new')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('"status":"healthy"', result.stdout)
+        self.assertIn('Open https://erp.example.test', result.stdout)
+
+    def test_every_app_probe_is_bounded(self):
+        self.run_script('deploy.sh')
+        probes = [c for c in self.commands() if c[:4] == ['compose', 'exec', '-T', 'app'] and 'curl' in c]
+        self.assertTrue(probes)
+        for probe in probes:
+            self.assertIn('--max-time', probe)
 
 
 if __name__ == '__main__':

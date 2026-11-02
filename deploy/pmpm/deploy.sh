@@ -23,6 +23,25 @@ fi
 set -a; . ./.env; set +a
 : "${PMPM_DOMAIN:?Set PMPM_DOMAIN in .env}"
 
+# /api/health answers HTTP 200 even when it reports "degraded" - the database
+# unreachable, an enabled module missing, the schema behind the models, the
+# frontend build gone - so `curl -f` alone accepts a broken release. Require
+# the payload to say "healthy". Every probe is bounded, so a hung app or proxy
+# fails the deployment instead of stalling it.
+app_health() {
+  timeout 20 docker compose exec -T app \
+    curl -fsS --connect-timeout 5 --max-time 10 http://localhost:8080/api/health 2>/dev/null
+}
+public_health() {
+  curl -fsS --connect-timeout 5 --max-time 10 "https://${PMPM_DOMAIN}/api/health" 2>/dev/null
+}
+is_healthy() {
+  grep -Eq '"status"[[:space:]]*:[[:space:]]*"healthy"' <<<"$1"
+}
+show_health() {
+  echo "$1 /api/health: $(head -c 600 <<<"${2:-<no answer>}")" >&2
+}
+
 requested_tag="${1:-}"
 if [ -n "$requested_tag" ]; then
   [[ "$requested_tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]] || {
@@ -45,18 +64,25 @@ echo "== Starting the private app"
 docker compose stop caddy
 docker compose up -d postgres app
 ready=false
+health=""
 for _ in $(seq 1 60); do
-  if docker compose exec -T app curl -fsS http://localhost:8080/api/health >/dev/null 2>&1; then
+  health="$(app_health || true)"
+  if is_healthy "$health"; then
     ready=true
     break
   fi
   sleep 5
 done
-[ "$ready" = true ] || { docker compose logs --tail 60 app >&2; exit 1; }
+if [ "$ready" != true ]; then
+  echo "The app did not report healthy; the public proxy stays stopped." >&2
+  show_health "Last app" "$health"
+  docker compose logs --tail 60 app >&2
+  exit 1
+fi
 
 # Never expose a fresh-install registration endpoint to the Internet: its
 # first registrant becomes administrator. Bootstrap privately via README first.
-if ! docker compose exec -T app python - <<'PYTHON'
+if ! timeout 60 docker compose exec -T app python - <<'PYTHON'
 import asyncio
 from app.database import async_session_factory
 from app.modules.users.repository import UserRepository
@@ -75,11 +101,13 @@ fi
 
 docker compose up -d caddy
 echo "== Waiting for the app and public HTTPS endpoint to answer"
+public=""
 for i in $(seq 1 60); do
-  if docker compose exec -T app curl -fsS http://localhost:8080/api/health >/dev/null 2>&1 &&
-    curl -fsS --connect-timeout 5 --max-time 10 "https://${PMPM_DOMAIN}/api/health" >/dev/null 2>&1; then
+  health="$(app_health || true)"
+  public="$(public_health || true)"
+  if is_healthy "$health" && is_healthy "$public"; then
     echo "Up after $((i * 5)) s."
-    docker compose exec -T app curl -fsS http://localhost:8080/api/health | head -c 300; echo
+    head -c 300 <<<"$health"; echo
     if [ -n "$requested_tag" ]; then
       if grep -q '^PMPM_IMAGE_TAG=' .env; then
         sed -i "s/^PMPM_IMAGE_TAG=.*/PMPM_IMAGE_TAG=$requested_tag/" .env
@@ -93,6 +121,9 @@ for i in $(seq 1 60); do
   sleep 5
 done
 
-echo "The app or public HTTPS endpoint did not become ready. Last app/Caddy logs:" >&2
+echo "The app or public HTTPS endpoint did not report healthy." >&2
+show_health "Last app" "$health"
+show_health "Last public" "$public"
+echo "Last app/Caddy logs:" >&2
 docker compose logs --tail 60 app caddy >&2
 exit 1
