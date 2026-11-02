@@ -36,6 +36,8 @@ Apply without deleting database volumes:
 
 ```powershell
 cd $HOME\pm-control-erp\deploy\pmpm
+git pull origin main
+docker compose pull app
 docker compose up -d --no-deps --force-recreate app
 docker compose ps
 ```
