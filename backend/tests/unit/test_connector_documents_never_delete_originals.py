@@ -162,21 +162,47 @@ async def test_a_file_that_cannot_be_copied_is_reported_and_retried(
     session: AsyncSession, watched: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     user, project = await _project(session)
-    (watched / "locked.xlsx").write_bytes(b"x")
+    original = watched / "locked.xlsx"
+    original.write_bytes(b"synthetic original")
     service = ConnectorService(session)
     source = await service.create_source(project_id=project.id, name="Dropbox", root_path=str(watched))
 
     real_copy = connectors_service.shutil.copyfile
 
-    def _fail(*args: object, **kwargs: object) -> None:
-        raise PermissionError("locked by another program")
+    def _fail(src: Path, dst: Path) -> None:
+        # Disk and read errors can happen after a destination was created.
+        Path(dst).write_bytes(b"partial")
+        raise OSError("copy interrupted")
 
     monkeypatch.setattr(connectors_service.shutil, "copyfile", _fail)
-    first = await service.sync_source(source, user_id=str(user.id))
-    assert first["created"] == 0
-    assert first["failed"] == [{"name": "locked.xlsx", "error": "could_not_copy"}]
-    assert source.last_result["failed"] == 1
+    for _ in range(2):
+        failed = await service.sync_source(source, user_id=str(user.id))
+        assert failed["created"] == 0
+        assert failed["failed"] == [{"name": "locked.xlsx", "error": "could_not_copy"}]
+        assert source.last_result["failed"] == 1
+        assert list((documents_service.UPLOAD_BASE / str(project.id)).iterdir()) == []
+        assert original.read_bytes() == b"synthetic original"
 
     monkeypatch.setattr(connectors_service.shutil, "copyfile", real_copy)
     second = await service.sync_source(source, user_id=str(user.id))
     assert second["created"] == 1
+
+
+def test_a_copy_whose_size_cannot_be_read_is_removed(watched: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    original = watched / "size-error.txt"
+    original.write_bytes(b"synthetic original")
+    project_id = uuid.uuid4()
+    upload_dir = documents_service.UPLOAD_BASE / str(project_id)
+    real_stat = Path.stat
+
+    def _fail_stored_stat(path: Path, *args: object, **kwargs: object):
+        if path.parent == upload_dir:
+            raise OSError("cannot read copied file size")
+        return real_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", _fail_stored_stat)
+    with pytest.raises(OSError, match="cannot read copied file size"):
+        connectors_service._copy_into_managed_storage(original, project_id)
+
+    assert list(upload_dir.iterdir()) == []
+    assert original.read_bytes() == b"synthetic original"

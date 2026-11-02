@@ -117,8 +117,18 @@ def _copy_into_managed_storage(original: Path, project_id: uuid.UUID) -> tuple[P
     upload_dir = UPLOAD_BASE / str(project_id)
     upload_dir.mkdir(parents=True, exist_ok=True)
     stored = upload_dir / f"{uuid.uuid4().hex[:12]}_{_sanitize_filename(original.name)}"
-    shutil.copyfile(original, stored)
-    return stored, stored.stat().st_size
+    try:
+        shutil.copyfile(original, stored)
+        return stored, stored.stat().st_size
+    except OSError:
+        # A failed copy can have written bytes already. There is no Document
+        # row to own them, and a retry picks a new name, so remove the partial
+        # destination before propagating the failure to the sync result.
+        try:
+            stored.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("connectors: could not remove failed copy %s", stored, exc_info=True)
+        raise
 
 
 def _iso_now() -> str:
