@@ -16,6 +16,8 @@ every one of them - see :func:`_title`.
 """
 
 import logging
+import uuid
+from collections.abc import Callable
 from typing import Any
 
 from sqlalchemy import or_, select
@@ -24,16 +26,50 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 
+class _NotPermitted(Exception):
+    """The caller's role may not read this module; its section is skipped."""
+
+
+def _require(may_read: Callable[[str], bool], permission: str) -> None:
+    if not may_read(permission):
+        raise _NotPermitted(permission)
+
+
+def _scoped(stmt: Any, column: Any, project_ids: set[uuid.UUID] | None) -> Any:
+    """Limit ``stmt`` to ``project_ids``; ``None`` means unrestricted (admin)."""
+    return stmt if project_ids is None else stmt.where(column.in_(project_ids))
+
+
 async def global_search(
     session: AsyncSession,
     query: str,
-    project_id: str | None = None,
+    *,
+    user_id: str,
+    project_ids: set[uuid.UUID] | None,
+    may_read: Callable[[str], bool],
+    contact_owner: str | None,
     limit: int = 20,
 ) -> list[dict[str, Any]]:
-    """Search across all modules using ILIKE text matching.
+    """Search across all modules using ILIKE text matching, as ``user_id``.
 
     Each result is a dict with keys:
         module, type, id, title, subtitle, url, score
+
+    Only what the caller could open elsewhere is returned. The router
+    (``global_search_router.search``) works out the scope and this applies it
+    to every module:
+
+    * ``project_ids`` - the projects searched: the one asked for (already
+      access-checked) or every project the caller may reach. ``None`` only
+      for an admin searching everything.
+    * ``may_read`` - whether the caller's role holds a module's read
+      permission (``rfi.read`` ...); a module it does not is left out.
+    * ``contact_owner`` - contacts belong to a user, not a project: the
+      caller's own, as the contacts list shows them. ``None`` for an admin.
+    * documents are also checked against folder permissions, as
+      ``GET /documents/{id}`` checks them.
+
+    Cost items are scoped by ``app.core.cost_scope`` on the session itself.
 
     Results are sorted by relevance score descending, then limited.
     Gracefully degrades: if a table does not exist yet, the search
@@ -41,12 +77,15 @@ async def global_search(
     """
     if not query or not query.strip():
         return []
+    if project_ids is not None and not project_ids:
+        return []
 
     pattern = f"%{query.strip()}%"
     results: list[dict[str, Any]] = []
 
     # --- BOQ Positions ---
     try:
+        _require(may_read, "boq.read")
         from app.modules.boq.models import Position
 
         stmt = select(Position).where(
@@ -55,8 +94,8 @@ async def global_search(
                 Position.ordinal.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(Position.boq_id.in_(select(_boq_id_for_project(project_id))))
+        if project_ids is not None:
+            stmt = stmt.where(Position.boq_id.in_(_boq_ids_for_projects(project_ids)))
         stmt = stmt.limit(limit)
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
@@ -86,6 +125,7 @@ async def global_search(
         # if the finance module is ever absent this import raises and the whole
         # contacts branch is skipped, so contacts would drop out of search
         # rather than merely lose a label.
+        _require(may_read, "contacts.read")
         from app.modules.contacts.models import Contact
         from app.modules.finance.einvoice_parties import contact_display_name
 
@@ -101,6 +141,10 @@ async def global_search(
             )
             .limit(limit)
         )
+        if contact_owner is not None:
+            from app.modules.contacts.repository import _tenant_scope
+
+            stmt = stmt.where(_tenant_scope(contact_owner))
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
             label = contact_display_name(row)
@@ -121,6 +165,7 @@ async def global_search(
 
     # --- Documents ---
     try:
+        _require(may_read, "documents.read")
         from app.modules.documents.models import Document
 
         stmt = select(Document).where(
@@ -129,10 +174,16 @@ async def global_search(
                 Document.description.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(Document.project_id == project_id)
-        stmt = stmt.limit(limit)
+        stmt = _scoped(stmt, Document.project_id, project_ids)
+        # Read past rows in folders the caller may not open, then drop them.
+        stmt = stmt.limit(limit * 4)
         rows = (await session.execute(stmt)).scalars().all()
+        if project_ids is not None:  # an admin (None) bypasses folder permissions
+            from app.modules.documents.access import readable_document_ids
+
+            readable = await readable_document_ids(session, user_id, [row.id for row in rows])
+            rows = [row for row in rows if str(row.id) in readable]
+        rows = rows[:limit]
         for row in rows:
             score = _score(query, row.name, row.description)
             results.append(
@@ -151,6 +202,7 @@ async def global_search(
 
     # --- RFIs ---
     try:
+        _require(may_read, "rfi.read")
         from app.modules.rfi.models import RFI
 
         stmt = select(RFI).where(
@@ -160,8 +212,7 @@ async def global_search(
                 RFI.rfi_number.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(RFI.project_id == project_id)
+        stmt = _scoped(stmt, RFI.project_id, project_ids)
         stmt = stmt.limit(limit)
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
@@ -187,6 +238,7 @@ async def global_search(
 
     # --- Tasks ---
     try:
+        _require(may_read, "tasks.read")
         from app.modules.tasks.models import Task
 
         stmt = select(Task).where(
@@ -195,8 +247,7 @@ async def global_search(
                 Task.description.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(Task.project_id == project_id)
+        stmt = _scoped(stmt, Task.project_id, project_ids)
         stmt = stmt.limit(limit)
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
@@ -217,6 +268,7 @@ async def global_search(
 
     # --- Cost Items ---
     try:
+        _require(may_read, "costs.read")
         from app.modules.costs.models import CostItem
 
         stmt = (
@@ -248,6 +300,7 @@ async def global_search(
 
     # --- Meetings ---
     try:
+        _require(may_read, "meetings.read")
         from app.modules.meetings.models import Meeting
 
         stmt = select(Meeting).where(
@@ -257,8 +310,7 @@ async def global_search(
                 Meeting.meeting_number.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(Meeting.project_id == project_id)
+        stmt = _scoped(stmt, Meeting.project_id, project_ids)
         stmt = stmt.limit(limit)
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
@@ -284,6 +336,7 @@ async def global_search(
 
     # --- Inspections ---
     try:
+        _require(may_read, "inspections.read")
         from app.modules.inspections.models import QualityInspection
 
         stmt = select(QualityInspection).where(
@@ -292,8 +345,7 @@ async def global_search(
                 QualityInspection.inspection_number.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(QualityInspection.project_id == project_id)
+        stmt = _scoped(stmt, QualityInspection.project_id, project_ids)
         stmt = stmt.limit(limit)
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
@@ -318,6 +370,7 @@ async def global_search(
 
     # --- NCRs ---
     try:
+        _require(may_read, "ncr.read")
         from app.modules.ncr.models import NCR
 
         stmt = select(NCR).where(
@@ -327,8 +380,7 @@ async def global_search(
                 NCR.ncr_number.ilike(pattern),
             )
         )
-        if project_id:
-            stmt = stmt.where(NCR.project_id == project_id)
+        stmt = _scoped(stmt, NCR.project_id, project_ids)
         stmt = stmt.limit(limit)
         rows = (await session.execute(stmt)).scalars().all()
         for row in rows:
@@ -357,11 +409,11 @@ async def global_search(
     return results[:limit]
 
 
-def _boq_id_for_project(project_id: str):
-    """Return a subquery selecting BOQ IDs for a specific project."""
+def _boq_ids_for_projects(project_ids: set[uuid.UUID]):
+    """Return a subquery selecting the BOQ IDs of ``project_ids``."""
     from app.modules.boq.models import BOQ
 
-    return select(BOQ.id).where(BOQ.project_id == project_id).scalar_subquery()
+    return select(BOQ.id).where(BOQ.project_id.in_(project_ids)).scalar_subquery()
 
 
 def _join(*parts: str | None) -> str:

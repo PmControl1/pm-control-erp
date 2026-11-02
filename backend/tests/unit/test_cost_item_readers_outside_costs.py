@@ -26,6 +26,15 @@ from app.modules.costs.models import CostCatalog, CostItem
 from app.modules.users.models import User
 from tests._pg import transactional_session
 
+#: The scope of an admin searching everything (``global_search_router``
+#: resolves a real caller's); these tests are about titles, not access.
+UNRESTRICTED = {
+    "user_id": "00000000-0000-0000-0000-000000000000",
+    "project_ids": None,
+    "may_read": lambda _p: True,
+    "contact_owner": None,
+}
+
 _APP = Path(__file__).resolve().parents[2] / "app"
 _TEXT = "zzotherprivate"
 
@@ -106,7 +115,7 @@ async def test_readers_in_other_modules(session: AsyncSession, reader: str | Non
     found: dict[str, set[str]] = {}
 
     with cost_scope.caller_scope(w[reader] if reader else None):
-        hits = await global_search(session, _TEXT, limit=50)
+        hits = await global_search(session, _TEXT, limit=50, **UNRESTRICTED)
         found["global search"] = {str(h["id"]) for h in hits}
 
         explorer = CostExplorerRepository(session)

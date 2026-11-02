@@ -300,8 +300,14 @@ async def search_content(
     kind: str | None = None,
     mode: str = "content",
     limit: int = 50,
+    user_id: str | uuid.UUID | None = None,
 ) -> list[SearchHit]:
     """Search the content index.
+
+    With ``user_id``, documents in folders that user cannot read are left
+    out, as ``GET /documents/{id}`` would refuse them: their names and text
+    must not reach a search result or the AI that reads it. Pass it from
+    every caller acting for a user; ``None`` is for system jobs only.
 
     Args:
         session: Active async session.
@@ -313,6 +319,7 @@ async def search_content(
               model. Filename search bypasses the index entirely so it
               works even on unindexed files.
         limit: Maximum number of hits to return.
+        user_id: The user the search runs for (see above).
 
     Returns:
         Ranked list of :class:`SearchHit`. May be shorter than ``limit``.
@@ -320,6 +327,10 @@ async def search_content(
     q = (q or "").strip()
     if not q:
         return []
+    if user_id is not None:
+        # Read past the hits the caller cannot see so the page still fills.
+        hits = await search_content(session, project_id, q, kind=kind, mode=mode, limit=limit * 4)
+        return (await _readable_hits(session, user_id, hits))[:limit]
 
     if mode == "filename":
         return await _search_by_filename(session, project_id, q, kind, limit)
@@ -348,6 +359,19 @@ async def search_content(
         )
     hits.sort(key=lambda h: h.score, reverse=True)
     return hits[:limit]
+
+
+async def _readable_hits(session: AsyncSession, user_id: str | uuid.UUID, hits: list[SearchHit]) -> list[SearchHit]:
+    """``hits`` without the documents ``user_id`` may not read (folder permissions).
+
+    Sheets and photos carry no folder permissions; project access, checked by
+    every caller, already covers them.
+    """
+    from app.modules.documents.access import readable_document_ids
+
+    document_ids = [h.file_id for h in hits if h.kind == "document"]
+    readable = await readable_document_ids(session, user_id, document_ids) if document_ids else set()
+    return [h for h in hits if h.kind != "document" or h.file_id in readable]
 
 
 def _score_for(text: str, q: str) -> float:

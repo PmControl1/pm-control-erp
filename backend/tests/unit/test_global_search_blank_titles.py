@@ -40,6 +40,15 @@ from app.modules.tasks.models import Task
 from app.modules.users.models import User
 from tests._pg import transactional_session
 
+#: The scope of an admin searching everything (``global_search_router``
+#: resolves a real caller's); these tests are about titles, not access.
+UNRESTRICTED = {
+    "user_id": "00000000-0000-0000-0000-000000000000",
+    "project_ids": None,
+    "may_read": lambda _p: True,
+    "contact_owner": None,
+}
+
 
 @pytest_asyncio.fixture
 async def session() -> AsyncIterator[AsyncSession]:
@@ -91,7 +100,7 @@ async def test_a_document_found_by_its_description_is_named(session: AsyncSessio
     session.add(Document(project_id=project_id, name="", description=f"Foundation survey {token}"))
     await session.flush()
 
-    hits = _of(await global_search(session, token), "documents")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "documents")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -106,7 +115,7 @@ async def test_a_task_found_by_its_description_is_named(session: AsyncSession, p
     )
     await session.flush()
 
-    hits = _of(await global_search(session, token), "tasks")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "tasks")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -127,7 +136,7 @@ async def test_an_rfi_found_by_its_question_is_named(session: AsyncSession, proj
     )
     await session.flush()
 
-    hits = _of(await global_search(session, token), "rfi")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "rfi")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -149,7 +158,7 @@ async def test_a_meeting_found_by_its_minutes_is_named(session: AsyncSession, pr
     )
     await session.flush()
 
-    hits = _of(await global_search(session, token), "meetings")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "meetings")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -171,7 +180,7 @@ async def test_an_ncr_found_by_its_description_is_named(session: AsyncSession, p
     )
     await session.flush()
 
-    hits = _of(await global_search(session, token), "ncr")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "ncr")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -192,7 +201,7 @@ async def test_a_position_without_an_ordinal_does_not_lead_with_a_separator(
     session.add(Position(boq_id=boq.id, ordinal="", description=f"Concrete C30/37 {token}", unit="m3"))
     await session.flush()
 
-    hits = _of(await global_search(session, token), "boq")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "boq")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -206,7 +215,7 @@ async def test_a_cost_item_without_a_code_does_not_lead_with_a_separator(session
     session.add(CostItem(code="", description=f"Site hoarding {token}", unit="m", rate="42.00"))
     await session.flush()
 
-    hits = _of(await global_search(session, token), "costs")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "costs")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -229,7 +238,7 @@ async def test_an_inspection_without_a_number_does_not_lead_with_a_separator(
     )
     await session.flush()
 
-    hits = _of(await global_search(session, token), "inspections")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "inspections")
 
     assert len(hits) == 1
     _assert_named_by(hits[0], token)
@@ -253,7 +262,7 @@ async def test_a_row_with_nothing_to_say_is_still_not_blank_and_not_a_bare_id(
     session.add(document)
     await session.flush()
 
-    hits = _of(await global_search(session, "%"), "documents")
+    hits = _of(await global_search(session, "%", **UNRESTRICTED), "documents")
 
     assert len(hits) == 1
     title = hits[0]["title"]
@@ -274,7 +283,7 @@ async def test_a_named_document_is_still_titled_by_its_name(session: AsyncSessio
     )
     await session.flush()
 
-    hits = _of(await global_search(session, token), "documents")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "documents")
 
     assert len(hits) == 1
     assert hits[0]["title"] == f"Site plan {token}"
@@ -292,7 +301,7 @@ async def test_a_numbered_position_still_reads_number_then_description(
     session.add(Position(boq_id=boq.id, ordinal="01.10.030", description=f"Blinding {token}", unit="m2"))
     await session.flush()
 
-    hits = _of(await global_search(session, token), "boq")
+    hits = _of(await global_search(session, token, **UNRESTRICTED), "boq")
 
     assert len(hits) == 1
     assert hits[0]["title"] == f"01.10.030 - Blinding {token}"

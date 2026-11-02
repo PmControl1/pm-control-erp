@@ -103,6 +103,7 @@ async def search_files(
         kind=kind,
         mode=mode,
         limit=limit,
+        user_id=user_id,
     )
     return SearchResponse(
         project_id=project_id,

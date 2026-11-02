@@ -997,6 +997,32 @@ async def _drop_unreadable_cost_hits(
     return out
 
 
+async def _drop_unreadable_document_hits(
+    session: AsyncSession,
+    user_id: str | None,
+    chosen: list[str],
+    rankings: list[list[VectorHit]],
+) -> list[list[VectorHit]]:
+    """Drop the document hits in folders the caller may not read.
+
+    The project fence is not enough for documents: a project member kept
+    out of a restricted folder still passes it. Each hit is checked as
+    ``GET /documents/{id}`` would check it. Without a user nothing is
+    dropped, matching the unrestricted fence above.
+    """
+    if user_id is None:
+        return list(rankings)
+    from app.modules.documents.access import readable_document_ids  # noqa: PLC0415
+
+    out: list[list[VectorHit]] = []
+    for collection, ranking in zip(chosen, rankings, strict=False):
+        if collection == COLLECTION_DOCUMENTS and ranking:
+            allowed = await readable_document_ids(session, user_id, [hit.id for hit in ranking])
+            ranking = [hit for hit in ranking if hit.id in allowed]
+        out.append(ranking)
+    return out
+
+
 async def unified_search_service(
     query: str,
     *,
@@ -1068,6 +1094,8 @@ async def unified_search_service(
                 hits = []
             sql_rankings.append(hits)
         vector_rankings = await _drop_unreadable_cost_hits(session, chosen, vector_rankings)
+        vector_rankings = await _drop_unreadable_document_hits(session, user_id, chosen, vector_rankings)
+        sql_rankings = await _drop_unreadable_document_hits(session, user_id, chosen, sql_rankings)
 
     # Apply the same access fence to the vector track. For a single
     # authorised project_id the vector layer already filtered on the
