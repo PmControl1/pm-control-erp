@@ -326,3 +326,82 @@ def test_the_route_converts_a_lev_bill_only_for_a_euro_project(
     assert (_work(result)[0].unit_rate == 6.39) is converted
     if not converted:
         assert _work(result)[0].unit_rate == first_rate
+
+
+# -- the bill toolbar's import (/import/smart/) converts the same way ---------
+#
+# The toolbar sends every spreadsheet to /import/smart/, not /import/auto/, so
+# the conversion above has to happen there too: a лева КСС going into a euro
+# project used to be saved with each лев rate read as a euro rate.
+
+
+def _smart_route(monkeypatch: pytest.MonkeyPatch, project_currency: str) -> list[ImportedBOQ]:
+    """Point the smart route at a project in ``project_currency``; collect what it would save."""
+    from app.modules.boq import router
+    from app.modules.projects import repository
+
+    project = SimpleNamespace(currency=project_currency)
+    saved: list[ImportedBOQ] = []
+
+    class _Repo:
+        def __init__(self, session: object) -> None:
+            pass
+
+        async def get_by_id(self, project_id: object) -> SimpleNamespace:
+            return project
+
+    async def _persist(boq_id: object, imported: ImportedBOQ, **kwargs: object) -> dict:
+        saved.append(imported)
+        return {"created": 0, "updated": 0, "unchanged": 0, "apply_errors": []}
+
+    monkeypatch.setattr(repository, "ProjectRepository", _Repo)
+    monkeypatch.setattr(router, "_persist_imported_boq", _persist)
+    return saved
+
+
+class _SmartService:
+    session = object()
+
+    async def get_boq(self, boq_id: object) -> SimpleNamespace:
+        return SimpleNamespace(project_id=uuid.uuid4())
+
+
+@pytest.mark.parametrize(("project_currency", "converted"), [("EUR", True), ("BGN", False), ("", False)])
+def test_the_toolbar_import_converts_a_lev_bill_only_for_a_euro_project(
+    monkeypatch: pytest.MonkeyPatch, project_currency: str, converted: bool
+) -> None:
+    from app.modules.boq import router
+
+    saved = _smart_route(monkeypatch, project_currency)
+    native = asyncio.run(router._native_spreadsheet_import(_kss()))
+    assert native is not None and native.currency == "BGN"
+
+    response = asyncio.run(router._smart_native_result(uuid.uuid4(), native, "kss.xlsx", _SmartService(), "u"))
+
+    (bill,) = saved
+    assert (bill.currency == "EUR") is converted
+    assert response["currency"] == ("EUR" if converted else "BGN")
+    # 12.50 лв is 6.39 €, never 12.50 €.
+    assert _work(bill)[0].unit_rate == (6.39 if converted else 12.5)
+    codes = [w.get("code") for w in response["warnings"]]
+    assert ("currency_converted_to_euro" in codes) is converted
+
+
+@pytest.mark.parametrize("currencies", [("(лв.)", "(€)"), ("", "(лв.)")])
+def test_the_toolbar_import_refuses_mixed_currencies_instead_of_guessing(currencies: tuple[str, ...]) -> None:
+    # Swallowing the refusal used to hand the rows to the text reader and the
+    # AI, which import the rates as written in whatever currency they are.
+    from fastapi import HTTPException
+
+    from app.modules.boq import router
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(router._native_spreadsheet_import(_currency_sheets(currencies)))
+    assert error.value.status_code == 400
+    assert error.value.detail["code"] == "spreadsheet_currency_ambiguous"
+
+
+def test_a_file_the_spreadsheet_reader_cannot_open_still_falls_through() -> None:
+    from app.modules.boq import router
+
+    assert asyncio.run(router._native_spreadsheet_import(b"not a workbook")) is None

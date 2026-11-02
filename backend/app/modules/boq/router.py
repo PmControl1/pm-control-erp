@@ -8417,19 +8417,36 @@ _SMART_IMPORT_EXTS: frozenset[str] = frozenset(
 )
 
 
+#: Importer refusals the smart route returns as they are, rather than falling
+#: back to its text reader and AI: the file was read and declined on purpose.
+_SMART_IMPORT_REFUSALS = frozenset({"spreadsheet_currency_ambiguous"})
+
+
 async def _native_spreadsheet_import(content: bytes) -> "ImportedBOQ | None":
     """The spreadsheet importer's reading of an upload, or ``None`` when it has none.
 
     ``None`` means the file is not a workbook the importer can open at all;
     a reading with no positions still comes back, carrying the errors that
     say why.
+
+    A refusal is not "cannot open": the importer read the workbook and
+    declined it on purpose (a КСС in mixed or unstated currencies cannot be
+    converted safely). That comes back as the 400 ``/import/auto/`` gives,
+    instead of handing the same rows to the text reader or the AI, neither of
+    which knows the currency and both of which would import the rates as
+    written.
+
+    Raises:
+        HTTPException 400: the importer refused the workbook.
     """
     from app.modules.boq.importers import ImporterParseError
     from app.modules.boq.importers.excel import ExcelImporter
 
     try:
         return await ExcelImporter.parse(content, locale=get_locale())
-    except ImporterParseError:
+    except ImporterParseError as exc:
+        if exc.code in _SMART_IMPORT_REFUSALS:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.as_detail()) from exc
         return None
     except Exception:  # noqa: BLE001 - the text extraction below still gets its chance
         logger.debug("Smart import: native spreadsheet reading failed", exc_info=True)
@@ -8443,7 +8460,14 @@ async def _smart_native_result(
     service: BOQService,
     user_id: str,
 ) -> dict[str, Any]:
-    """Persist a native spreadsheet reading and validate it, in the smart route's shape."""
+    """Persist a native spreadsheet reading and validate it, in the smart route's shape.
+
+    A лева bill going into a euro project is converted first, exactly as
+    ``/import/auto/`` does (``_run_native_import``). The bill toolbar sends
+    every spreadsheet here, so without it a pre-2026 КСС came in with each
+    лев rate read as a euro rate, at almost twice its value.
+    """
+    await _convert_replaced_currency_to_euro(boq_id, imported_boq, service)
     apply_summary = await _persist_imported_boq(
         boq_id,
         imported_boq,
