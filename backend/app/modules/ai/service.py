@@ -546,7 +546,7 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
     # The ciphertext of the endpoint key lives in metadata; it never leaves.
     public_meta = {k: v for k, v in meta.items() if k != VLLM_API_KEY_META} if _meta_is_dict else {}
 
-    return AISettingsResponse(
+    response = AISettingsResponse(
         id=settings.id,
         user_id=settings.user_id,
         anthropic_api_key_set=_usable(settings.anthropic_api_key),
@@ -582,6 +582,23 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
         created_at=settings.created_at,
         updated_at=settings.updated_at,
     )
+
+    from app.modules.ai import workspace
+
+    ws = workspace.current()
+    if ws is None:
+        return response
+    # Workspace AI serves this user. Report it the way every readiness check
+    # in the app already reads settings, so no page asks for a personal key.
+    update: dict[str, Any] = {
+        "workspace_managed": True,
+        "ai_ready": bool(ws.api_key),
+        "preferred_model": ws.provider,
+        f"{ws.provider}_api_key_set": bool(ws.api_key),
+    }
+    if ws.model:
+        update["model_overrides"] = {**model_overrides, ws.provider: ws.model}
+    return response.model_copy(update=update)
 
 
 def _build_job_response(job: AIEstimateJob) -> EstimateJobResponse:

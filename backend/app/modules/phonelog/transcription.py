@@ -316,6 +316,15 @@ async def resolve_openai_key(session: Any, user_id: str | None) -> str | None:
     """
     from app.config import get_settings
     from app.core.crypto import decrypt_secret
+    from app.modules.ai import workspace
+
+    ws = workspace.current()
+    if ws is not None:
+        # Workspace AI serves everyone. Speech-to-text is OpenAI only, so it is
+        # available when the owner chose OpenAI; otherwise the manual path.
+        if ws.provider == "openai" and ws.api_key:
+            return ws.api_key
+        return None
 
     if session is not None and user_id:
         try:

@@ -294,6 +294,9 @@ def manager_permission_error_result() -> dict[str, Any]:
 
 # ── Tool definitions (Anthropic function-calling format) ─────────────────────
 
+#: The assistant's memory tool. Offered only while memory is on.
+MEMORY_TOOL_NAME = "save_memory"
+
 TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "get_all_projects",
@@ -620,10 +623,48 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "required": ["query"],
         },
     },
+    {
+        "name": MEMORY_TOOL_NAME,
+        "description": (
+            "Remember one short fact or lasting preference about the user for future "
+            "conversations (for example their role, company, language, or how they want "
+            "answers). Use it when the user asks you to remember something or states a "
+            "lasting preference. Never store passwords or API keys."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "description": "One short sentence, written about the user, e.g. 'Prefers answers in Bulgarian.'",
+                },
+            },
+            "required": ["content"],
+        },
+    },
 ]
 
 
 # ── Tool handlers ────────────────────────────────────────────────────────────
+
+
+async def handle_save_memory(session: AsyncSession, args: dict[str, Any], user_id: str) -> dict[str, Any]:
+    """Store a memory for the caller. It writes only the caller's own memory list."""
+    from app.modules.ai import workspace
+
+    if not workspace.memory_enabled():
+        return {"renderer": "error", "data": {"error": "Memory is turned off."}, "summary": "Memory is turned off"}
+    try:
+        memory = await workspace.add_memory(
+            session, uuid.UUID(str(user_id)), str(args.get("content") or ""), source="assistant"
+        )
+    except (TypeError, ValueError) as exc:
+        return {"renderer": "error", "data": {"error": str(exc)}, "summary": f"Not saved: {exc}"}
+    return {
+        "renderer": "generic_table",
+        "data": [{"remembered": memory.content}],
+        "summary": f"Remembered: {memory.content}",
+    }
 
 
 async def handle_get_all_projects(session: AsyncSession, args: dict[str, Any], user_id: str) -> dict[str, Any]:
@@ -1379,6 +1420,8 @@ TOOL_PERMISSIONS: dict[str, ToolPermission] = {
     "search_submittals": "read",
     "search_correspondence": "read",
     "search_anything": "read",
+    # Writes only the caller's own memory list, never ERP records.
+    "save_memory": "read",
 }
 
 
@@ -1402,4 +1445,5 @@ TOOL_HANDLER_MAP: dict[str, Any] = {
     "search_submittals": handle_search_submittals,
     "search_correspondence": handle_search_correspondence,
     "search_anything": handle_search_anything,
+    "save_memory": handle_save_memory,
 }

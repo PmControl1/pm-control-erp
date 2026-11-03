@@ -1204,3 +1204,9 @@ async def advisor_chat(
         "sources": sources,
         "query": message,
     }
+
+
+# ── Workspace AI and memory ──────────────────────────────────────────────────
+from app.modules.ai.workspace_router import router as _workspace_router  # noqa: E402
+
+router.include_router(_workspace_router)

@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.events import publish_after_commit
 from app.modules.ai.ai_client import SELF_HOSTED_PROVIDERS
+from app.modules.ai.workspace import with_workspace_instructions
 from app.modules.erp_chat.actions import registry as action_registry
 from app.modules.erp_chat.actions.base import ActionConflictError
 from app.modules.erp_chat.actions.service import ChatActionService, propose_tool_result
@@ -39,6 +40,7 @@ from app.modules.erp_chat.models import ChatMessage, ChatSession, ChatTurnFeedba
 from app.modules.erp_chat.prompts import SYSTEM_PROMPT, SYSTEM_PROMPT_NO_TOOLS, build_context_block
 from app.modules.erp_chat.schemas import StreamChatRequest
 from app.modules.erp_chat.tools import (
+    MEMORY_TOOL_NAME,
     TOOL_DEFINITIONS,
     TOOL_HANDLER_MAP,
     TOOL_PERMISSIONS,
@@ -75,7 +77,9 @@ MAX_AGENT_ROUNDS = 5
 # operator states it per endpoint in Settings > AI (auto / on / off, issue
 # #499) - see ``ai_client.tool_calling_mode``. Their calls keep the
 # SSRF-guarded transport, which every OpenAI-compatible request goes through.
-TOOL_CAPABLE_OPENAI_COMPAT = frozenset({"openrouter"})
+# DeepSeek: OpenAI-format tool calls are documented for deepseek-flash and
+# deepseek-v4-pro (api-docs.deepseek.com/guides/tool_calls).
+TOOL_CAPABLE_OPENAI_COMPAT = frozenset({"openrouter", "deepseek"})
 
 # Every provider whose response is shaped like an OpenAI chat completion. The
 # three response parsers below key off this set rather than a single literal:
@@ -251,9 +255,18 @@ def _proposal_spec(tool_name: str) -> Any:
         return None
 
 
+def _read_tools() -> list[dict[str, Any]]:
+    """The read tools, without the memory tool while the owner has memory turned off."""
+    from app.modules.ai import workspace
+
+    if workspace.memory_enabled():
+        return list(TOOL_DEFINITIONS)
+    return [t for t in TOOL_DEFINITIONS if t["name"] != MEMORY_TOOL_NAME]
+
+
 def _anthropic_tool_schema() -> list[dict[str, Any]]:
     """Every tool the model may call, in Anthropic's shape: the read tools, then the proposal tools."""
-    return [*TOOL_DEFINITIONS, *_proposal_tools(openai_shape=False)]
+    return [*_read_tools(), *_proposal_tools(openai_shape=False)]
 
 
 def _openai_tool_schema() -> list[dict[str, Any]]:
@@ -273,7 +286,7 @@ def _openai_tool_schema() -> list[dict[str, Any]]:
                 "parameters": t["input_schema"],
             },
         }
-        for t in TOOL_DEFINITIONS
+        for t in _read_tools()
     ]
     return [*read_tools, *_proposal_tools(openai_shape=True)]
 
@@ -534,6 +547,22 @@ class ERPChatService:
         except Exception:
             logger.exception("erp_chat: could not attach message %s to proposal batch %s", message_id, batch_id)
 
+    async def _memory_block(self, user_id: str) -> str:
+        """What the assistant remembers about this user, for the system prompt."""
+        from app.modules.ai import workspace
+
+        if not workspace.memory_enabled():
+            return ""
+        try:
+            async with self.session.begin_nested():
+                memories = await workspace.list_memories(
+                    self.session, uuid.UUID(str(user_id)), limit=workspace.MEMORY_PROMPT_ITEMS
+                )
+        except Exception:
+            logger.warning("erp_chat: could not load memories for %s", user_id, exc_info=True)
+            return ""
+        return workspace.memory_prompt_block(memories)
+
     # ── Main streaming entry point ───────────────────────────────────────
 
     async def stream_response(self, user_id: str, request: StreamChatRequest) -> AsyncGenerator[str, None]:
@@ -554,8 +583,11 @@ class ERPChatService:
                 project_currency=turn.project_currency,
                 route=turn.route,
             )
-            self._system_prompt = SYSTEM_PROMPT + context_block
-            self._system_prompt_no_tools = SYSTEM_PROMPT_NO_TOOLS + context_block
+            memory_block = await self._memory_block(user_id)
+            self._system_prompt = with_workspace_instructions(SYSTEM_PROMPT + context_block + memory_block)
+            self._system_prompt_no_tools = with_workspace_instructions(
+                SYSTEM_PROMPT_NO_TOOLS + context_block + memory_block
+            )
             # One batch per user turn: the proposals of this turn share it, so
             # the card tray can offer "apply all" and the assistant message can
             # be attached to them once it is stored.

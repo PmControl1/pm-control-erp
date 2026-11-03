@@ -188,6 +188,9 @@ class AISettingsResponse(BaseModel):
     # frontend reads this instead of re-deriving readiness from individual
     # key flags, so chat / estimate gating stays in sync with the backend.
     ai_ready: bool = False
+    # True when the platform owner's workspace AI serves every user; personal
+    # keys are then ignored and the settings page hides them.
+    workspace_managed: bool = False
     preferred_model: str
     # Effective per-provider model id the platform will send (override if the
     # user set one, otherwise the built-in default). Drives the editable
