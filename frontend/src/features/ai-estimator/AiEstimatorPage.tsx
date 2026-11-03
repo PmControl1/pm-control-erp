@@ -936,7 +936,7 @@ export function AiEstimatorPage() {
         {/* Right run-monitor */}
         <aside className="lg:sticky lg:top-4 lg:self-start">
           {hasRun ? (
-            <RunMonitor runId={runId!} progress={progressQ.data} isPolling={isRunning} />
+            <RunMonitor managed={readiness.managed} runId={runId!} progress={progressQ.data} isPolling={isRunning} />
           ) : (
             <Card padding="sm">
               <p className="text-xs text-content-tertiary">

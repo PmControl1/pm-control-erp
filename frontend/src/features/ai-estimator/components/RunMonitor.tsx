@@ -60,7 +60,9 @@ export function RunMonitor({
   runId,
   progress,
   isPolling,
+  managed,
 }: {
+  managed?: boolean;
   runId: string;
   progress: ProgressResponse | undefined;
   isPolling: boolean;
@@ -91,7 +93,7 @@ export function RunMonitor({
         />
       </Card>
 
-      {progress?.degraded_reason && <DegradedBanner reason={progress.degraded_reason} />}
+      {progress?.degraded_reason && <DegradedBanner managed={managed} reason={progress.degraded_reason} />}
 
       {/* Agent activity feed */}
       <Card padding="sm" className="flex flex-col">

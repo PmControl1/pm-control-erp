@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { companyAiStatusText, useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
@@ -2596,6 +2597,7 @@ function StepModuleConfig({
   enabledModules: Set<string>;
   onToggleModule: (key: string) => void;
 }) {
+  const { data: aiSettings } = useWorkspaceAiSettings();
   const { t } = useTranslation();
   const enabledCount = activeModuleCount(enabledModules);
   const totalCount = ALL_MODULES.length;
@@ -2682,7 +2684,7 @@ function StepModuleConfig({
                 {t('onboarding.ai_tools', { defaultValue: 'AI-Powered Tools' })}
               </p>
               <p className="text-xs text-content-tertiary truncate">
-                {t('onboarding.ai_tools_desc', {
+                {aiSettings?.managed_ai ? companyAiStatusText(t, aiSettings.ai_ready) : t('onboarding.ai_tools_desc', {
                   defaultValue: 'AI estimation, cost advisor, project intelligence. Requires API key (Anthropic, OpenAI, or Gemini).',
                 })}
               </p>
@@ -3712,6 +3714,8 @@ export function StepDataSetup({
   const [installingDemo, setInstallingDemo] = useState(false);
   const [demoInstalled, setDemoInstalled] = useState(false);
 
+  const { data: aiSettings } = useWorkspaceAiSettings();
+
   // ── AI state ──
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('anthropic');
   const [apiKey, setApiKey] = useState('');
@@ -4122,8 +4126,8 @@ export function StepDataSetup({
     if (installSemanticModel && semanticStatus?.state === 'not_requested') {
       void aiEstimatorApi.installEmbeddingModel().catch(() => undefined);
     }
-    // Save AI key if provided
-    if (apiKey.trim()) {
+    // Personal credentials are only used in self-managed mode.
+    if (aiSettings && !aiSettings.managed_ai && apiKey.trim()) {
       saveMutation.mutate();
     }
     onNext();
@@ -4145,6 +4149,7 @@ export function StepDataSetup({
     installingDemo,
     handleInstallDemo,
     apiKey,
+    aiSettings,
     saveMutation,
     onNext,
   ]);
@@ -4358,7 +4363,8 @@ export function StepDataSetup({
         />
 
         {/* Card 3: AI Provider — collapsible */}
-        <div className="rounded-2xl bg-surface-elevated shadow-sm shadow-black/[0.04]">
+        {aiSettings?.managed_ai && <p className="text-sm text-content-secondary">{companyAiStatusText(t, aiSettings.ai_ready)}</p>}
+        {aiSettings && !aiSettings.managed_ai && <div className="rounded-2xl bg-surface-elevated shadow-sm shadow-black/[0.04]">
           <button
             type="button"
             onClick={() => setAiExpanded(!aiExpanded)}
@@ -4468,7 +4474,7 @@ export function StepDataSetup({
               </div>
             </div>
           )}
-        </div>
+        </div>}
           </div>
         </details>
       </div>

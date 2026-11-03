@@ -9,6 +9,7 @@
 // unavailable the recording is still stored and the transcript can be pasted by
 // hand. AI suggests, a human confirms.
 
+import { useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -89,6 +90,7 @@ function directionLabel(
 export function RecordingProtocolCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { data: aiSettings } = useWorkspaceAiSettings();
   const addToast = useToastStore((s) => s.addToast);
 
   const [phase, setPhase] = useState<Phase>('idle');
@@ -278,7 +280,9 @@ export function RecordingProtocolCard({ projectId }: { projectId: string }) {
             })}
           </p>
           <p className="mt-1 text-xs text-content-tertiary">
-            {t('ai.transcription_goes_to_openai', {
+            {!aiSettings || aiSettings.managed_ai ? t('company_ai.recording_disclosure', {
+              defaultValue: 'Audio is transcribed by OpenAI when an OpenAI connection is available. Recordings are kept for 90 days by default.',
+            }) : t('ai.transcription_goes_to_openai', {
               defaultValue:
                 'Audio is transcribed by OpenAI with your OpenAI key, whatever AI provider you selected in Settings. Recordings are kept for 90 days by default.',
             })}

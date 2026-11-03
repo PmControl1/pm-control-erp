@@ -309,14 +309,15 @@ def _build_extraction_prompt(transcript: str) -> str:
 async def resolve_openai_key(session: Any, user_id: str | None) -> str | None:
     """Find an OpenAI key for transcription, or None when none is configured.
 
-    Looks first at the requesting user's stored AI settings (encrypted key,
-    decrypted here), then falls back to the app-level ``OPENAI_API_KEY`` env /
-    config value. Returns None rather than raising when nothing is available, so
+    Managed installations require the caller's grant and an OpenAI company
+    provider. Other installations use personal settings and the app-level key. Returns None rather than raising when nothing is available, so
     the caller can degrade to the manual-transcript path.
     """
     from app.config import get_settings
     from app.core.crypto import decrypt_secret
+    from app.modules.ai.internal_pilot import managed_ai_requested
 
+    settings_row = None
     if session is not None and user_id:
         try:
             from app.modules.ai.repository import AISettingsRepository
@@ -324,12 +325,22 @@ async def resolve_openai_key(session: Any, user_id: str | None) -> str | None:
             settings_row = await AISettingsRepository(session).get_by_user_id(uuid.UUID(str(user_id)))
         except Exception as exc:  # noqa: BLE001 - never let settings lookup break ingestion
             logger.debug("AI settings lookup failed: %s", exc)
-            settings_row = None
-        raw = getattr(settings_row, "openai_api_key", None) if settings_row else None
-        if raw:
-            decrypted = decrypt_secret(raw)
-            if decrypted:
-                return decrypted
+    if managed_ai_requested():
+        from app.modules.ai.ai_client import resolve_provider_key_model
+
+        if settings_row is None:
+            return None
+        try:
+            provider, key, _model = resolve_provider_key_model(settings_row)
+        except ValueError:
+            return None
+        return key if provider == "openai" else None
+
+    raw = getattr(settings_row, "openai_api_key", None)
+    if raw:
+        decrypted = decrypt_secret(raw)
+        if decrypted:
+            return decrypted
 
     app_key = getattr(get_settings(), "openai_api_key", None)
     if app_key and app_key.strip():

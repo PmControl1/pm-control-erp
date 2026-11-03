@@ -2713,7 +2713,7 @@ def create_app() -> FastAPI:
         def _scrub(err: dict) -> dict:
             return _json_safe(dict(err))
 
-        if settings.app_debug:
+        if settings.app_debug and not request.url.path.rstrip("/").endswith("/ai/company/settings"):
             safe_errors = [_scrub(e) for e in errors]
         else:
             safe_errors = [{k: v for k, v in _scrub(err).items() if k != "input"} for err in errors]

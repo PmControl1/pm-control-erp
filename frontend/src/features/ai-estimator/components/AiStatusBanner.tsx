@@ -6,6 +6,7 @@
 // LLM key is missing. Never blocks the flow - the module degrades to
 // deterministic matching - it only sets expectations.
 
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BrainCircuit, Database, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
@@ -70,7 +71,8 @@ export function AiStatusBanner({ readiness }: { readiness: AiReadiness }) {
             : t('aiest.status.vector_lexical', { defaultValue: 'keyword fallback' })
         }
       />
-      {!llmReady && (
+      {!llmReady && readiness.managed && <span className="text-xs text-content-secondary">{companyAiStatusText(t, false)}</span>}
+      {!llmReady && !readiness.managed && (
         <Link
           to="/settings?tab=ai"
           className="inline-flex items-center gap-1 rounded-full border border-oe-blue/30 bg-surface-primary px-3 py-1.5 text-xs font-semibold text-oe-blue transition-colors hover:bg-oe-blue hover:text-content-inverse"

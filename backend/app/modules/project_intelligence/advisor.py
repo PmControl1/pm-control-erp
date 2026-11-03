@@ -16,8 +16,8 @@ Cost discipline (v4.2.2+):
 import hashlib
 import logging
 import time
+import uuid
 from collections import OrderedDict
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -278,32 +278,20 @@ def _build_context_prompt(state: ProjectState, score: ProjectScore) -> str:
     return "\n".join(lines)
 
 
-async def _get_ai_settings(session: AsyncSession) -> Any:
-    """Load AI settings from the database."""
-    try:
-        from sqlalchemy import text
-
-        row = (await session.execute(text("SELECT * FROM oe_ai_settings LIMIT 1"))).first()
-        return row
-    except Exception:
+async def _resolve_provider(session: AsyncSession, user_id: str | None) -> tuple[str, str, str | None] | None:
+    """Use the requesting account's credentials or authorized company provider."""
+    if not user_id:
         return None
+    from app.modules.ai.ai_client import resolve_provider_key_model
+    from app.modules.ai.repository import AISettingsRepository
 
-
-async def _resolve_provider(session: AsyncSession) -> tuple[str, str, str | None] | None:
-    """Resolve (provider, key, model_override). None if no LLM configured.
-
-    The model override (Settings > AI) is returned so the advisor honors the
-    user's chosen model instead of a hardcoded provider default - issue #138.
-    """
     try:
-        from app.modules.ai.ai_client import resolve_provider_key_model
-
-        settings = await _get_ai_settings(session)
+        settings = await AISettingsRepository(session).get_by_user_id(uuid.UUID(str(user_id)))
         if settings is None:
             return None
-        provider, key, model_override = resolve_provider_key_model(settings)
-        return (provider, key, model_override)
-    except (ValueError, Exception):
+        return resolve_provider_key_model(settings)
+    except Exception:
+        logger.debug("Advisor provider unavailable", exc_info=True)
         return None
 
 
@@ -313,6 +301,8 @@ async def generate_recommendations(
     score: ProjectScore,
     role: str = "estimator",
     language: str = "en",
+    *,
+    user_id: str | None = None,
 ) -> str:
     """Generate AI recommendations for the project.
 
@@ -327,7 +317,7 @@ async def generate_recommendations(
         Recommendation text (from LLM or rule-based fallback).
     """
     # Try LLM first
-    provider_info = await _resolve_provider(session)
+    provider_info = await _resolve_provider(session, user_id)
     if provider_info:
         try:
             provider, api_key, model_override = provider_info
@@ -360,6 +350,8 @@ async def explain_gap(
     gap: CriticalGap,
     state: ProjectState,
     language: str = "en",
+    *,
+    user_id: str | None = None,
 ) -> str:
     """Generate a detailed explanation for a specific gap.
 
@@ -372,7 +364,7 @@ async def explain_gap(
     Returns:
         Explanation text.
     """
-    provider_info = await _resolve_provider(session)
+    provider_info = await _resolve_provider(session, user_id)
     if provider_info:
         try:
             provider, api_key, model_override = provider_info
@@ -417,6 +409,7 @@ async def _retrieve_relevant_chunks(
     question: str,
     project_id: str | None,
     *,
+    user_id: str | None,
     limit: int = 12,
 ) -> str:
     """Pull top-K semantic hits from the unified search layer.
@@ -426,13 +419,14 @@ async def _retrieve_relevant_chunks(
     empty index, etc.) return an empty string so the caller falls back
     to its existing behaviour without RAG augmentation.
     """
-    if not question:
+    if not question or not project_id or not user_id:
         return ""
     try:
         from app.modules.search.service import unified_search_service
 
         response = await unified_search_service(
             query=question,
+            user_id=user_id,
             project_id=project_id,
             limit_per_collection=4,
             final_limit=limit,
@@ -460,6 +454,8 @@ async def answer_question(
     question: str,
     role: str = "estimator",
     language: str = "en",
+    *,
+    user_id: str | None = None,
 ) -> str:
     """Answer a user question about the project.
 
@@ -474,7 +470,7 @@ async def answer_question(
     Returns:
         Answer text.
     """
-    provider_info = await _resolve_provider(session)
+    provider_info = await _resolve_provider(session, user_id)
     if provider_info:
         try:
             provider, api_key, model_override = provider_info
@@ -486,7 +482,7 @@ async def answer_question(
             # genuine RAG agent - answers stay anchored in real evidence
             # instead of hallucinating from the structured project state alone.
             project_id = str(getattr(state, "project_id", "")) or None
-            rag_context = await _retrieve_relevant_chunks(question, project_id)
+            rag_context = await _retrieve_relevant_chunks(question, project_id, user_id=user_id)
             prompt_parts = [f"Project context:\n{context}"]
             if rag_context:
                 prompt_parts.append(rag_context)

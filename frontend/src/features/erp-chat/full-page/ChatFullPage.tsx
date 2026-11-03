@@ -50,6 +50,7 @@ export default function ChatFullPage() {
     dataPanelEntries,
     activePanelIndex,
     aiConfigured,
+    managedAi,
     sessions,
     sessionsTotal,
     sessionsLoading,
@@ -103,7 +104,7 @@ export default function ChatFullPage() {
       {/* The route header and old ChatTopBar are not the chat's persistent
           identity. Keep disclosure visible independently of setup or history. */}
       <AiDisclosure />
-      <AIConfigBanner />
+      <AIConfigBanner ready={aiConfigured} managed={managedAi} />
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <Group
@@ -125,6 +126,7 @@ export default function ChatFullPage() {
               onSend={sendMessage}
               onClear={clearChat}
               aiConfigured={aiConfigured}
+              managedAi={managedAi}
               sessions={sessions}
               sessionsTotal={sessionsTotal}
               sessionsLoading={sessionsLoading}

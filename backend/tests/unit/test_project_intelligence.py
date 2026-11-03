@@ -401,3 +401,32 @@ async def test_collect_project_state_does_not_let_a_cancelled_collector_reach_th
 
     assert state.boq == collector.BOQState()
     assert not isinstance(state.boq, BaseException)
+
+
+@pytest.mark.asyncio
+async def test_advisor_scopes_settings_and_retrieval_to_the_actor():
+    from app.modules.ai.repository import AISettingsRepository
+    from app.modules.project_intelligence import advisor
+
+    user_id = uuid.uuid4()
+    project_id = str(uuid.uuid4())
+    settings = object()
+    with (
+        patch.object(AISettingsRepository, "get_by_user_id", new=AsyncMock(return_value=settings)) as load,
+        patch(
+            "app.modules.ai.ai_client.resolve_provider_key_model", return_value=("openai", "test", "model")
+        ) as resolve,
+        patch(
+            "app.modules.search.service.unified_search_service", new=AsyncMock(return_value=SimpleNamespace(hits=[]))
+        ) as search,
+    ):
+        assert await advisor._resolve_provider(None, str(user_id)) == ("openai", "test", "model")
+        load.assert_awaited_once_with(user_id)
+        resolve.assert_called_once_with(settings)
+        await advisor._retrieve_relevant_chunks("Annex", project_id, user_id=str(user_id))
+        assert search.await_args.kwargs["user_id"] == str(user_id)
+        assert search.await_args.kwargs["project_id"] == project_id
+        assert await advisor._resolve_provider(None, None) is None
+        assert await advisor._retrieve_relevant_chunks("Annex", project_id, user_id=None) == ""
+        assert await advisor._retrieve_relevant_chunks("Annex", None, user_id=str(user_id)) == ""
+        assert search.await_count == load.await_count == 1

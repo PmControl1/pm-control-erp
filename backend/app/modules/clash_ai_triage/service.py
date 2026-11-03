@@ -59,7 +59,7 @@ from app.core.ai.pricing import (
     estimate_cost_usd as _shared_estimate_cost_usd,
 )
 from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
-from app.modules.ai.models import AISettings
+from app.modules.ai.repository import AISettingsRepository
 from app.modules.clash.models import ClashResult, ClashRun
 from app.modules.clash_ai_triage.models import ClashTriageResult
 from app.modules.clash_ai_triage.prompts import (
@@ -252,8 +252,7 @@ async def _resolve_provider_settings(
     Raises :class:`ClashTriageUnavailable` (not ValueError) so the caller
     can map cleanly to a 503.
     """
-    result = await session.execute(select(AISettings).where(AISettings.user_id == user_id))
-    settings = result.scalar_one_or_none()
+    settings = await AISettingsRepository(session).get_by_user_id(user_id)
     try:
         return resolve_provider_key_model(settings)
     except ValueError as exc:

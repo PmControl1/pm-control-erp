@@ -10,9 +10,10 @@ interface MessageThreadProps {
   messages: ChatMessage[];
   isStreaming: boolean;
   aiConfigured: boolean | null;
+  managedAi: boolean;
 }
 
-export default function MessageThread({ messages, isStreaming, aiConfigured }: MessageThreadProps) {
+export default function MessageThread({ messages, isStreaming, aiConfigured, managedAi }: MessageThreadProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -24,7 +25,7 @@ export default function MessageThread({ messages, isStreaming, aiConfigured }: M
 
   if (messages.length === 0) {
     // Show onboarding card when AI is not configured
-    if (aiConfigured === false) {
+    if (aiConfigured === false && !managedAi) {
       return (
         <div
           ref={scrollRef}

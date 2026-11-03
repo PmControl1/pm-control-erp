@@ -273,6 +273,7 @@ async def get_recommendations(
 
     text = await generate_recommendations(
         session=session,
+        user_id=user_id,
         state=state,
         score=score,
         role=body.role,
@@ -302,6 +303,7 @@ async def chat(
 
     text = await ai_answer_question(
         session=session,
+        user_id=user_id,
         state=state,
         score=score,
         question=body.question,
@@ -345,6 +347,7 @@ async def explain_gap(
 
     text = await ai_explain_gap(
         session=session,
+        user_id=user_id,
         gap=target_gap,
         state=state,
         language=body.language,

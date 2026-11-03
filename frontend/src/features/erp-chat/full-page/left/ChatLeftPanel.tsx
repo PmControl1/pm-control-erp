@@ -12,6 +12,7 @@ interface ChatLeftPanelProps {
   onSend: (text: string) => void;
   onClear: () => void;
   aiConfigured: boolean | null;
+  managedAi: boolean;
   sessions: ChatSession[];
   sessionsTotal: number;
   sessionsLoading: boolean;
@@ -28,6 +29,7 @@ export default function ChatLeftPanel({
   onSend,
   onClear,
   aiConfigured,
+  managedAi,
   sessions,
   sessionsTotal,
   sessionsLoading,
@@ -56,7 +58,7 @@ export default function ChatLeftPanel({
         onDelete={onDeleteSession}
         onNew={onClear}
       />
-      <MessageThread messages={messages} isStreaming={isStreaming} aiConfigured={aiConfigured} />
+      <MessageThread messages={messages} isStreaming={isStreaming} aiConfigured={aiConfigured} managedAi={managedAi} />
       <InputBar
         onSend={onSend}
         onClear={onClear}

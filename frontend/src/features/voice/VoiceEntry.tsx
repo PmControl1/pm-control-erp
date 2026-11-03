@@ -11,6 +11,7 @@
 // AI suggests, a human confirms: the draft is always reviewable and editable,
 // and the feature stays usable with no AI keys (raw transcript / typed note).
 
+import { useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, Loader2, Mic, RotateCcw, Sparkles, Square, Upload, Wand2 } from 'lucide-react';
@@ -69,6 +70,7 @@ export function VoiceEntry({
 }: VoiceEntryProps) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const { data: aiSettings } = useWorkspaceAiSettings(open);
   const [typed, setTyped] = useState('');
   const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -304,7 +306,9 @@ export function VoiceEntry({
           })}
         </p>
         <p className="text-xs text-content-tertiary">
-          {t('voice.transcription_goes_to_openai', {
+          {!aiSettings || aiSettings.managed_ai ? t('company_ai.audio_disclosure', {
+              defaultValue: 'Speech is transcribed by OpenAI when an OpenAI connection is available.',
+            }) : t('voice.transcription_goes_to_openai', {
             defaultValue: 'Speech is transcribed by OpenAI with your OpenAI key, whatever AI provider you selected in Settings.',
           })}
         </p>

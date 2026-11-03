@@ -345,6 +345,7 @@ class ImageSourceAdapter:
         # the AI module entirely doesn't break match-elements imports.
         try:
             from app.modules.ai.ai_client import call_ai, resolve_provider_and_key
+            from app.modules.ai.internal_pilot import internal_pilot_enabled, managed_ai_requested
             from app.modules.ai.repository import AISettingsRepository
         except ImportError as exc:
             logger.warning("ImageAdapter: AI module not available: %s", exc)
@@ -360,12 +361,14 @@ class ImageSourceAdapter:
         if self.session is not None:
             try:
                 repo = AISettingsRepository(self.session)
-                # Prefer the session creator's settings if available.
-                creator_id = getattr(self.match_session, "created_by", None)
-                settings_row = None
-                if creator_id is not None:
-                    settings_row = await repo.get_by_user_id(creator_id)
-                if settings_row is None:
+                company_mode = managed_ai_requested() or internal_pilot_enabled()
+                actor = (
+                    self.session.info.get("match_request_user_id")
+                    if company_mode
+                    else getattr(self.match_session, "created_by", None)
+                )
+                settings_row = await repo.get_by_user_id(actor) if actor is not None else None
+                if settings_row is None and not company_mode:
                     # Fallback: any settings row with a usable key.
                     from sqlalchemy import select
 

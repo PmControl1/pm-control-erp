@@ -358,3 +358,24 @@ async def test_extract_protocol_empty_transcript_returns_none():
     """Degrade path: nothing to extract from an empty transcript, no provider call."""
     assert await transcription.extract_protocol("", None, None) is None
     assert await transcription.extract_protocol("   ", None, None) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider,expected", [("openai", "company-test"), ("deepseek", None), (None, None)])
+async def test_managed_transcription_never_uses_personal_or_global_key(monkeypatch, provider, expected):
+    import uuid
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, Mock
+
+    from app.modules.ai import ai_client, internal_pilot
+    from app.modules.ai.repository import AISettingsRepository
+
+    monkeypatch.setattr(internal_pilot, "managed_ai_requested", lambda: True)
+    monkeypatch.setattr("app.config.get_settings", lambda: SimpleNamespace(openai_api_key="global-test"))
+    row = SimpleNamespace(openai_api_key="personal-test")
+    monkeypatch.setattr(AISettingsRepository, "get_by_user_id", AsyncMock(return_value=row))
+    resolve = Mock(return_value=(provider, "company-test", "model")) if provider else Mock(side_effect=ValueError())
+    monkeypatch.setattr(ai_client, "resolve_provider_key_model", resolve)
+    assert await transcription.resolve_openai_key(object(), str(uuid.uuid4())) == expected
+    resolve.assert_called_once_with(row)
+    assert await transcription.resolve_openai_key(None, None) is None

@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -48,6 +49,7 @@ export interface UseChatFullPageReturn {
   suggestions: string[];
   dataPanelEntries: DataPanelEntry[];
   activePanelIndex: number;
+  managedAi: boolean;
   aiConfigured: boolean | null; // null = still loading
   sessions: ChatSession[];
   /** How many sessions the caller has, as the server counts them. The route
@@ -124,6 +126,7 @@ export function useChatFullPage(): UseChatFullPageReturn {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [dataPanelEntries, setDataPanelEntries] = useState<DataPanelEntry[]>([]);
   const [activePanelIndex, setActivePanelIndex] = useState(-1);
+  const [managedAi, setManagedAi] = useState(false);
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [sessionsTotal, setSessionsTotal] = useState(0);
@@ -150,6 +153,7 @@ export function useChatFullPage(): UseChatFullPageReturn {
         // shared local-aware helper for older payloads without the flag.
         const ready =
           typeof settings.ai_ready === 'boolean' ? settings.ai_ready : hasLlmKey(settings);
+        setManagedAi(Boolean(settings.managed_ai));
         setAiConfigured(ready);
       })
       .catch(() => {
@@ -275,7 +279,7 @@ export function useChatFullPage(): UseChatFullPageReturn {
         const onboardingMsg: ChatMessage = {
           id: uid(),
           role: 'assistant',
-          content:
+          content: managedAi ? companyAiStatusText(t, false) :
             '**AI assistant is not configured yet**\n\n' +
             'Connect your AI provider (Anthropic, OpenAI, Google, or another supported provider) in **Settings** to enable the chat assistant.\n\n' +
             'Go to [Settings](/settings) to add your API key.',
@@ -580,7 +584,7 @@ export function useChatFullPage(): UseChatFullPageReturn {
         }
       })();
     },
-    [isStreaming, sessionId, activeProjectId, aiConfigured, refreshSessions, i18n],
+    [isStreaming, sessionId, activeProjectId, aiConfigured, managedAi, refreshSessions, i18n, t],
   );
 
   const clearChat = useCallback(() => {
@@ -603,6 +607,7 @@ export function useChatFullPage(): UseChatFullPageReturn {
     dataPanelEntries,
     activePanelIndex,
     aiConfigured,
+    managedAi,
     sessions,
     sessionsTotal,
     sessionsLoading,

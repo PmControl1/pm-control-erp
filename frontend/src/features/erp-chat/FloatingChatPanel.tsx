@@ -32,6 +32,7 @@
  * stomping on each other.
  */
 
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import {
   useCallback,
   useEffect,
@@ -910,11 +911,13 @@ function NoAIBanner({
 
 // ── Friendly error card (replaces inline error plain-text) ─────────────────
 function ErrorCard({
+  managedAi,
   message,
   i18nKey,
   onConfigure,
   onRetry,
 }: {
+  managedAi: boolean;
   message: string;
   /** When set, render the localized message for this key (non-retryable —
    *  used for permission-denied errors that would just fail on retry). */
@@ -934,6 +937,8 @@ function ErrorCard({
           'This action requires manager-or-higher permission on this project. '
           + 'Ask a project manager or admin to perform it for you.',
       })
+    : apiKey && managedAi
+    ? companyAiStatusText(t, false)
     : apiKey
     ? t('chat.panel.error_card.api_key', {
         defaultValue:
@@ -996,7 +1001,7 @@ function ErrorCard({
           flexWrap: 'wrap',
         }}
       >
-        {managerRequired ? null : apiKey ? (
+        {managerRequired || (apiKey && managedAi) ? null : apiKey ? (
           <button
             type="button"
             onClick={onConfigure}
@@ -1502,6 +1507,7 @@ export function FloatingChatPanel() {
     { status: 'idle' } | { status: 'loading' | 'error'; sessionId: string; title: string }
   >({ status: 'idle' });
   const [isStreaming, setIsStreaming] = useState(false);
+  const [managedAi, setManagedAi] = useState(false);
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
   const [value, setValue] = useState('');
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -1771,6 +1777,7 @@ export function FloatingChatPanel() {
         // shared local-aware helper for older payloads without the flag.
         const ready =
           typeof settings.ai_ready === 'boolean' ? settings.ai_ready : hasLlmKey(settings);
+        setManagedAi(Boolean(settings.managed_ai));
         setAiConfigured(ready);
       })
       .catch(() => {
@@ -1817,7 +1824,7 @@ export function FloatingChatPanel() {
           role: 'assistant',
           content: '',
           ts: new Date(),
-          errorText: t('chat.panel.error_card.api_key', {
+          errorText: managedAi ? companyAiStatusText(t, false) : t('chat.panel.error_card.api_key', {
             defaultValue:
               'AI provider needs a key - configure it in Settings to keep chatting.',
           }),
@@ -2102,6 +2109,7 @@ export function FloatingChatPanel() {
       activeProjectId,
       location.pathname,
       aiConfigured,
+      managedAi,
       bumpUnread,
       setActiveSession,
       refreshAiConfigured,
@@ -2487,6 +2495,7 @@ export function FloatingChatPanel() {
                     <MessageRow
                       key={msg.id}
                       msg={msg}
+                      managedAi={managedAi}
                       onConfigureAI={handleConfigureAI}
                       onRetry={handleRetryFromError}
                     />
@@ -2518,7 +2527,8 @@ export function FloatingChatPanel() {
           {/* Proactive "no AI configured" onboarding banner — visible above the
               input until the user either configures a key (event-driven re-fetch
               clears it) or hits Skip for this browser session. */}
-          {aiConfigured === false && !onboardingBannerDismissed && (
+          {aiConfigured === false && managedAi && <p role="status" className="px-3 py-2 text-sm text-content-secondary">{companyAiStatusText(t, false)}</p>}
+          {aiConfigured === false && !managedAi && !onboardingBannerDismissed && (
             <NoAIBanner
               onConfigure={handleConfigureAI}
               onSkip={dismissOnboardingBanner}
@@ -2677,10 +2687,12 @@ export function FloatingChatPanel() {
 
 // ── Individual message row ─────────────────────────────────────────────────
 function MessageRow({
+  managedAi,
   msg,
   onConfigureAI,
   onRetry,
 }: {
+  managedAi: boolean;
   msg: ChatMessage;
   onConfigureAI: () => void;
   onRetry: (msgId: string, prompt: string) => void;
@@ -2764,6 +2776,7 @@ function MessageRow({
       )}
       {msg.errorText && (
         <ErrorCard
+          managedAi={managedAi}
           message={msg.errorText}
           i18nKey={msg.errorI18nKey}
           onConfigure={onConfigureAI}

@@ -40,12 +40,9 @@ async def _load_ai_settings(db: AsyncSession, user_id: str | None) -> Any:
     if not user_id:
         return None
     try:
-        from sqlalchemy import select
+        from app.modules.ai.repository import AISettingsRepository
 
-        from app.modules.ai.models import AISettings
-
-        stmt = select(AISettings).where(AISettings.user_id == uuid.UUID(user_id))
-        return (await db.execute(stmt)).scalar_one_or_none()
+        return await AISettingsRepository(db).get_by_user_id(uuid.UUID(user_id))
     except Exception as exc:  # pragma: no cover - AI module optional
         logger.debug("ai_settings load skipped: %s", exc)
         return None

@@ -461,6 +461,34 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
     as "configured" would make the Settings UI show "Key configured" while
     every chat/estimate call fails with a decrypt error.
     """
+    from app.modules.ai.internal_pilot import CompanyAccess, managed_ai_requested
+
+    if managed_ai_requested():
+        from app.modules.ai.ai_client import default_model_for
+        from app.modules.ai.company_config import company_status
+        from app.modules.ai.schemas import ManagedAIStatus
+
+        status = company_status()
+        access = getattr(settings, "_company_access", None)
+        granted = isinstance(access, CompanyAccess) and access.granted
+        return AISettingsResponse(
+            id=settings.id,
+            user_id=settings.user_id,
+            preferred_model=status.model,
+            default_models={p: default_model_for(p) for p in ("openai", "deepseek")},
+            created_at=settings.created_at,
+            updated_at=settings.updated_at,
+            ai_ready=granted and status.key_set,
+            internal_shared_ai_available=granted and status.key_set,
+            managed_ai=ManagedAIStatus(
+                is_owner=isinstance(access, CompanyAccess) and access.is_owner,
+                has_access=granted,
+                configured=status.key_set,
+                provider=status.provider,
+                model=status.model,
+            ),
+        )
+
     from app.core.crypto import decrypt_secret
     from app.modules.ai.ai_client import (
         AI_TIMEOUT,
@@ -810,6 +838,10 @@ class AIService:
         settings = await self.settings_repo.get_by_user_id(uid)
 
         if settings is None:
+            from app.modules.ai.internal_pilot import managed_ai_requested
+
+            if managed_ai_requested():
+                raise HTTPException(status_code=403, detail="An active company account is required.")
             # Create default settings for the user
             settings = AISettings(
                 user_id=uid,
@@ -832,6 +864,10 @@ class AIService:
         Returns:
             Updated AISettingsResponse.
         """
+        from app.modules.ai.internal_pilot import managed_ai_requested
+
+        if managed_ai_requested():
+            raise HTTPException(status_code=403, detail="The company owner manages AI settings.")
         uid = uuid.UUID(user_id)
         settings = await self.settings_repo.get_by_user_id(uid)
 

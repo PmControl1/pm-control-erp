@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { companyAiStatusText, useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -577,13 +578,8 @@ function OnboardingSteps({
   const hasVectors = Boolean(vectorCount && vectorCount > 0);
   const hasQuantities = Boolean(boqs && boqs.some((b) => b.hasPricedPositions));
 
-  const aiConfigured = (() => {
-    try {
-      return Boolean(localStorage.getItem('oe_ai_provider'));
-    } catch {
-      return false;
-    }
-  })();
+  const { data: aiSettings } = useWorkspaceAiSettings();
+  const aiConfigured = aiSettings?.ai_ready === true;
 
   const completedCount = [
     hasDatabase,
@@ -628,12 +624,12 @@ function OnboardingSteps({
       icon: <Cpu size={22} strokeWidth={1.5} />,
       titleKey: 'dashboard.step_connect_ai',
       titleDefault: 'Connect AI',
-      descKey: 'dashboard.step_connect_ai_desc',
-      descDefault: 'Add your API keys for AI-powered estimation',
-      buttonKey: 'dashboard.add_api_keys',
-      buttonDefault: 'Add API Keys',
+      descKey: aiSettings?.managed_ai ? (aiConfigured ? 'company_ai.member_ready' : 'company_ai.member_unavailable') : 'dashboard.step_connect_ai_desc',
+      descDefault: aiSettings?.managed_ai ? companyAiStatusText(t, aiConfigured) : 'Add your API keys for AI-powered estimation',
+      buttonKey: aiSettings?.managed_ai ? 'nav.settings' : 'dashboard.add_api_keys',
+      buttonDefault: aiSettings?.managed_ai ? 'Settings' : 'Add API Keys',
       done: aiConfigured,
-      disabled: false,
+      disabled: !!aiSettings?.managed_ai && !aiSettings.managed_ai.is_owner,
       onClick: () => navigate('/settings'),
     },
     {
@@ -3417,12 +3413,7 @@ function SystemStatus() {
     retry: false,
   });
 
-  // Check user AI keys from localStorage
-  const hasUserAiKey = typeof window !== 'undefined' && (
-    !!localStorage.getItem('oe_ai_provider') ||
-    !!localStorage.getItem('oe_openai_key') ||
-    !!localStorage.getItem('oe_anthropic_key')
-  );
+  const { data: aiSettings } = useWorkspaceAiSettings();
 
   const apiStatus = status?.api?.status ?? 'offline';
   const dbStatus = status?.database?.status ?? 'offline';
@@ -3442,7 +3433,7 @@ function SystemStatus() {
         })
       : '';
   const vectorDetail = vectorEngine && vectorHeld ? `${vectorEngine} · ${vectorHeld}` : vectorEngine || vectorHeld;
-  const aiConfigured = status?.ai?.configured || hasUserAiKey;
+  const aiConfigured = aiSettings?.ai_ready ?? status?.ai?.configured;
 
   const services = [
     {
@@ -3470,8 +3461,8 @@ function SystemStatus() {
       name: t('dashboard.ai_providers', { defaultValue: 'AI Providers' }),
       status: aiConfigured ? 'connected' : 'offline',
       detail:
-        fmtList(status?.ai?.providers?.map((p) => p.name) ?? []) ||
-        (hasUserAiKey
+        (aiSettings?.managed_ai ? aiSettings.managed_ai.provider : fmtList(status?.ai?.providers?.map((p) => p.name) ?? [])) ||
+        (aiSettings?.ai_ready
           ? t('dashboard.status_user_keys', { defaultValue: 'User keys' })
           : t('dashboard.not_configured', { defaultValue: 'Not configured' })),
       icon: <ShieldCheck size={13} />,

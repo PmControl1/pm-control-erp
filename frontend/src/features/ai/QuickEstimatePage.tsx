@@ -2,6 +2,7 @@
 // CWICR AI Estimation Engine
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 // DDC-CWICR-OE-2026
+import { companyAiStatusText, useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import React, { useState, useCallback, useRef, useEffect, useId, useMemo, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -1678,18 +1679,12 @@ export function QuickEstimatePage() {
   const [cadExporting, setCadExporting] = useState(false);
 
   // Check if AI is configured
-  const { data: aiSettings } = useQuery({
-    queryKey: ['ai-settings'],
-    queryFn: aiApi.getSettings,
-    retry: false,
-    staleTime: 5 * 60_000,
-  });
+  const { data: aiSettings } = useWorkspaceAiSettings();
 
   // AI is ready when a usable cloud key is set OR a local runtime (Ollama /
   // vLLM) is configured via its base_url. Prefer the backend's authoritative
   // flag; fall back to the shared local-aware helper for older payloads.
-  const isConfigured =
-    typeof aiSettings?.ai_ready === 'boolean' ? aiSettings.ai_ready : hasLlmKey(aiSettings);
+  const isConfigured = hasLlmKey(aiSettings);
 
   // ── Converter status (for CAD tab) ────────────────────────────────────
   interface ConverterFull {
@@ -2693,7 +2688,11 @@ export function QuickEstimatePage() {
       {!isCadRoute && <AIDisclaimerBanner />}
 
       {/* AI Status Banner */}
-      {aiSettings && !isConfigured ? (
+      {aiSettings?.managed_ai && !isConfigured ? (
+        <p role="status" className="rounded-xl border border-border-light p-3 text-sm text-content-secondary">
+          {companyAiStatusText(t, false)}
+        </p>
+      ) : aiSettings && !isConfigured ? (
         isCadRoute ? (
           /* ── CAD route: compact AI info (AI is optional here) ─── */
           <div

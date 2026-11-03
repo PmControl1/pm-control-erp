@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { companyAiStatusText, useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useState, useCallback, useRef, useMemo, useEffect, useId, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
@@ -46,7 +47,6 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
 import { takeoffApi, type TakeoffDocumentResponse } from './api';
 import { canonicalizeUnit } from './lib/units';
-import { aiApi } from '@/features/ai/api';
 import { hasLlmKey } from '@/features/ai-estimator/useAiReadiness';
 import { compareNames } from '@/shared/lib/collator';
 
@@ -400,6 +400,7 @@ function DocumentCard({
   onView,
   boqSelected,
   aiConnected,
+  managed,
 }: {
   doc: UploadedDocument;
   onAnalyze: (id: string) => void;
@@ -412,6 +413,7 @@ function DocumentCard({
   onView: (docId: string) => void;
   boqSelected: boolean;
   aiConnected: boolean;
+  managed: boolean;
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
@@ -535,7 +537,7 @@ function DocumentCard({
       {/* AI-not-connected hint — the Analyze / Extract Tables buttons call an
           LLM provider, so guide the user to settings when none is connected.
           Suppressed once an analysis already exists. */}
-      {!aiConnected && !doc.analysis && !hasError && (
+      {!aiConnected && !managed && !doc.analysis && !hasError && (
         <p className="mt-2.5 flex flex-wrap items-center gap-1 text-xs text-content-tertiary">
           <BrainCircuit size={13} className="shrink-0 text-oe-blue" />
           {t('takeoff.ai_not_connected_hint', {
@@ -1097,11 +1099,11 @@ type TakeoffTab = 'documents' | 'measurements';
  * is never blocked. The numbered steps stay visible either way so a new user
  * always sees how the feature works.
  */
-function AiTakeoffNotice({ connected }: { connected: boolean }) {
+function AiTakeoffNotice({ connected, managed }: { connected: boolean; managed: boolean }) {
   const { t } = useTranslation();
 
   const steps = [
-    t('takeoff.ai_setup.step_connect', {
+    managed ? companyAiStatusText(t, connected) : t('takeoff.ai_setup.step_connect', {
       defaultValue: 'Connect an AI provider in settings (use any supported provider and your own API key).',
     }),
     t('takeoff.ai_setup.step_upload', {
@@ -1137,7 +1139,7 @@ function AiTakeoffNotice({ connected }: { connected: boolean }) {
           <h3 className="text-sm font-semibold text-content-primary">
             {connected
               ? t('takeoff.ai_setup.ready_title', { defaultValue: 'AI provider connected' })
-              : t('takeoff.ai_setup.title', { defaultValue: 'Connect an AI provider to use AI takeoff' })}
+              : managed ? t('company_ai.title', { defaultValue: 'Company AI' }) : t('takeoff.ai_setup.title', { defaultValue: 'Connect an AI provider to use AI takeoff' })}
           </h3>
           <p className="mt-0.5 text-xs text-content-tertiary">
             {connected
@@ -1170,7 +1172,7 @@ function AiTakeoffNotice({ connected }: { connected: boolean }) {
             ))}
           </ol>
 
-          {!connected && (
+          {!connected && !managed && (
             <Link
               to="/settings?tab=ai"
               data-testid="takeoff-connect-ai"
@@ -1265,12 +1267,7 @@ export function TakeoffPage() {
    * the Documents & AI tab tells the user up front whether one is connected
    * and links to the AI settings tab when it is not. Errors degrade to
    * "not connected" so the guidance shows instead of an error. */
-  const aiSettingsQuery = useQuery({
-    queryKey: ['ai-settings'],
-    queryFn: aiApi.getSettings,
-    staleTime: 60_000,
-    retry: false,
-  });
+  const aiSettingsQuery = useWorkspaceAiSettings();
   const aiConnected = hasLlmKey(aiSettingsQuery.data);
 
   /* ── Handle ?doc= / ?name= deep link from Documents / BOQ link icon ─ */
@@ -2302,7 +2299,7 @@ export function TakeoffPage() {
               provider connected and links to AI settings. Hidden while the
               settings query is still loading so it doesn't flash the
               "connect" prompt for users who already have a key. */}
-          {!aiSettingsQuery.isLoading && <AiTakeoffNotice connected={aiConnected} />}
+          {!aiSettingsQuery.isLoading && <AiTakeoffNotice connected={aiConnected} managed={Boolean(aiSettingsQuery.data?.managed_ai)} />}
 
           {/* Workflow steps */}
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -2447,6 +2444,7 @@ export function TakeoffPage() {
                     onView={handleOpenDocInViewer}
                     boqSelected={hasBoqSelected}
                     aiConnected={aiConnected}
+                    managed={Boolean(aiSettingsQuery.data?.managed_ai)}
                   />
                 ))}
               </div>

@@ -8,12 +8,13 @@
 // or empty vector DB never reads as a failure. Rates are still grounded
 // in the cost database in every mode; the AI never invents a number.
 
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Info, ArrowRight } from 'lucide-react';
 import type { DegradedReason } from '../api';
 
-export function DegradedBanner({ reason }: { reason: DegradedReason | null | undefined }) {
+export function DegradedBanner({ reason, managed }: { managed?: boolean; reason: DegradedReason | null | undefined }) {
   const { t } = useTranslation();
   if (!reason) return null;
 
@@ -22,6 +23,10 @@ export function DegradedBanner({ reason }: { reason: DegradedReason | null | und
 
   switch (reason) {
     case 'no_ai_key':
+      if (managed) {
+        body = companyAiStatusText(t, false);
+        break;
+      }
       body = t('aiest.degraded.no_ai_key', {
         defaultValue:
           'AI not connected - running in deterministic mode. The agent reads, groups and matches using rule-based extraction and keyword search. Connect a provider to add AI reasoning at every stage.',

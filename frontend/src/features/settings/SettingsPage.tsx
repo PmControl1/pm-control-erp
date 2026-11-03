@@ -11,6 +11,8 @@ import { RegionalSettings } from './RegionalSettings';
 import { EInvoiceSettings } from './EInvoiceSettings';
 import { ModulesSettings } from './ModulesSettings';
 import { SettingsTeamPanel } from './SettingsTeamPanel';
+import { CompanyAISettings } from './CompanyAISettings';
+import { useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { CompanyDocumentsSettings } from './CompanyDocumentsSettings';
 import { WebhookLeads } from './WebhookLeads';
 import { DesktopServerCard } from './DesktopServerCard';
@@ -360,6 +362,33 @@ function useFormatTimeAgo() {
 
 export function AIConfigurationCard() {
   const { t } = useTranslation();
+  const userId = useAuthStore((state) => state.userId);
+  const query = useWorkspaceAiSettings();
+
+  if (query.isError) return (
+    <Card className="lg:col-span-2">
+      <p role="alert">{t('company_ai.load_error', { defaultValue: 'Could not load the AI settings.' })}</p>
+      <Button variant="secondary" onClick={() => void query.refetch()}>{t('common.retry', { defaultValue: 'Retry' })}</Button>
+    </Card>
+  );
+  if (!query.data) return <Skeleton className="lg:col-span-2" height={80} />;
+  if (query.data.managed_ai) {
+    return <CompanyAISettings key={userId} managed={query.data.managed_ai} userId={userId} defaults={query.data.default_models} />;
+  }
+  return (
+    <>
+      <div className="lg:col-span-2">
+        <InfoHint
+          text={t('settings.ai_guidance_provider', { defaultValue: 'AI features (estimation, takeoff analysis, semantic search) need an AI provider. Keys are stored encrypted on your server, and the text of each AI request goes to the provider you choose. Choose a local model to keep that text on your own network.' })}
+        />
+      </div>
+      <PersonalAIConfigurationCard settings={query.data} />
+    </>
+  );
+}
+
+function PersonalAIConfigurationCard({ settings }: { settings: AISettings }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -381,13 +410,6 @@ export function AIConfigurationCard() {
   // Per-provider timeout in seconds as typed; '' means the default.
   const [timeoutInput, setTimeoutInput] = useState('');
   const [timeoutTouched, setTimeoutTouched] = useState(false);
-
-  // Fetch current settings
-  const { data: settings } = useQuery({
-    queryKey: ['ai-settings'],
-    queryFn: aiApi.getSettings,
-    retry: false,
-  });
 
   // Sync provider selection from preferred_model when settings are loaded
   useEffect(() => {
@@ -2126,11 +2148,6 @@ export function SettingsPage() {
           {/* ── AI ────────────────────────────────────────────────── */}
           {activeTab === 'ai' && (
             <>
-              <div className="lg:col-span-2">
-                <InfoHint
-                  text={t('settings.ai_guidance_provider', { defaultValue: 'AI features (estimation, takeoff analysis, semantic search) need an AI provider. Keys are stored encrypted on your server, and the text of each AI request goes to the provider you choose. Choose a local model to keep that text on your own network.' })}
-                />
-              </div>
               <AIConfigurationCard />
               <div className="lg:col-span-2">
                 <VectorStatusCard />

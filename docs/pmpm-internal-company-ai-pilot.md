@@ -1,87 +1,76 @@
-# PM Project Management — internal shared AI pilot
+# Company AI on an internal PM installation
 
-**Scope: single-company installation, synthetic data only. NOT a multi-tenant
-SaaS launch and NOT suitable for external customer accounts.**
+The owner selects the provider, model and key once in **Settings → AI → Company AI**.
+Approved employees use the existing AI tools with that configuration. The grant
+allows the employee to use the company provider wherever their existing ERP
+permissions allow. It does not grant access to projects, folders or documents.
+This pilot is for one company on a closed installation. Use synthetic inputs
+for the DeepSeek pilot.
 
-## What works in this first slice
+## Enable owner management
 
-- One server-managed DeepSeek API credential, available to individually
-  approved internal user accounts only; users cannot view/download the key.
-- Explicit administrator grant/revoke in **User Management**. A Viewer may not
-  be granted, because the existing `ai.use` permission starts at Editor.
-- Existing per-user API keys continue to work. Shared credentials are only
-  used if the user has no usable personal key.
-- Fail-closed when the internal mode is disabled, registration is not `closed`,
-  demo seeding is enabled, a user has no grant or the credential is missing.
-- Regular global environment-based provider fallbacks are blocked while this
-  internal pilot mode is enabled, so they cannot bypass the grant list.
-- DeepSeek's model identifier defaults to the current `deepseek-flash`.
+Use an ERP image built from this branch or a release containing these changes.
+From the existing installation's `deploy/pmpm` directory, find your own
+administrator account UUID. This read-only command lists active administrators.
 
-## Configure the isolated local Docker deployment
+```powershell
+docker compose exec postgres psql -U oe -d openestimate -c "SELECT id, email FROM oe_users_user WHERE role = 'admin' AND is_active ORDER BY email"
+```
 
-In `deploy/pmpm/.env` on the trusted host, set:
+In the host's private `deploy/pmpm/.env`, set these values, replacing the UUID
+placeholder with your account ID. Keep the provider key for entry in the UI.
 
 ```dotenv
 PMPM_INTERNAL_AI_PILOT=true
-PMPM_INTERNAL_DEEPSEEK_API_KEY=PUT_YOUR_DEEPSEEK_KEY_HERE
+PMPM_AI_OWNER_USER_ID=<your-administrator-account-uuid>
 PMPM_REGISTRATION_MODE=closed
 ```
 
-**Do not commit this file, paste its contents into chat, or share the output of
-`docker compose config`**: Docker Compose interpolates the plaintext key.
-The production compose sets `SEED_DEMO=false` and passes the two pilot values
-to the backend process. Limit access to the host and its backups.
-
-Apply without deleting database volumes:
+The PM compose file already sets `SEED_DEMO=false`. Recreate the application
+container to load the owner setting with the intended image.
 
 ```powershell
-cd $HOME\pm-control-erp\deploy\pmpm
-git pull origin main
-docker compose pull app
 docker compose up -d --no-deps --force-recreate app
-docker compose ps
 ```
 
-The company-admin logs into the ERP, opens **User Management**, and finds
-**Shared company AI — internal test**. Enable individual active Editor/Manager
-accounts. The key is not inserted in the employee's per-user settings row.
-When revoked, the shared credential is no longer resolved on new AI requests.
+1. Sign in as the designated owner. Open **Settings → AI → Company AI**.
+2. Select **OpenAI** or **DeepSeek**, enter a model ID available to your provider
+   account and the corresponding API key, save, then test the saved connection.
+   Leave the key blank to keep it when editing the model. Switching providers
+   requires its own key.
+3. Under **Team access**, find a team by project and team name. Grant access
+   to its current eligible members. New and re-added members are pending until
+   the owner approves the current roster again. Removing a member or revoking a
+   team ends access through that team on the next request. Another approved team
+   may still grant that employee access. Viewer and inactive accounts are ineligible.
+4. Sign in as an approved employee and try an existing AI feature using a sample
+   project. Repeat with an unapproved account, then revoke the first team's
+   access and try a new request. Employees never enter the company key.
 
-The account's own `ai.use` permission is still required by API routes.
-Review and test unusual AI modules separately before expanding pilot access.
+The provider must support the feature being used. For example, the existing
+audio transcription integration uses OpenAI; with DeepSeek selected the manual
+transcript path is still available.
 
-## Known limitations / commercialization blockers
+## Credentials and backups
 
-1. This installation does not yet have genuine organizations, memberships or
-   tenant-scoped authorization. All users on the instance are assumed to be
-   internal employees. **Never create external client accounts on this pilot.**
-2. Existing AI request rate limiting and some estimate token/cost records are
-   not a durable per-company metering/budget service. There are no guaranteed
-   monthly spending caps or customer invoices in this PR.
-3. AI modules beyond the primary client may use their own provider paths.
-   Verify every AI path before promising a company-wide quota or cost cap.
-4. The company key is a backend environment variable, not a separate vault,
-   and is available to anyone with Docker/host admin access. Secure backups,
-   workstation, environment and key rotation.
-5. There is no automatic classification of synthetic vs real inputs. Users must
-   follow the synthetic-only data policy for DeepSeek.
-6. The existing ERP still needs a verified migration/recovery plan, project and
-   document isolation tests, and GDPR assessment for genuine company data.
+The saved key is encrypted with the ERP's secret encryption mechanism and
+stored under `OE_DATA_DIR/.pmpm/company-ai.sqlite3` (normally
+`/data/.pmpm/company-ai.sqlite3` in the PM container). Team approvals are
+stored in the application database. Keep the app data volume, the database
+backup, and the corresponding JWT encryption secret recoverable. Keep the
+secret separate from the backups. To rotate a provider key, save and test the
+new key before retiring the old one at the provider.
 
-## Commercial design, next milestones
+## Existing local installations
 
-Before opening registration to unrelated paying customers:
+The feature is off by default. On an installation that has never saved an owner
+configuration, leaving the owner UUID empty lets the earlier DeepSeek pilot continue
+to support administrator grants per user via **User Management** and `PMPM_INTERNAL_DEEPSEEK_API_KEY`. Owner-managed mode uses its
+team approvals instead. Personal keys are not overwritten and are not used for
+managed requests. Remove the legacy environment key when moving to owner
+management if it should no longer be available. After saving an owner configuration,
+removing the owner UUID while the pilot is active locks managed access. Restore
+the binding to regain access.
 
-1. Create Organizations and Memberships (role within organization), propagate
-   `organization_id` from authenticated membership rather than trusting a
-   client-controlled header, and default-deny missing membership.
-2. Scope all projects, documents, searches, agents and AI settings to an
-   organization; add negative cross-organization IDOR, storage and search tests.
-3. Store encrypted per-organization AI credentials (with a managed platform
-   provider and optional customer BYOK), rotate them independently of JWT.
-4. Route ALL provider calls through one server-side gateway with atomic,
-   persistent per-user/organization usage reservations, reconciled actual
-   token/cost records, quotas, provider budgets and audit logs.
-5. Add subscription metering/invoicing, customer limits, consent/processor
-   controls, regional provider policy and separation of dev/synthetic from
-   prod/customer documents. Roll out behind a feature flag.
+This change supplies shared credentials within one installation. It does not
+introduce cross-company tenancy, subscription billing or a spending cap.

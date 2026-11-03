@@ -12,6 +12,7 @@
  * Works with any LLM provider (Anthropic, OpenAI, Gemini) via user's API key.
  */
 
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -33,7 +34,8 @@ import {
 
 import { Button, ConfidenceBadge } from '@/shared/ui';
 import SimilarItemsPanel from '@/shared/ui/SimilarItemsPanel';
-import { apiGet } from '@/shared/lib/api';
+import { aiApi } from '@/features/ai/api';
+import { hasLlmKey } from '@/features/ai-estimator/useAiReadiness';
 import { useIsRTL } from '@/shared/hooks/useIsRTL';
 import { fmtWithCurrency } from './boqHelpers';
 import {
@@ -87,30 +89,21 @@ export function AISmartPanel({
 
   /* ── AI configuration check ─────────────────────────────────────── */
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
+  const [managedAi, setManagedAi] = useState(false);
   const [aiProvider, setAiProvider] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
-    apiGet<Record<string, unknown>>('/v1/ai/settings/')
-      .then((s) => {
-        // Prefer the backend's authoritative readiness flag. It already counts
-        // local runtimes (Ollama / vLLM) configured via base_url, which carry
-        // no api_key; fall back to scanning key flags + local base urls so an
-        // older payload without the flag still treats local setups as ready.
-        const hasCloudKey =
-          !!s.anthropic_api_key_set || !!s.openai_api_key_set || !!s.gemini_api_key_set ||
-          !!s.openrouter_api_key_set || !!s.mistral_api_key_set || !!s.groq_api_key_set ||
-          !!s.deepseek_api_key_set || !!s.together_api_key_set || !!s.fireworks_api_key_set ||
-          !!s.perplexity_api_key_set || !!s.cohere_api_key_set || !!s.ai21_api_key_set ||
-          !!s.xai_api_key_set || !!s.zhipu_api_key_set || !!s.baidu_api_key_set ||
-          !!s.yandex_api_key_set || !!s.gigachat_api_key_set || !!s.kimi_api_key_set;
-        const hasLocal = !!s.ollama_base_url || !!s.vllm_base_url;
-        const ready =
-          typeof s.ai_ready === 'boolean' ? s.ai_ready : hasCloudKey || hasLocal;
-        setAiConfigured(ready);
-        setAiProvider((s.provider as string) || '');
+    let active = true;
+    aiApi.getSettings()
+      .then((settings) => {
+        if (!active) return;
+        setManagedAi(Boolean(settings.managed_ai));
+        setAiConfigured(hasLlmKey(settings));
+        setAiProvider(settings.managed_ai?.provider || settings.provider || '');
       })
-      .catch(() => setAiConfigured(false));
+      .catch(() => { if (active) setAiConfigured(false); });
+    return () => { active = false; };
   }, [isOpen]);
 
   /* ── Loading states ──────────────────────────────────────────────── */
@@ -340,15 +333,15 @@ export function AISmartPanel({
                 {t('boq.ai_not_configured', { defaultValue: 'AI not configured' })}
               </p>
               <p className="text-[11px] text-amber-700 dark:text-amber-400/80 mt-0.5">
-                {t('boq.ai_not_configured_desc', { defaultValue: 'Add your API key in Settings to use AI Smart Actions.' })}
+                {managedAi ? companyAiStatusText(t, false) : t('boq.ai_not_configured_desc', { defaultValue: 'Add your API key in Settings to use AI Smart Actions.' })}
               </p>
-              <Link
+              {!managedAi && <Link
                 to="/settings"
                 className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline"
               >
                 <Settings size={11} />
                 {t('boq.go_to_settings', { defaultValue: 'Configure AI' })}
-              </Link>
+              </Link>}
             </div>
           </div>
         </div>

@@ -36,7 +36,18 @@ export type ToolCallingMode = 'auto' | 'on' | 'off';
 export const AI_TIMEOUT_MIN_S = 10;
 export const AI_TIMEOUT_MAX_S = 1800;
 
+export type CompanyAIProvider = 'deepseek' | 'openai';
+
+export interface ManagedAI {
+  is_owner: boolean;
+  has_access: boolean;
+  configured: boolean;
+  provider: CompanyAIProvider;
+  model: string | null;
+}
+
 export interface AISettings {
+  managed_ai?: ManagedAI | null;
   id: string;
   user_id: string;
   anthropic_api_key_set: boolean;

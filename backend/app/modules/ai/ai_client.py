@@ -20,7 +20,13 @@ from typing import Any
 
 import httpx
 
-from app.modules.ai.internal_pilot import internal_pilot_credential, internal_pilot_enabled
+from app.modules.ai.internal_pilot import (
+    CompanyAccess,
+    internal_pilot_credential,
+    internal_pilot_enabled,
+    managed_ai_enabled,
+    managed_ai_requested,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1071,6 +1077,8 @@ async def call_ai(
         ValueError: If provider is unknown.
         httpx.HTTPStatusError: On API errors.
     """
+    if managed_ai_requested() and base_url is not None:
+        raise ValueError("A company provider cannot use a custom endpoint.")
     callers = {
         "anthropic": call_anthropic,
         "openai": call_openai,
@@ -1121,7 +1129,7 @@ async def call_ai(
         msg = f"Unknown AI provider: {provider}"
         raise ValueError(msg)
 
-    return await _call_with_model_recovery(provider, _make_call, model, image_base64=image_base64)
+    return await _call_with_model_recovery(provider, _make_call, model, api_key=api_key, image_base64=image_base64)
 
 
 async def _call_with_model_recovery[T](
@@ -1129,6 +1137,7 @@ async def _call_with_model_recovery[T](
     make_call: Callable[[str | None], Callable[[], Awaitable[T]]],
     model: str | None,
     *,
+    api_key: str | None = None,
     image_base64: str | None = None,
 ) -> T:
     """Run a provider call, self-healing a rejected model id, then map errors.
@@ -1154,6 +1163,19 @@ async def _call_with_model_recovery[T](
     Raises:
         ValueError: With an actionable message for every mapped provider error.
     """
+    if managed_ai_requested():
+        from app.modules.ai.company_config import company_credential
+
+        selected = company_credential() if managed_ai_enabled() else None
+        if selected is None or (provider, api_key) != selected[:2]:
+            raise ValueError("The configured company AI provider is unavailable.")
+        try:
+            # Includes older 2-tuple callers and never retries another model.
+            return await make_call(selected[2])()
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+            # Provider error bodies may echo credentials or project input.
+            raise ValueError("Company AI request failed. Contact your workspace owner.") from None
+
     # The actual model id this call will use (override or built-in default) -
     # surfaced in "model not found" errors so the user knows exactly what to
     # change in Settings > AI.
@@ -1309,7 +1331,7 @@ async def call_ai_tools(
 
         return _call
 
-    return await _call_with_model_recovery(provider, _make_call, model)
+    return await _call_with_model_recovery(provider, _make_call, model, api_key=api_key)
 
 
 # ── JSON extraction ──────────────────────────────────────────────────────────
@@ -1450,6 +1472,18 @@ def _key_from_env_and_config(provider: str | None) -> tuple[str, str] | None:
     return None
 
 
+def _managed_provider(settings: Any) -> tuple[str, str, str]:
+    from app.modules.ai.company_config import company_credential
+
+    access = getattr(settings, "_company_access", None)
+    if not (managed_ai_enabled() and isinstance(access, CompanyAccess) and access.granted):
+        raise ValueError("Your account does not have company AI access.")
+    selected = company_credential()
+    if selected is None:
+        raise ValueError("The company AI provider has not been configured.")
+    return selected
+
+
 def resolve_provider_and_key(
     settings: Any,
     preferred_model: str | None = None,
@@ -1475,6 +1509,9 @@ def resolve_provider_and_key(
     Raises:
         ValueError: If no API key is configured.
     """
+    if managed_ai_requested():
+        provider, key, _ = _managed_provider(settings)
+        return provider, key
     meta = getattr(settings, "metadata_", None) if settings else None
     # Bind before resolving: whichever provider this resolves to, the dispatch
     # that follows in this task must use THESE settings' endpoints, and a
@@ -1647,6 +1684,8 @@ def resolve_provider_key_model(
     the dropdown actually sends Opus/Haiku. ``call_anthropic`` maps that alias
     to the current API id via :func:`resolve_anthropic_model`.
     """
+    if managed_ai_requested():
+        return _managed_provider(settings)
     provider, api_key = resolve_provider_and_key(settings, preferred_model)
     model = _model_override_for(settings, provider)
     if model is None and provider == "anthropic":

@@ -14,6 +14,7 @@ from sqlalchemy.orm.attributes import set_committed_value
 from sqlalchemy.orm.util import identity_key
 from sqlalchemy.sql.elements import ClauseElement
 
+from app.modules.ai.internal_pilot import CompanyAccess, managed_ai_enabled, managed_ai_requested
 from app.modules.ai.models import AIEstimateJob, AISettings
 
 
@@ -25,9 +26,39 @@ class AISettingsRepository:
 
     async def get_by_user_id(self, user_id: uuid.UUID) -> AISettings | None:
         """Get AI settings for a specific user."""
+        if managed_ai_requested():
+            return await self._company_settings(user_id)
         stmt = select(AISettings).where(AISettings.user_id == user_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def _company_settings(self, user_id: uuid.UUID) -> AISettings | None:
+        """Build a read-only settings view, even for accounts without personal keys."""
+        from app.modules.ai.company_config import is_company_owner
+        from app.modules.ai.team_grants import has_approved_team_membership
+        from app.modules.users.models import User
+
+        account = (
+            await self.session.execute(
+                select(User.id, User.role, User.created_at, User.updated_at).where(
+                    User.id == user_id, User.is_active.is_(True)
+                )
+            )
+        ).one_or_none()
+        if account is None:
+            return None
+        owner = is_company_owner(account.id, account.role)
+        granted = managed_ai_enabled() and (owner or await has_approved_team_membership(self.session, account.id))
+        # Never attach shared secrets, endpoints, or grants to a mapped user row.
+        settings = AISettings(
+            id=account.id,
+            user_id=account.id,
+            created_at=account.created_at,
+            updated_at=account.updated_at,
+            metadata_={},
+        )
+        settings._company_access = CompanyAccess(is_owner=owner, granted=granted)
+        return settings
 
     async def create(self, settings: AISettings) -> AISettings:
         """Insert new AI settings."""

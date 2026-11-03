@@ -185,6 +185,10 @@ async def _assert_session_access(
         raise HTTPException(status_code=404, detail="Match session not found")
     project_id = row[0]
     await verify_project_access(project_id, user_id, db)
+    # Image extraction can run several levels below this access check. Bind the
+    # requesting account on this HTTP request's database session, never the
+    # saved session creator (other project members may open the same image).
+    db.info["match_request_user_id"] = _u(user_id)
     return project_id
 
 

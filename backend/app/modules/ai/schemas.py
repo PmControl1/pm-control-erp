@@ -144,6 +144,14 @@ class AISettingsUpdate(BaseModel):
         return v
 
 
+class ManagedAIStatus(BaseModel):
+    is_owner: bool
+    has_access: bool
+    configured: bool
+    provider: str
+    model: str
+
+
 class AISettingsResponse(BaseModel):
     """AI settings returned from the API.
 
@@ -189,6 +197,7 @@ class AISettingsResponse(BaseModel):
     # key flags, so chat / estimate gating stays in sync with the backend.
     ai_ready: bool = False
     internal_shared_ai_available: bool = False
+    managed_ai: ManagedAIStatus | None = None
     preferred_model: str
     # Effective per-provider model id the platform will send (override if the
     # user set one, otherwise the built-in default). Drives the editable

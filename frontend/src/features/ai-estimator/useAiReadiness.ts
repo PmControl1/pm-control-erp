@@ -12,13 +12,15 @@
 // reports exactly which capability is missing so the UI can guide the
 // user instead of failing.
 
+import { useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useQuery } from '@tanstack/react-query';
-import { aiApi, type AISettings } from '@/features/ai/api';
+import type { AISettings } from '@/features/ai/api';
 import { aiEstimatorApi } from './api';
 
 /** True when the user has any usable LLM provider configured. */
 export function hasLlmKey(settings: AISettings | undefined): boolean {
   if (!settings) return false;
+  if (typeof settings.ai_ready === 'boolean') return settings.ai_ready;
   const keyFlags: (keyof AISettings)[] = [
     'anthropic_api_key_set',
     'openai_api_key_set',
@@ -47,6 +49,7 @@ export function hasLlmKey(settings: AISettings | undefined): boolean {
 export interface AiReadiness {
   /** LLM key present -> AI understanding / grouping / reasoning available. */
   llmReady: boolean;
+  managed?: boolean;
   /** Vector DB reachable -> grounded semantic rate retrieval available. */
   vectorReady: boolean;
   /** The preferred model id the run would use, if known. */
@@ -57,12 +60,7 @@ export interface AiReadiness {
 /** Probe both gates. Errors degrade to "not ready" rather than throwing,
  *  so the page renders its guidance card instead of an error boundary. */
 export function useAiReadiness(): AiReadiness {
-  const settingsQ = useQuery({
-    queryKey: ['ai-settings'],
-    queryFn: aiApi.getSettings,
-    staleTime: 60_000,
-    retry: false,
-  });
+  const settingsQ = useWorkspaceAiSettings();
 
   const qdrantQ = useQuery({
     queryKey: ['ai-estimator-qdrant-health'],
@@ -78,6 +76,7 @@ export function useAiReadiness(): AiReadiness {
   );
 
   return {
+    managed: Boolean(settingsQ.data?.managed_ai),
     llmReady: hasLlmKey(settingsQ.data),
     vectorReady,
     preferredModel: settingsQ.data?.preferred_model || null,

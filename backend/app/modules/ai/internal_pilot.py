@@ -1,18 +1,58 @@
 # PM Project Management internal company AI pilot.
-"""Fail-closed, opt-in shared DeepSeek credential for a SINGLE-company install.
+"""Single-company AI modes on a closed, demo-free installation.
 
-There is no Organization/Tenant membership entity in this release. Therefore
-this is not a customer-facing SaaS credential feature. Grants are per account,
-never inferred from an email domain or admin status. Only the backend sees the
-shared key. Standalone personal AI keys remain separate.
+The legacy staff pilot grants its environment-held DeepSeek key per account.
+In managed mode the owner selects the provider and approves project teams.
 """
 
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 ACCESS_FLAG = "pmpm_internal_ai_access"
+
+
+@dataclass(frozen=True)
+class CompanyAccess:
+    """Transient authorization from an active database account, never user metadata."""
+
+    is_owner: bool
+    granted: bool
+
+
+def company_store_path() -> Path:
+    from app.core.demo_seed import resolve_data_dir
+
+    return resolve_data_dir() / ".pmpm" / "company-ai.sqlite3"
+
+
+def managed_ai_requested() -> bool:
+    """Keep unsafe managed deployments locked; never fall through to personal keys."""
+    if os.environ.get("PMPM_INTERNAL_AI_PILOT", "").strip().lower() != "true":
+        return False
+    if os.environ.get("PMPM_AI_OWNER_USER_ID", "").strip():
+        return True
+    try:
+        company_store_path().stat()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+    return True
+
+
+def managed_ai_enabled() -> bool:
+    if not managed_ai_requested() or not internal_pilot_enabled():
+        return False
+    try:
+        UUID(os.environ.get("PMPM_AI_OWNER_USER_ID", "").strip())
+    except ValueError:
+        return False
+    return True
 
 
 def internal_pilot_enabled() -> bool:

@@ -754,15 +754,10 @@ async def _extract_with_ai(
         True if AI was successfully used, False otherwise.
     """
     try:
-        from sqlalchemy import select
-
         from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
-        from app.modules.ai.models import AISettings
+        from app.modules.ai.repository import AISettingsRepository
 
-        result = await session.execute(  # type: ignore[union-attr]
-            select(AISettings).where(AISettings.user_id == uuid.UUID(str(user_id)))
-        )
-        ai_settings = result.scalar_one_or_none()
+        ai_settings = await AISettingsRepository(session).get_by_user_id(uuid.UUID(str(user_id)))
 
         if not ai_settings:
             return False

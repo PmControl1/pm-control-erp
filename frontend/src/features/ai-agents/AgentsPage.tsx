@@ -1,6 +1,7 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 // AI Agents — gallery of registered agents, run them, watch the ReAct timeline.
+import { companyAiStatusText, useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -454,6 +455,8 @@ export function AgentsPage(): JSX.Element {
     if (match) setSelected(match);
   }, [run, selected, agents]);
 
+  const { data: aiSettings } = useWorkspaceAiSettings();
+  const managed = Boolean(aiSettings?.managed_ai);
   const runDisabledNoLlm = healthLoaded && !llmConfigured;
   const SelectedIcon = selected ? resolveAgentIcon(selected.icon) : Sparkles;
   const selectedPrompts = (selected?.example_prompts ?? []).filter((p) => p.trim().length > 0);
@@ -513,18 +516,18 @@ export function AgentsPage(): JSX.Element {
               {t('agents.no_llm_title', { defaultValue: 'AI provider not configured' })}
             </p>
             <p className="mt-1 text-content-secondary">
-              {t('agents.no_llm_body', {
+              {managed ? companyAiStatusText(t, false) : t('agents.no_llm_body', {
                 defaultValue:
                   'Add an API key (Anthropic, OpenAI, Gemini, OpenRouter, …) in Settings → AI to run agents. Runs started without one fail immediately.',
               })}
             </p>
-            <Link
+            {!managed && <Link
               to={healthQuery.data?.settings_url ?? '/settings?tab=ai'}
               className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-semantic-warning px-3 py-1.5 text-xs font-semibold text-content-inverse hover:opacity-90"
             >
               <SettingsIcon className="h-3.5 w-3.5" />
               {t('agents.open_ai_settings', { defaultValue: 'Open AI settings' })}
-            </Link>
+            </Link>}
           </div>
         </div>
       )}
@@ -605,7 +608,7 @@ export function AgentsPage(): JSX.Element {
                   disabled={!userInput.trim() || startMutation.isPending || runDisabledNoLlm}
                   title={
                     runDisabledNoLlm
-                      ? t('agents.run_disabled_no_llm', {
+                      ? managed ? companyAiStatusText(t, false) : t('agents.run_disabled_no_llm', {
                           defaultValue: 'Configure an AI provider in Settings → AI first.',
                         })
                       : undefined
@@ -627,7 +630,7 @@ export function AgentsPage(): JSX.Element {
               </div>
               {runDisabledNoLlm && (
                 <span id="agents-run-disabled-hint" className="sr-only">
-                  {t('agents.run_disabled_no_llm', {
+                  {managed ? companyAiStatusText(t, false) : t('agents.run_disabled_no_llm', {
                     defaultValue: 'Configure an AI provider in Settings → AI first.',
                   })}
                 </span>
@@ -650,7 +653,7 @@ export function AgentsPage(): JSX.Element {
               {t('agents.run_load_error', { defaultValue: 'Could not load this run.' })}
             </div>
           )}
-          {activeRunId && run && <RunTimeline run={run} />}
+          {activeRunId && run && <RunTimeline managed={managed} run={run} />}
 
           {/* Gallery */}
           <section className="space-y-4">

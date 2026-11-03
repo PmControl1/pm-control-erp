@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -287,12 +288,12 @@ function Markdown({ text, className }: { text: string; className?: string }): JS
 
 // ── Failure-reason humanisation (preserved verbatim) ──────────────────────────
 
-function useFailureLabel(run: AgentRun, steps: AgentStep[]): string | null {
+function useFailureLabel(run: AgentRun, steps: AgentStep[], managed: boolean): string | null {
   const { t } = useTranslation();
   if (!run.failure_reason) return null;
   switch (run.failure_reason) {
     case 'no_llm':
-      return t('agents.failure.no_llm', {
+      return managed ? companyAiStatusText(t, false) : t('agents.failure.no_llm', {
         defaultValue: 'AI provider not configured - add an API key in Settings → AI.',
       });
     case 'unknown_agent':
@@ -341,11 +342,11 @@ function useFailureLabel(run: AgentRun, steps: AgentStep[]): string | null {
 
 // ── Run timeline ───────────────────────────────────────────────────────────────
 
-export function RunTimeline({ run }: { run: AgentRun }): JSX.Element {
+export function RunTimeline({ run, managed = false }: { run: AgentRun; managed?: boolean }): JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const steps = useMemo(() => run.steps ?? [], [run.steps]);
-  const failureLabel = useFailureLabel(run, steps);
+  const failureLabel = useFailureLabel(run, steps, managed);
   const statusBadge = STATUS_BADGE[run.status];
 
   // The run can finish while the user is watching its timeline. The proposals
@@ -382,7 +383,7 @@ export function RunTimeline({ run }: { run: AgentRun }): JSX.Element {
         )}
       </header>
 
-      {run.failure_reason === 'no_llm' && (
+      {!managed && run.failure_reason === 'no_llm' && (
         <Link
           to="/settings?tab=ai"
           className="inline-flex items-center gap-1.5 self-start rounded-md bg-semantic-warning px-3 py-1.5 text-xs font-semibold text-content-inverse hover:opacity-90"

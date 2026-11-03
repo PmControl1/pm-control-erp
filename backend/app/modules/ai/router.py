@@ -52,11 +52,13 @@ from app.modules.ai.ai_client import (
     self_hosted_api_key,
     self_hosted_endpoints,
 )
+from app.modules.ai.company_config import router as company_config_router
 from app.modules.ai.internal_pilot import (
     ACCESS_FLAG,
     internal_pilot_credential,
     internal_pilot_enabled,
     internal_pilot_key_set,
+    managed_ai_requested,
 )
 from app.modules.ai.schemas import (
     AISettingsResponse,
@@ -67,8 +69,11 @@ from app.modules.ai.schemas import (
     QuickEstimateRequest,
 )
 from app.modules.ai.service import AIService
+from app.modules.ai.team_grants import router as team_grants_router
 
 router = APIRouter(tags=["ai"])
+router.include_router(company_config_router)
+router.include_router(team_grants_router)
 
 # Maximum upload size for photos: 50 MB
 MAX_PHOTO_SIZE = 50 * 1024 * 1024
@@ -256,11 +261,10 @@ async def get_internal_pilot_access(session: SessionDep) -> dict:
 
     from app.modules.ai.models import AISettings
 
+    if managed_ai_requested():
+        return {"enabled": False, "key_set": False, "grants": {}}
     rows = (await session.execute(select(AISettings.user_id, AISettings.metadata_))).all()
-    grants = {
-        str(user_id): isinstance(meta, dict) and meta.get(ACCESS_FLAG) is True
-        for user_id, meta in rows
-    }
+    grants = {str(user_id): isinstance(meta, dict) and meta.get(ACCESS_FLAG) is True for user_id, meta in rows}
     return {
         "enabled": internal_pilot_enabled(),
         "key_set": internal_pilot_key_set(),
@@ -282,6 +286,8 @@ async def update_internal_pilot_access(
     from app.modules.ai.repository import AISettingsRepository
     from app.modules.users.repository import UserRepository
 
+    if managed_ai_requested():
+        raise HTTPException(403, "The company owner grants AI access through teams.")
     if not internal_pilot_enabled():
         raise HTTPException(
             status_code=409,
@@ -333,6 +339,8 @@ async def test_ai_connection(
 
     Returns success status and response latency.
     """
+    if managed_ai_requested():
+        raise HTTPException(403, "Only the owner can test the company AI connection.")
     # Every provider the dispatch knows, read from the same table rather than
     # listed again here, so a provider added there is testable at once.
     _VALID_PROVIDERS = tuple(DEFAULT_MODELS)

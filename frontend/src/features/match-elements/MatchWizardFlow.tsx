@@ -19,6 +19,7 @@
 //   7 Review         inspect candidates per group, adjust, confirm
 //   8 Apply & done   dry-run BOQ rollup → write → summary
 
+import { useWorkspaceAiSettings } from '@/features/ai/companyAiStatus';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -53,7 +54,6 @@ import { useToastStore } from '@/stores/useToastStore';
 import { projectsApi, type Project } from '@/features/projects/api';
 import { fetchMatchIndex, matchIndexKey } from '@/features/costs/api';
 import { convertToBase } from '@/features/boq/boqHelpers';
-import { aiApi } from '@/features/ai/api';
 import { hasLlmKey } from '@/features/ai-estimator/useAiReadiness';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -835,12 +835,7 @@ export function MatchWizardFlow() {
 
   // Is the user's own AI connected? Shared 'ai-settings' query key so this
   // dedupes with the AI Estimate Builder / Settings probes.
-  const aiSettingsQ = useQuery({
-    queryKey: ['ai-settings'],
-    queryFn: aiApi.getSettings,
-    staleTime: 60_000,
-    retry: false,
-  });
+  const aiSettingsQ = useWorkspaceAiSettings();
   const aiConnected = hasLlmKey(aiSettingsQ.data);
 
   const runMatchM = useMutation({

@@ -1,11 +1,9 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-import { useEffect, useState } from 'react';
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
-import { aiApi, type AISettings } from '@/features/ai/api';
-import { hasLlmKey } from '@/features/ai-estimator/useAiReadiness';
 
 /**
  * Banner shown above the chat panel when the user has not configured an
@@ -14,39 +12,10 @@ import { hasLlmKey } from '@/features/ai-estimator/useAiReadiness';
  * A configured local runtime (Ollama / vLLM) counts as ready even without a
  * cloud API key, so the banner stays hidden for local-only setups.
  */
-export default function AIConfigBanner() {
+export default function AIConfigBanner({ ready, managed }: { ready: boolean | null; managed: boolean }) {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<AISettings | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    aiApi
-      .getSettings()
-      .then((data) => {
-        if (!cancelled) setSettings(data);
-      })
-      .catch(() => {
-        // Ignore — we'll show a generic banner if settings call fails
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (loading) return null;
-
-  // AI is ready when a usable cloud key is set OR a local runtime (Ollama /
-  // vLLM) is configured via its base_url. Prefer the backend's authoritative
-  // flag; fall back to the shared local-aware helper for older payloads.
-  const ready =
-    !!settings &&
-    (typeof settings.ai_ready === 'boolean' ? settings.ai_ready : hasLlmKey(settings));
-
-  if (ready) return null;
+  if (ready !== false) return null;
+  if (managed) return <p role="status" className="m-3 text-sm text-content-secondary">{companyAiStatusText(t, false)}</p>;
 
   return (
     <div

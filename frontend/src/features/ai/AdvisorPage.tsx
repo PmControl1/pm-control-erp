@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { companyAiStatusText } from '@/features/ai/companyAiStatus';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
@@ -455,6 +456,7 @@ export function AdvisorPage() {
   const regionFromUrl = searchParams.get('region') ?? '';
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(questionFromUrl);
+  const [managedAi, setManagedAi] = useState(false);
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null); // null = loading
   const [aiProvider, setAiProvider] = useState<string>('');
   const [region, setRegion] = useState(
@@ -548,7 +550,7 @@ export function AdvisorPage() {
   // would otherwise pin `aiConfigured=false` until a full page reload.
   const checkAiSettings = useCallback(() => {
     setAiConfigured(null); // back to "loading" so the warning hides while we retry
-    apiGet<Record<string, unknown>>('/v1/ai/settings/')
+    apiGet<Record<string, unknown> & { managed_ai?: { provider: string } }>('/v1/ai/settings/')
       .then((s) => {
         // Every provider whose key is set (and decryptable) reports a
         // `<provider>_api_key_set` boolean. Treat the AI as configured when
@@ -557,11 +559,12 @@ export function AdvisorPage() {
         // making those users see a false "not configured" warning.
         const flag = (key: string) => !!s[`${key}_api_key_set`];
         const configured = PROVIDER_DISPLAY.filter((p) => flag(p.key));
-        setAiConfigured(configured.length > 0);
+        setManagedAi(Boolean(s.managed_ai));
+        setAiConfigured(typeof s.ai_ready === 'boolean' ? s.ai_ready : configured.length > 0);
         // Derive the active provider from the preferred model first, falling
         // back to the first configured key. AISettingsResponse has no
         // `provider` field, so reading it always yielded '' (pill said "AI").
-        setAiProvider(resolveActiveProvider(s, configured));
+        setAiProvider(s.managed_ai?.provider || resolveActiveProvider(s, configured));
       })
       .catch(() => setAiConfigured(false));
   }, []);
@@ -682,7 +685,7 @@ export function AdvisorPage() {
               {t('ai.not_configured_title', { defaultValue: 'AI is not configured' })}
             </p>
             <p className="text-xs text-amber-700 dark:text-amber-400/80">
-              {t('ai.not_configured_desc', { defaultValue: 'Add your API key (Anthropic, OpenAI, or other) to use the AI Cost Advisor.' })}
+              {managedAi ? companyAiStatusText(t, false) : t('ai.not_configured_desc', { defaultValue: 'Add your API key (Anthropic, OpenAI, or other) to use the AI Cost Advisor.' })}
             </p>
           </div>
           <button
@@ -693,13 +696,13 @@ export function AdvisorPage() {
             <RefreshCw size={13} />
             {t('common.retry', { defaultValue: 'Retry' })}
           </button>
-          <Link
+          {!managedAi && <Link
             to="/settings"
             className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-colors shrink-0"
           >
             <Settings size={13} />
             {t('ai.go_to_settings', { defaultValue: 'Configure AI' })}
-          </Link>
+          </Link>}
         </div>
       )}
 

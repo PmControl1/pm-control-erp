@@ -8,16 +8,44 @@ Tables:
 """
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, Float, Integer, String, Text
+from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import GUID, Base
 
+if TYPE_CHECKING:
+    from app.modules.ai.internal_pilot import CompanyAccess
+
+# Owner approval belongs to the installation, outside the project-editable
+# Team.metadata. Snapshot *membership* ids so leaving and rejoining requires
+# fresh approval, even for the same user and team.
+company_team_grants = Table(
+    "oe_ai_company_team_grant",
+    Base.metadata,
+    Column("team_id", GUID(), ForeignKey("oe_teams_team.id", ondelete="CASCADE"), primary_key=True),
+)
+company_team_approvals = Table(
+    "oe_ai_company_team_approval",
+    Base.metadata,
+    Column("membership_id", GUID(), ForeignKey("oe_teams_membership.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "team_id",
+        GUID(),
+        ForeignKey("oe_ai_company_team_grant.team_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+)
+
 
 class AISettings(Base):
     """Per-user AI configuration - API keys and model preferences."""
+
+    if TYPE_CHECKING:
+        # Set only on a transient settings view produced by AISettingsRepository.
+        _company_access: CompanyAccess
 
     __tablename__ = "oe_ai_settings"
 
