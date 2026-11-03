@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Numere las líneas como lo hace la количествена сметка y vuelva a validar"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Hoja del Excel original \"{sheet}\", fila {row}: el importe es {actual}; se esperaba {expected} según las partidas originales, los imprevistos y el ДДС (IVA).",
+      "rate": "Hoja del Excel original \"{sheet}\", fila {row}: el ДДС (IVA) figura al {rate}%; la validación de obras espera un 20%.",
+      "review": "No se pueden verificar los totales de ДДС (IVA) del Excel original en la hoja \"{sheet}\": es necesario revisar los múltiples bloques fiscales, un resumen sin partidas propias o las filas omitidas durante el análisis.",
+      "suggestion": "Compruebe la hoja de cálculo original e importe de nuevo el archivo corregido. Esta comprobación revisa los importes de origen; los recargos actuales del ERP se comprueban por separado."
     }
   }
 }

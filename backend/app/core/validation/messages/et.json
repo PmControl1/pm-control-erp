@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Nummerdage read nii, nagu количествена сметка neid nummerdab, ja kontrollige uuesti"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Exceli lähtefaili tööleht „{sheet}”, rida {row}: summa on {actual}; lähtefaili tööde, ettenägematute kulude reservi ja käibemaksu (ДДС) põhjal on oodatud summa {expected}.",
+      "rate": "Exceli lähtefaili tööleht „{sheet}”, rida {row}: käibemaksu (ДДС) määraks on märgitud {rate}%; ehitustööde kontroll eeldab määra 20%.",
+      "review": "Exceli lähtefaili töölehe „{sheet}” käibemaksusummasid (ДДС) ei saa kontrollida: mitu maksuplokki, oma tööridadeta koondarvestus või lugemisel välja jäetud read vajavad ülevaatamist.",
+      "suggestion": "Kontrollige algset arvutustabelit ja importige parandatud fail uuesti. See kontroll hindab lähtefaili summasid; ERP praeguseid juurdehindlusi kontrollitakse eraldi."
     }
   }
 }

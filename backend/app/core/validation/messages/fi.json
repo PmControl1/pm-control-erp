@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Numeroi rivit samoin kuin количествена сметка ja tarkista uudelleen"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Alkuperäisen Excel-tiedoston taulukko ”{sheet}”, rivi {row}: summa on {actual}; lähdetiedoston töiden, odottamattomiin kuluihin tehdyn varauksen ja arvonlisäveron (ДДС) perusteella odotettu summa on {expected}.",
+      "rate": "Alkuperäisen Excel-tiedoston taulukko ”{sheet}”, rivi {row}: arvonlisäveroksi (ДДС) on merkitty {rate} %; rakennustöiden tarkistus edellyttää 20 %:a.",
+      "review": "Alkuperäisen Excel-tiedoston taulukon ”{sheet}” arvonlisäverosummia (ДДС) ei voida tarkistaa: useat verolohkot, yhteenveto ilman omia työrivejä tai lukemisen aikana pois jätetyt rivit on tarkistettava.",
+      "suggestion": "Tarkista alkuperäinen laskentataulukko ja tuo korjattu tiedosto uudelleen. Tämä tarkistus koskee lähdetiedoston summia; ERP-järjestelmän nykyiset lisät tarkistetaan erikseen."
     }
   }
 }

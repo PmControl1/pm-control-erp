@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "กำหนดเลขลำดับรายการให้ตรงกับ количествена сметка แล้วตรวจสอบอีกครั้ง"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "ในแผ่นงาน Excel ต้นฉบับ “{sheet}” แถว {row}: ยอดเงินคือ {actual} แต่ยอดที่คาดไว้จากค่างาน เงินสำรองเผื่อเหตุฉุกเฉิน และ ДДС ในไฟล์ต้นฉบับคือ {expected}",
+      "rate": "ในแผ่นงาน Excel ต้นฉบับ “{sheet}” แถว {row}: ระบุ ДДС ไว้ที่ {rate}% แต่การตรวจสอบงานก่อสร้างคาดไว้ที่ 20%",
+      "review": "ไม่สามารถตรวจสอบยอดรวม ДДС ในแผ่นงาน Excel ต้นฉบับ “{sheet}” ได้: ต้องตรวจทานกรณีที่มีชุดคำนวณภาษีหลายชุด แผ่นสรุปที่ไม่มีรายการงานของตนเอง หรือแถวที่ถูกข้ามระหว่างการอ่านไฟล์",
+      "suggestion": "ตรวจสอบสเปรดชีตต้นฉบับแล้วนำเข้าไฟล์ที่แก้ไขอีกครั้ง การตรวจสอบนี้ใช้ยอดเงินในไฟล์ต้นฉบับ ส่วนค่าใช้จ่ายเพิ่มเติมปัจจุบันใน ERP จะตรวจสอบแยกต่างหาก"
     }
   }
 }

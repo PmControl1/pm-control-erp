@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Αριθμήστε τις γραμμές όπως η количествена сметка και επαληθεύστε ξανά"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Φύλλο προέλευσης Excel \"{sheet}\", γραμμή {row}: το ποσό είναι {actual}· αναμενόταν {expected} βάσει των αρχικών εργασιών, των απρόβλεπτων δαπανών και του ДДС (ΦΠΑ).",
+      "rate": "Φύλλο προέλευσης Excel \"{sheet}\", γραμμή {row}: ο ДДС (ΦΠΑ) εμφανίζεται με συντελεστή {rate}%, ενώ ο έλεγχος κατασκευαστικών εργασιών αναμένει 20%.",
+      "review": "Δεν είναι δυνατή η επαλήθευση των συνόλων ДДС (ΦΠΑ) του αρχικού Excel στο φύλλο \"{sheet}\": απαιτείται έλεγχος λόγω πολλαπλών φορολογικών ενοτήτων, ανακεφαλαίωσης χωρίς δικές της εργασίες ή γραμμών που παραλείφθηκαν κατά την ανάλυση.",
+      "suggestion": "Ελέγξτε το αρχικό υπολογιστικό φύλλο και εισαγάγετε ξανά το διορθωμένο αρχείο. Αυτός ο έλεγχος εξετάζει τα αρχικά ποσά· οι τρέχουσες προσαυξήσεις του ERP ελέγχονται χωριστά."
     }
   }
 }

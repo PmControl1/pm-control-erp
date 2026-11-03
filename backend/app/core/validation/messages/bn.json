@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "লাইনগুলো количествена сметка-র মতো করে নম্বর দিন, তারপর আবার যাচাই করুন"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "মূল Excel শিট \"{sheet}\", সারি {row}: অর্থের পরিমাণ {actual}; মূল ফাইলের কাজ, অপ্রত্যাশিত ব্যয়ের সংস্থান এবং ДДС অনুযায়ী প্রত্যাশিত পরিমাণ {expected}।",
+      "rate": "মূল Excel শিট \"{sheet}\", সারি {row}: ДДС দেখানো হয়েছে {rate}%; নির্মাণকাজের যাচাইয়ের নিয়ম অনুযায়ী প্রত্যাশিত হার 20%।",
+      "review": "মূল Excel শিট \"{sheet}\"-এর ДДС-এর মোট পরিমাণ যাচাই করা যাচ্ছে না: একাধিক করের বিভাগ, নিজস্ব কাজের বিবরণ ছাড়া সারসংক্ষেপ, অথবা ফাইল পড়ার সময় বাদ পড়া সারিগুলো পর্যালোচনা করা প্রয়োজন।",
+      "suggestion": "মূল স্প্রেডশিট পরীক্ষা করুন এবং সংশোধিত ফাইল আবার আমদানি করুন। এই যাচাইটি মূল ফাইলের অর্থের পরিমাণ পরীক্ষা করে; ERP-তে বর্তমান মার্কআপগুলো আলাদাভাবে পরীক্ষা করা হয়।"
     }
   }
 }

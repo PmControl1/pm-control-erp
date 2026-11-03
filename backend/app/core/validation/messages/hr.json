@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Numerirajte stavke kao što ih numerira количествена сметка i ponovno provjerite"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "List izvorne Excel datoteke \"{sheet}\", redak {row}: iznos je {actual}; očekivani iznos je {expected}, na temelju izvornih radova, nepredviđenih troškova i ДДС-a (PDV-a).",
+      "rate": "List izvorne Excel datoteke \"{sheet}\", redak {row}: ДДС (PDV) je iskazan po stopi od {rate}%; provjera građevinskih radova očekuje stopu od 20%.",
+      "review": "Nije moguće provjeriti ukupne iznose ДДС-a (PDV-a) iz izvorne Excel datoteke na listu \"{sheet}\": potrebno je pregledati više poreznih blokova, rekapitulaciju bez vlastitih radova ili retke izostavljene tijekom obrade.",
+      "suggestion": "Provjerite izvornu proračunsku tablicu i ponovno uvezite ispravljenu datoteku. Ova provjera ispituje izvorne iznose; trenutačni dodaci u ERP-u provjeravaju se zasebno."
     }
   }
 }

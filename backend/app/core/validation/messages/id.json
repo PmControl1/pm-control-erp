@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Beri nomor baris seperti penomoran количествена сметка, lalu validasi ulang"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Pada lembar Excel sumber “{sheet}”, baris {row}: nilainya {actual}; nilai yang diharapkan adalah {expected} berdasarkan pekerjaan, cadangan biaya tak terduga, dan ДДС dalam berkas sumber.",
+      "rate": "Pada lembar Excel sumber “{sheet}”, baris {row}: ДДС tercantum sebesar {rate}%; validasi pekerjaan konstruksi mengharapkan 20%.",
+      "review": "Total ДДС pada lembar Excel sumber “{sheet}” tidak dapat diverifikasi: beberapa kelompok pajak, rekapitulasi tanpa rincian pekerjaan sendiri, atau baris yang terlewat saat pembacaan perlu ditinjau.",
+      "suggestion": "Periksa lembar kerja asli dan impor kembali berkas yang telah diperbaiki. Pemeriksaan ini mengaudit nilai dalam berkas sumber; tambahan biaya ERP saat ini diperiksa secara terpisah."
     }
   }
 }

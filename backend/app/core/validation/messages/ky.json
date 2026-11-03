@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Саптарды количествена сметка-дагыдай номерлеп, кайра текшериңиз"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Баштапкы Excel барагы \"{sheet}\", {row}-сап: сумма {actual}; баштапкы иштер, күтүлбөгөн чыгымдар жана ДДС боюнча күтүлгөн сумма — {expected}.",
+      "rate": "Баштапкы Excel барагы \"{sheet}\", {row}-сап: ДДС чени {rate}% деп көрсөтүлгөн; курулуш документтерин текшерүүдө 20% чен күтүлөт.",
+      "review": "\"{sheet}\" барагындагы баштапкы Excel ДДС жыйынтыктарын текшерүү мүмкүн эмес: бир нече салык блогу, өзүнчө иштери жок жыйынтык барагы же талдоо учурунда өткөрүлүп кеткен саптар карап чыгууну талап кылат.",
+      "suggestion": "Баштапкы электрондук жадыбалды текшерип, оңдолгон файлды кайра импорттоңуз. Бул текшерүү баштапкы суммаларды карайт; ERP тутумундагы учурдагы үстөктөр өзүнчө текшерилет."
     }
   }
 }

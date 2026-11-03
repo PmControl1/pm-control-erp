@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Пронумеруйте рядки так само, як у количествена сметка, і перевірте знову"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Вихідний аркуш Excel \"{sheet}\", рядок {row}: сума становить {actual}; за вихідними роботами, непередбаченими витратами та ПДВ очікується {expected}.",
+      "rate": "Вихідний аркуш Excel \"{sheet}\", рядок {row}: ПДВ (ДДС) зазначено за ставкою {rate}%; перевірка будівельного кошторису очікує 20%.",
+      "review": "Неможливо перевірити підсумки ПДВ (ДДС) на вихідному аркуші Excel \"{sheet}\": кілька податкових блоків, зведення без власних робіт або рядки, пропущені під час зчитування, потребують перегляду.",
+      "suggestion": "Перевірте вихідну електронну таблицю та знову імпортуйте виправлений файл. Ця перевірка аналізує вихідні суми; поточні нарахування ERP перевіряються окремо."
     }
   }
 }

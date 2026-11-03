@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Numerotați liniile la fel ca în количествена сметка și validați din nou"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Foaia Excel sursă \"{sheet}\", rândul {row}: suma este {actual}; pe baza lucrărilor, rezervei pentru cheltuieli neprevăzute și ДДС din sursă, se aștepta {expected}.",
+      "rate": "Foaia Excel sursă \"{sheet}\", rândul {row}: ДДС este indicat la cota de {rate}%; validarea lucrărilor de construcții așteaptă 20%.",
+      "review": "Totalurile ДДС din foaia Excel sursă \"{sheet}\" nu pot fi verificate: mai multe blocuri fiscale, o recapitulare fără lucrări proprii sau rânduri omise la citire necesită revizuire.",
+      "suggestion": "Verificați foaia de calcul originală și importați din nou fișierul corectat. Această verificare auditează sumele din sursă; adaosurile curente din ERP sunt verificate separat."
     }
   }
 }

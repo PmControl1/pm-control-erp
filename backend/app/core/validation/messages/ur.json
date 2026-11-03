@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "لائنوں کو اسی طرح نمبر دیں جیسے количествена сметка دیتی ہے، پھر دوبارہ جانچیں"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "اصل Excel شیٹ \"{sheet}\"، قطار {row}: رقم {actual} ہے؛ اصل فائل کے کام، غیر متوقع اخراجات کے ذخیرے اور ДДС کی بنیاد پر متوقع رقم {expected} ہے۔",
+      "rate": "اصل Excel شیٹ \"{sheet}\"، قطار {row}: ДДС کی شرح {rate}% دکھائی گئی ہے؛ تعمیراتی کاموں کی جانچ کے قواعد کے مطابق متوقع شرح 20% ہے۔",
+      "review": "اصل Excel شیٹ \"{sheet}\" میں ДДС کے مجموعوں کی تصدیق نہیں ہو سکتی: ٹیکس کے متعدد حصوں، اپنے کاموں کی قطاروں کے بغیر خلاصے، یا فائل پڑھتے وقت چھوڑی گئی قطاروں کا جائزہ لینا ضروری ہے۔",
+      "suggestion": "اصل اسپریڈشیٹ کی جانچ کریں اور درست کی گئی فائل دوبارہ درآمد کریں۔ یہ جانچ اصل فائل کی رقوم کا معائنہ کرتی ہے؛ ERP میں موجودہ مارک اپ کی جانچ الگ سے ہوتی ہے۔"
     }
   }
 }

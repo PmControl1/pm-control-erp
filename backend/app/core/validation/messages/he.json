@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "מספרו את השורות כפי שה-количествена сметка ממספר אותן ובדקו שוב"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "גיליון Excel המקורי \"{sheet}\", שורה {row}: הסכום הוא {actual}; הסכום הצפוי לפי העבודות, העתודה להוצאות בלתי צפויות ו-ДДС במקור הוא {expected}.",
+      "rate": "גיליון Excel המקורי \"{sheet}\", שורה {row}: שיעור ДДС המוצג הוא {rate}%; כללי הבדיקה לעבודות בנייה מצפים לשיעור של 20%.",
+      "review": "לא ניתן לאמת את סכומי ДДС בגיליון Excel המקורי \"{sheet}\": נדרשת בדיקה של מספר מקטעי מס, סיכום ללא שורות עבודה משלו, או שורות שהושמטו במהלך קריאת הקובץ.",
+      "suggestion": "בדקו את הגיליון המקורי וייבאו שוב את הקובץ המתוקן. בדיקה זו בוחנת את סכומי המקור; תוספות המחיר הנוכחיות במערכת ERP נבדקות בנפרד."
     }
   }
 }

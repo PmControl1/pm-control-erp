@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Számozza a tételeket úgy, ahogy a количествена сметка számozza őket, majd ellenőrizze újra"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Az eredeti Excel-fájl \"{sheet}\" munkalapjának {row}. sora: az összeg {actual}; a forrásban szereplő munkák, tartalékkeret és ДДС (áfa) alapján várt összeg {expected}.",
+      "rate": "Az eredeti Excel-fájl \"{sheet}\" munkalapjának {row}. sora: a feltüntetett ДДС (áfa) mértéke {rate}%; az építési munkák ellenőrzése 20%-ot vár.",
+      "review": "Nem ellenőrizhetők az eredeti Excel-fájl ДДС-összegei (áfa) a(z) \"{sheet}\" munkalapon: több adóblokk, saját munkatételek nélküli összesítés vagy a feldolgozás során kihagyott sorok felülvizsgálatot igényelnek.",
+      "suggestion": "Ellenőrizze az eredeti táblázatot, majd importálja újra a javított fájlt. Ez az ellenőrzés a forrásban szereplő összegeket vizsgálja; az ERP jelenlegi felárait külön ellenőrzi a rendszer."
     }
   }
 }

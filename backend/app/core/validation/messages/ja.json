@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "количествена сметка と同じ番号を行に付けてから、もう一度検証してください"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "元のExcelシート「{sheet}」の{row}行目：金額は{actual}です。元データの工事費、予備費、ДДСから算出される金額は{expected}です。",
+      "rate": "元のExcelシート「{sheet}」の{row}行目：ДДСは{rate}%と記載されています。工事の検証では20%を想定しています。",
+      "review": "元のExcelシート「{sheet}」のДДС合計を検証できません。複数の税計算区分、工事項目を持たない集計表、または読み取り時に除外された行を確認してください。",
+      "suggestion": "元のスプレッドシートを確認し、修正したファイルを再度インポートしてください。この検証では元ファイルの金額を監査します。ERPの現在の加算費用は別途検証されます。"
     }
   }
 }

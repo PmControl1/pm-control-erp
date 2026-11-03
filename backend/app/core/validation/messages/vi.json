@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Đánh số các dòng như количествена сметка rồi kiểm tra lại"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Trang tính Excel nguồn \"{sheet}\", dòng {row}: số tiền là {actual}; theo công việc, chi phí dự phòng và thuế GTGT trong nguồn, số tiền dự kiến là {expected}.",
+      "rate": "Trang tính Excel nguồn \"{sheet}\", dòng {row}: thuế GTGT (ДДС) được ghi là {rate}%; quy tắc kiểm tra xây dựng yêu cầu 20%.",
+      "review": "Không thể kiểm tra tổng thuế GTGT (ДДС) trên trang tính Excel nguồn \"{sheet}\": cần xem xét các khối thuế trùng nhau, bảng tổng hợp không có công việc riêng hoặc các dòng bị bỏ qua khi đọc tệp.",
+      "suggestion": "Kiểm tra bảng tính gốc rồi nhập lại tệp đã sửa. Quy tắc này kiểm tra số tiền trong nguồn; các khoản cộng thêm hiện tại trong ERP được kiểm tra riêng."
     }
   }
 }

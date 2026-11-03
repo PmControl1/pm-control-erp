@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Qatorlarni количествена сметка dagidek raqamlang va qayta tekshiring"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Manba Excel varagʻi \"{sheet}\", {row}-qator: summa {actual}; manbadagi ishlar, kutilmagan xarajatlar va QQS asosida {expected} kutilmoqda.",
+      "rate": "Manba Excel varagʻi \"{sheet}\", {row}-qator: QQS (ДДС) {rate}% deb koʻrsatilgan; qurilish tekshiruvi 20% ni kutadi.",
+      "review": "Manba Excel varagʻi \"{sheet}\" dagi QQS (ДДС) jami summalarini tekshirib boʻlmaydi: bir nechta soliq bloki, oʻz ish qatorlari boʻlmagan jamlanma yoki oʻqish vaqtida tashlab ketilgan qatorlar koʻrib chiqilishi kerak.",
+      "suggestion": "Asl elektron jadvalni tekshiring va tuzatilgan faylni qayta import qiling. Bu tekshiruv manba summalarini tekshiradi; ERP tizimidagi joriy ustamalar alohida tekshiriladi."
     }
   }
 }

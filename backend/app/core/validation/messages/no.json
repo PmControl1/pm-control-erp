@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Nummerer linjene slik количествена сметка nummererer dem, og valider på nytt"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Excel-kildearket «{sheet}», rad {row}: beløpet er {actual}; ut fra arbeidspostene, avsetningen til uforutsette kostnader og merverdiavgiften (ДДС) i kildefilen forventes {expected}.",
+      "rate": "Excel-kildearket «{sheet}», rad {row}: merverdiavgiften (ДДС) er oppgitt til {rate} %; kontrollen av byggearbeidet forventer 20 %.",
+      "review": "Merverdiavgiftssummene (ДДС) i Excel-kildearket «{sheet}» kan ikke kontrolleres: flere avgiftsblokker, et sammendrag uten egne arbeidsposter eller rader utelatt under innlesingen må gjennomgås.",
+      "suggestion": "Kontroller det opprinnelige regnearket og importer den korrigerte filen på nytt. Denne kontrollen gjelder kildebeløpene; de gjeldende tilleggene i ERP kontrolleres separat."
     }
   }
 }

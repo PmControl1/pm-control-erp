@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "Lagyan ng numero ang mga linya gaya ng pagnunumero ng количествена сметка, saka i-validate muli"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "Sa orihinal na Excel sheet na “{sheet}”, hanay {row}: {actual} ang halaga; {expected} ang inaasahan batay sa mga trabaho, laang pondo para sa di-inaasahang gastos, at ДДС sa orihinal na file.",
+      "rate": "Sa orihinal na Excel sheet na “{sheet}”, hanay {row}: {rate}% ang nakasaad na ДДС; 20% ang inaasahan ng pagsusuri para sa konstruksiyon.",
+      "review": "Hindi mapatunayan ang mga kabuuan ng ДДС sa orihinal na Excel sheet na “{sheet}”: kailangang suriin ang maraming pangkat ng buwis, buod na walang sariling tala ng trabaho, o mga hanay na hindi naisama sa pagbasa.",
+      "suggestion": "Suriin ang orihinal na spreadsheet at muling i-import ang naitamang file. Sinusuri nito ang mga halaga sa orihinal na file; hiwalay na sinusuri ang kasalukuyang mga patong sa ERP."
     }
   }
 }

@@ -1323,10 +1323,10 @@
       "unmatched_suggestion": "请按 количествена сметка 的编号为各行编号，然后重新校验"
     },
     "imported_vat_totals": {
-      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
-      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
-      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
-      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+      "amount": "原始 Excel 工作表“{sheet}”第 {row} 行：金额为 {actual}；根据原文件中的工程费用、预备费和 ДДС，预期金额为 {expected}。",
+      "rate": "原始 Excel 工作表“{sheet}”第 {row} 行：ДДС 标注为 {rate}%；建筑工程校验要求使用 20%。",
+      "review": "无法校验原始 Excel 工作表“{sheet}”中的 ДДС 合计：存在多个计税区块、没有自身工程明细的汇总表，或读取时跳过的行，需要人工复核。",
+      "suggestion": "请检查原始电子表格，并重新导入修正后的文件。此检查核对原文件中的金额；ERP 当前的附加费用将单独校验。"
     }
   }
 }
