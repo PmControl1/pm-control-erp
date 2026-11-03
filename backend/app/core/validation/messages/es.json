@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "certificado de cumplimiento de la responsabilidad del empleador",
     "insurance": "certificado de seguro",
     "license": "licencia de contratista"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "El presupuesto no tiene línea de ДДС; una КСС se cierra con «Общо без ДДС», «ДДС 20 %» y «Всичко с ДДС»",
+      "suggestion": "Añada una línea de ДДС al 20 % como último recargo. Un contratista no registrado conforme a la ЗДДС no cobra ДДС y puede ignorar este aviso"
+    },
+    "vat_charged_once": {
+      "fail": "El ДДС se cobra {count} veces en este presupuesto: {names}",
+      "suggestion": "Mantenga una sola línea de ДДС y desactive las demás"
+    },
+    "vat_rate": {
+      "fail": "La línea de ДДС '{name}' aplica un {rate} %; las obras de construcción tributan al 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "La línea de ДДС '{name}' es un importe fijo; el ДДС es el 20 % del total antes de impuestos",
+      "suggestion": "Configure la línea de ДДС como un porcentaje del 20"
+    },
+    "vat_on_whole_total": {
+      "base": "La línea de ДДС '{name}' solo se aplica al coste directo y deja fuera {names}; el ДДС se debe sobre todo el «Общо без ДДС»",
+      "after": "{names} va después de la línea de ДДС '{name}', por lo que no lleva ДДС y queda fuera de «Всичко с ДДС»",
+      "suggestion": "Ponga el ДДС como última línea de recargo y aplíquelo de forma acumulativa, sobre todo lo anterior"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "La línea {ordinal} de la количествена сметка '{bill}' ({description}) falta en esta КСС",
+      "extra": "La línea {ordinal} ({description}) no está en la количествена сметка '{bill}'",
+      "description": "Línea {ordinal}: la descripción difiere de la количествена сметка ('{description}' en lugar de '{tender_description}')",
+      "unit": "Línea {ordinal}: unidad {unit} en lugar de {tender_unit} según la количествена сметка",
+      "quantity": "Línea {ordinal}: cantidad {quantity} en lugar de {tender_quantity} según la количествена сметка",
+      "suggestion": "Valore la количествена сметка tal como se emitió: mantenga cada descripción, unidad y cantidad y no añada líneas. Plantee cualquier discrepancia al órgano de contratación",
+      "tender_missing": "Este presupuesto está vinculado a una количествена сметка que ya no existe en el proyecto",
+      "tender_missing_suggestion": "Vuelva a elegir la количествена сметка en la cabecera del presupuesto o elimine el vínculo",
+      "unmatched": "Las líneas de esta КСС no se pueden emparejar con la количествена сметка '{bill}': la numeración se repite o falta",
+      "unmatched_suggestion": "Numere las líneas como lo hace la количествена сметка y vuelva a validar"
+    },
+    "imported_vat_totals": {
+      "amount": "Hoja del Excel original \"{sheet}\", fila {row}: el importe es {actual}; se esperaba {expected} según las partidas originales, los imprevistos y el ДДС (IVA).",
+      "rate": "Hoja del Excel original \"{sheet}\", fila {row}: el ДДС (IVA) figura al {rate}%; la validación de obras espera un 20%.",
+      "review": "No se pueden verificar los totales de ДДС (IVA) del Excel original en la hoja \"{sheet}\": es necesario revisar los múltiples bloques fiscales, un resumen sin partidas propias o las filas omitidas durante el análisis.",
+      "suggestion": "Compruebe la hoja de cálculo original e importe de nuevo el archivo corregido. Esta comprobación revisa los importes de origen; los recargos actuales del ERP se comprueban por separado."
+    }
   }
 }

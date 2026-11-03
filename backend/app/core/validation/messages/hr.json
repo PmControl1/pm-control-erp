@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "potvrda o ispunjenju odgovornosti poslodavaca",
     "insurance": "potvrda o osiguranju",
     "license": "licenca izvođača"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Troškovnik nema redak ДДС; КСС završava retcima \"Общо без ДДС\", \"ДДС 20 %\" i \"Всичко с ДДС\"",
+      "suggestion": "Dodajte redak ДДС 20 % kao posljednji dodatak. Izvođač koji nije registriran prema ЗДДС ne obračunava ДДС i može ovo zanemariti"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС se u ovom troškovniku obračunava {count} puta: {names}",
+      "suggestion": "Zadržite jedan redak ДДС, a ostale isključite"
+    },
+    "vat_rate": {
+      "fail": "Redak ДДС '{name}' obračunava {rate} %; građevinski radovi oporezuju se stopom od 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Redak ДДС '{name}' fiksni je iznos; ДДС iznosi 20 % zbroja prije poreza",
+      "suggestion": "Postavite redak ДДС kao postotak od 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Redak ДДС '{name}' obračunava se samo na izravne troškove i izostavlja {names}; ДДС se plaća na cijeli \"Общо без ДДС\"",
+      "after": "{names} dolazi nakon retka ДДС '{name}', pa ne nosi ДДС i ostaje izvan \"Всичко с ДДС\"",
+      "suggestion": "Postavite ДДС kao posljednji redak dodataka i primijenite ga kumulativno, na sve iznad njega"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Stavka {ordinal} iz количествена сметка '{bill}' ({description}) nedostaje u ovoj КСС",
+      "extra": "Stavka {ordinal} ({description}) nije u количествена сметка '{bill}'",
+      "description": "Stavka {ordinal}: opis se razlikuje od количествена сметка ('{description}' umjesto '{tender_description}')",
+      "unit": "Stavka {ordinal}: jedinica {unit} umjesto {tender_unit} prema количествена сметка",
+      "quantity": "Stavka {ordinal}: količina {quantity} umjesto {tender_quantity} prema количествена сметка",
+      "suggestion": "Ispunite cijene u количествена сметка onakvoj kakva je izdana: zadržite svaki opis, jedinicu i količinu i ne dodajte stavke. Odstupanja umjesto toga uputite naručitelju",
+      "tender_missing": "Ovaj je troškovnik povezan s количествена сметка koja više ne postoji u projektu",
+      "tender_missing_suggestion": "Ponovno odaberite количествена сметка u zaglavlju troškovnika ili uklonite poveznicu",
+      "unmatched": "Stavke ove КСС ne mogu se upariti s количествена сметка '{bill}': numeracija se ponavlja ili nedostaje",
+      "unmatched_suggestion": "Numerirajte stavke kao što ih numerira количествена сметка i ponovno provjerite"
+    },
+    "imported_vat_totals": {
+      "amount": "List izvorne Excel datoteke \"{sheet}\", redak {row}: iznos je {actual}; očekivani iznos je {expected}, na temelju izvornih radova, nepredviđenih troškova i ДДС-a (PDV-a).",
+      "rate": "List izvorne Excel datoteke \"{sheet}\", redak {row}: ДДС (PDV) je iskazan po stopi od {rate}%; provjera građevinskih radova očekuje stopu od 20%.",
+      "review": "Nije moguće provjeriti ukupne iznose ДДС-a (PDV-a) iz izvorne Excel datoteke na listu \"{sheet}\": potrebno je pregledati više poreznih blokova, rekapitulaciju bez vlastitih radova ili retke izostavljene tijekom obrade.",
+      "suggestion": "Provjerite izvornu proračunsku tablicu i ponovno uvezite ispravljenu datoteku. Ova provjera ispituje izvorne iznose; trenutačni dodaci u ERP-u provjeravaju se zasebno."
+    }
   }
 }

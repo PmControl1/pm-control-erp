@@ -176,8 +176,13 @@ MANIFEST = PartnerPackManifest(
     # No classification rule set. A Bulgarian КСС is grouped by kind of work
     # (see ``kss_sections``) and carries no DIN 276 cost groups, so switching
     # ``din276`` on made every line of an ordinary КСС fail an error-severity
-    # rule. New projects keep the platform default, ``boq_quality``.
-    validation_rule_sets=[],
+    # rule. ``bulgaria`` (app/core/validation/rules/bulgaria_kss.py) checks what
+    # a tender reads: the КСС keeps its количествена сметка, and ДДС is one
+    # 20 % line on the whole "Общо без ДДС". New projects get it on top of the
+    # platform default, ``boq_quality``.
+    validation_rule_sets=[
+        "bulgaria",
+    ],
     default_modules=[],  # empty = show all
     hidden_modules=[],
     # One Bulgarian demo so far: a residential block in Sofia, III category.

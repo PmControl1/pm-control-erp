@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "klareringsattest for arbeidsgiveransvar",
     "insurance": "forsikringsbevis",
     "license": "entreprenørlisens"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Kalkylen har ingen ДДС-linje; en КСС avsluttes med \"Общо без ДДС\", \"ДДС 20 %\" og \"Всичко с ДДС\"",
+      "suggestion": "Legg til en ДДС-linje på 20 % som siste påslag. En entreprenør som ikke er registrert etter ЗДДС, krever ikke ДДС og kan se bort fra dette"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС beregnes {count} ganger i denne kalkylen: {names}",
+      "suggestion": "Behold én ДДС-linje og slå av de andre"
+    },
+    "vat_rate": {
+      "fail": "ДДС-linjen '{name}' beregner {rate} %; byggearbeider avgiftsbelegges med 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС-linjen '{name}' er et fast beløp; ДДС er 20 % av summen før avgift",
+      "suggestion": "Angi ДДС-linjen som en prosentsats på 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС-linjen '{name}' beregnes bare av direkte kostnader og utelater {names}; ДДС skal beregnes av hele \"Общо без ДДС\"",
+      "after": "{names} kommer etter ДДС-linjen '{name}', så den får ingen ДДС og havner utenfor \"Всичко с ДДС\"",
+      "suggestion": "Gjør ДДС til siste påslagslinje og bruk den kumulativt, på alt over"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Linje {ordinal} i количествена сметка '{bill}' ({description}) mangler i denne КСС",
+      "extra": "Linje {ordinal} ({description}) finnes ikke i количествена сметка '{bill}'",
+      "description": "Linje {ordinal}: beskrivelsen avviker fra количествена сметка ('{description}' i stedet for '{tender_description}')",
+      "unit": "Linje {ordinal}: enhet {unit} i stedet for {tender_unit} i количествена сметка",
+      "quantity": "Linje {ordinal}: mengde {quantity} i stedet for {tender_quantity} i количествена сметка",
+      "suggestion": "Pris количествена сметка slik den ble utstedt: behold hver beskrivelse, enhet og mengde og ikke legg til linjer. Ta heller opp avvik med oppdragsgiveren",
+      "tender_missing": "Denne kalkylen er koblet til en количествена сметка som ikke lenger finnes i prosjektet",
+      "tender_missing_suggestion": "Velg количествена сметка på nytt i kalkylens topptekst, eller fjern koblingen",
+      "unmatched": "Linjene i denne КСС kan ikke matches mot количествена сметка '{bill}': nummereringen gjentas eller mangler",
+      "unmatched_suggestion": "Nummerer linjene slik количествена сметка nummererer dem, og valider på nytt"
+    },
+    "imported_vat_totals": {
+      "amount": "Excel-kildearket «{sheet}», rad {row}: beløpet er {actual}; ut fra arbeidspostene, avsetningen til uforutsette kostnader og merverdiavgiften (ДДС) i kildefilen forventes {expected}.",
+      "rate": "Excel-kildearket «{sheet}», rad {row}: merverdiavgiften (ДДС) er oppgitt til {rate} %; kontrollen av byggearbeidet forventer 20 %.",
+      "review": "Merverdiavgiftssummene (ДДС) i Excel-kildearket «{sheet}» kan ikke kontrolleres: flere avgiftsblokker, et sammendrag uten egne arbeidsposter eller rader utelatt under innlesingen må gjennomgås.",
+      "suggestion": "Kontroller det opprinnelige regnearket og importer den korrigerte filen på nytt. Denne kontrollen gjelder kildebeløpene; de gjeldende tilleggene i ERP kontrolleres separat."
+    }
   }
 }

@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "雇主责任无欠费证明",
     "insurance": "保险证明",
     "license": "承包商执照"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "本清单没有 ДДС 行；КСС 以“Общо без ДДС”“ДДС 20 %”和“Всичко с ДДС”结尾",
+      "suggestion": "请添加一行 20 % 的 ДДС 作为最后一项加价。未按 ЗДДС 登记的承包商不收取 ДДС，可忽略此提示"
+    },
+    "vat_charged_once": {
+      "fail": "本清单中 ДДС 被计取了 {count} 次：{names}",
+      "suggestion": "保留一行 ДДС，关闭其余各行"
+    },
+    "vat_rate": {
+      "fail": "ДДС 行“{name}”按 {rate} % 计取；建筑工程适用 20 % 的税率（ЗДДС чл. 66, ал. 1）",
+      "not_percentage": "ДДС 行“{name}”是固定金额；ДДС 应为税前合计的 20 %",
+      "suggestion": "请将 ДДС 行设为百分比 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС 行“{name}”只按直接费计取，未包含 {names}；ДДС 应按整个“Общо без ДДС”计取",
+      "after": "{names} 位于 ДДС 行“{name}”之后，因此未计 ДДС，且落在“Всичко с ДДС”之外",
+      "suggestion": "请把 ДДС 设为最后一行加价，并按累计方式计取其上方的全部金额"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "количествена сметка“{bill}”的第 {ordinal} 行（{description}）在本 КСС 中缺失",
+      "extra": "第 {ordinal} 行（{description}）不在 количествена сметка“{bill}”中",
+      "description": "第 {ordinal} 行：名称与 количествена сметка 不同（为“{description}”，应为“{tender_description}”）",
+      "unit": "第 {ordinal} 行：单位为 {unit}，количествена сметка 中为 {tender_unit}",
+      "quantity": "第 {ordinal} 行：数量为 {quantity}，количествена сметка 中为 {tender_quantity}",
+      "suggestion": "请按发出的原样对 количествена сметка 报价：保留每一项名称、单位和数量，不要增加行。如有不符，请向招标人提出",
+      "tender_missing": "本清单关联的 количествена сметка 已不在项目中",
+      "tender_missing_suggestion": "请在清单抬头重新选择 количествена сметка，或解除关联",
+      "unmatched": "本 КСС 的各行无法与 количествена сметка“{bill}”对应：编号重复或缺失",
+      "unmatched_suggestion": "请按 количествена сметка 的编号为各行编号，然后重新校验"
+    },
+    "imported_vat_totals": {
+      "amount": "原始 Excel 工作表“{sheet}”第 {row} 行：金额为 {actual}；根据原文件中的工程费用、预备费和 ДДС，预期金额为 {expected}。",
+      "rate": "原始 Excel 工作表“{sheet}”第 {row} 行：ДДС 标注为 {rate}%；建筑工程校验要求使用 20%。",
+      "review": "无法校验原始 Excel 工作表“{sheet}”中的 ДДС 合计：存在多个计税区块、没有自身工程明细的汇总表，或读取时跳过的行，需要人工复核。",
+      "suggestion": "请检查原始电子表格，并重新导入修正后的文件。此检查核对原文件中的金额；ERP 当前的附加费用将单独校验。"
+    }
   }
 }

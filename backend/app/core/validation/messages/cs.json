@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "potvrzení o bezdlužnosti u odpovědnosti zaměstnavatelů",
     "insurance": "pojistný certifikát",
     "license": "oprávnění zhotovitele"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Rozpočet nemá řádek ДДС; КСС končí řádky \"Общо без ДДС\", \"ДДС 20 %\" a \"Всичко с ДДС\"",
+      "suggestion": "Přidejte jako poslední přirážku řádek ДДС 20 %. Zhotovitel, který není registrován podle ЗДДС, ДДС neúčtuje a může to ignorovat"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС se v tomto rozpočtu účtuje {count}krát: {names}",
+      "suggestion": "Ponechte jeden řádek ДДС a ostatní vypněte"
+    },
+    "vat_rate": {
+      "fail": "Řádek ДДС '{name}' účtuje {rate} %; stavební práce se daní sazbou 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Řádek ДДС '{name}' je pevná částka; ДДС činí 20 % součtu před daní",
+      "suggestion": "Nastavte řádek ДДС jako procento ve výši 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Řádek ДДС '{name}' se počítá jen z přímých nákladů a vynechává {names}; ДДС se platí z celého \"Общо без ДДС\"",
+      "after": "{names} následuje po řádku ДДС '{name}', takže nenese ДДС a zůstává mimo \"Всичко с ДДС\"",
+      "suggestion": "Dejte ДДС jako poslední řádek přirážek a uplatněte ho kumulativně na vše nad ním"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Položka {ordinal} z количествена сметка '{bill}' ({description}) v této КСС chybí",
+      "extra": "Položka {ordinal} ({description}) není v количествена сметка '{bill}'",
+      "description": "Položka {ordinal}: popis se liší od количествена сметка ('{description}' místo '{tender_description}')",
+      "unit": "Položka {ordinal}: jednotka {unit} místo {tender_unit} podle количествена сметка",
+      "quantity": "Položka {ordinal}: množství {quantity} místo {tender_quantity} podle количествена сметка",
+      "suggestion": "Oceňte количествена сметка tak, jak byla vydána: zachovejte každý popis, jednotku a množství a nepřidávejte položky. Nesrovnalosti místo toho vzneste u zadavatele",
+      "tender_missing": "Tento rozpočet je propojen s количествена сметка, která už v projektu neexistuje",
+      "tender_missing_suggestion": "Vyberte количествена сметка znovu v záhlaví rozpočtu, nebo propojení odstraňte",
+      "unmatched": "Položky této КСС nelze přiřadit k количествена сметка '{bill}': číslování se opakuje nebo chybí",
+      "unmatched_suggestion": "Očíslujte položky tak, jak je čísluje количествена сметка, a ověřte znovu"
+    },
+    "imported_vat_totals": {
+      "amount": "Zdrojový list Excelu „{sheet}“, řádek {row}: částka je {actual}; podle stavebních prací, rezervy na nepředvídané výdaje a DPH (ДДС) ve zdroji se očekává {expected}.",
+      "rate": "Zdrojový list Excelu „{sheet}“, řádek {row}: DPH (ДДС) je uvedena ve výši {rate} %; kontrola stavebních prací očekává 20 %.",
+      "review": "Součty DPH (ДДС) ve zdrojovém listu Excelu „{sheet}“ nelze ověřit: více daňových bloků, rekapitulace bez vlastních stavebních prací nebo řádky vynechané při načítání vyžadují kontrolu.",
+      "suggestion": "Zkontrolujte původní tabulku a opravený soubor znovu importujte. Tato kontrola ověřuje částky ve zdroji; aktuální přirážky v ERP se kontrolují samostatně."
+    }
   }
 }

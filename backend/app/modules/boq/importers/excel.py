@@ -2696,6 +2696,11 @@ def _rows_to_positions(
                         metadata={
                             "import_row_index": row_idx,
                             "section_header": True,
+                            **(
+                                {"kss_source_ordinal": str(row.get("ordinal") or description).strip()}
+                                if header_language == "bg"
+                                else {}
+                            ),
                             **({"import_sheet": row["_sheet"]} if row.get("_sheet") else {}),
                         },
                         is_section=True,
@@ -2937,4 +2942,12 @@ class ExcelImporter:
                         ),
                     }
                 )
+        if language == "bg":
+            from app.modules.boq.importers.bulgaria_kss import normalise_section_ordinals
+
+            normalise_section_ordinals(result)
+        if language == "bg" and result.metadata.get("summary_rows"):
+            from app.modules.boq.importers.bulgaria_totals import SOURCE_TOTALS_KEY, source_totals_snapshot
+
+            result.metadata[SOURCE_TOTALS_KEY] = source_totals_snapshot(result)
         return result

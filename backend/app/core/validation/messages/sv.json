@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "intyg om arbetsgivaransvar",
     "insurance": "försäkringsbevis",
     "license": "entreprenörslicens"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Kalkylen saknar ДДС-rad; en КСС avslutas med \"Общо без ДДС\", \"ДДС 20 %\" och \"Всичко с ДДС\"",
+      "suggestion": "Lägg till en ДДС-rad på 20 % som sista påslag. En entreprenör som inte är registrerad enligt ЗДДС tar inte ut ДДС och kan bortse från detta"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС tas ut {count} gånger i den här kalkylen: {names}",
+      "suggestion": "Behåll en ДДС-rad och stäng av de övriga"
+    },
+    "vat_rate": {
+      "fail": "ДДС-raden '{name}' tar ut {rate} %; byggarbeten beskattas med 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС-raden '{name}' är ett fast belopp; ДДС är 20 % av summan före skatt",
+      "suggestion": "Ange ДДС-raden som en procentsats på 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС-raden '{name}' beräknas bara på direkta kostnader och utelämnar {names}; ДДС ska tas ut på hela \"Общо без ДДС\"",
+      "after": "{names} kommer efter ДДС-raden '{name}', så den bär ingen ДДС och hamnar utanför \"Всичко с ДДС\"",
+      "suggestion": "Gör ДДС till sista påslagsraden och tillämpa den kumulativt, på allt ovanför"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Rad {ordinal} i количествена сметка '{bill}' ({description}) saknas i denna КСС",
+      "extra": "Rad {ordinal} ({description}) finns inte i количествена сметка '{bill}'",
+      "description": "Rad {ordinal}: beskrivningen skiljer sig från количествена сметка ('{description}' i stället för '{tender_description}')",
+      "unit": "Rad {ordinal}: enhet {unit} i stället för {tender_unit} enligt количествена сметка",
+      "quantity": "Rad {ordinal}: mängd {quantity} i stället för {tender_quantity} enligt количествена сметка",
+      "suggestion": "Prissätt количествена сметка som den utfärdats: behåll varje beskrivning, enhet och mängd och lägg inte till rader. Ta i stället upp avvikelser med den upphandlande myndigheten",
+      "tender_missing": "Kalkylen är kopplad till en количествена сметка som inte längre finns i projektet",
+      "tender_missing_suggestion": "Välj количествена сметка igen i kalkylens sidhuvud eller ta bort kopplingen",
+      "unmatched": "Raderna i denna КСС kan inte matchas mot количествена сметка '{bill}': numreringen upprepas eller saknas",
+      "unmatched_suggestion": "Numrera raderna som количествена сметка numrerar dem och validera igen"
+    },
+    "imported_vat_totals": {
+      "amount": "Källfilens Excelblad \"{sheet}\", rad {row}: beloppet är {actual}; utifrån källans arbeten, oförutsedda kostnader och moms förväntas {expected}.",
+      "rate": "Källfilens Excelblad \"{sheet}\", rad {row}: momsen (ДДС) anges till {rate}%; byggvalideringen förväntar sig 20%.",
+      "review": "Momssummorna (ДДС) i källfilens Excelblad \"{sheet}\" kan inte kontrolleras: flera skatteblock, en sammanställning utan egna arbeten eller rader som utelämnats vid inläsningen behöver granskas.",
+      "suggestion": "Kontrollera det ursprungliga kalkylbladet och importera den korrigerade filen igen. Denna kontroll granskar källbeloppen; aktuella påslag i ERP-systemet kontrolleras separat."
+    }
   }
 }
