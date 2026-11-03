@@ -13,7 +13,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from app.modules.ai import workspace
 
 
 class PhoneLogCreate(BaseModel):
@@ -92,3 +94,14 @@ class PhoneLogResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, validation_alias="metadata_")
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("metadata")
+    def _public_metadata(self, value: dict[str, Any]) -> dict[str, Any]:
+        if workspace.current() is None or not isinstance(value.get("transcription"), dict):
+            return value
+        # Keep source/audit metadata in storage; publish the transcript's status
+        # and language without the configured service's identifying details.
+        info = {key: item for key, item in value["transcription"].items() if key not in {"provider", "model"}}
+        if isinstance(info.get("error"), str):
+            info["error"] = workspace.public_error(info["error"])
+        return {**value, "transcription": info}

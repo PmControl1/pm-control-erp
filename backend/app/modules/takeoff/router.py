@@ -4251,6 +4251,7 @@ async def analyze_document(
     import time
     import uuid as _uuid
 
+    from app.modules.ai import workspace
     from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
     from app.modules.ai.prompts import (
         SMART_IMPORT_PROMPT,
@@ -4287,7 +4288,7 @@ async def analyze_document(
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
-            detail=str(exc),
+            detail=workspace.public_error(str(exc)),
         ) from exc
 
     # 4. Build prompt
@@ -4310,12 +4311,12 @@ async def analyze_document(
             model=model_override,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail=workspace.public_error(str(exc))) from exc
     except Exception as exc:
         logger.exception("AI analysis failed for document %s: %s", doc_id, exc)
         raise HTTPException(
             status_code=502,
-            detail=f"AI analysis failed: {exc}",
+            detail=workspace.public_error(f"AI analysis failed: {exc}"),
         ) from exc
 
     duration_ms = int((time.monotonic() - start_time) * 1000)

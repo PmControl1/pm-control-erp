@@ -73,6 +73,8 @@ export interface AISettings {
    * local-only setups are not falsely treated as unconfigured.
    */
   ai_ready: boolean;
+  /** Shared AI is available without exposing the owner's provider or model. */
+  workspace_managed?: boolean;
   preferred_model: string;
   /** Per-provider model-id override the user has saved (provider -> model id). */
   model_overrides: Record<string, string>;
@@ -153,13 +155,13 @@ export interface EstimateJobResponse {
   items: EstimateItem[];
   grand_total: number;
   currency?: string;
-  model_used: string;
+  model_used: string | null;
   duration_ms: number;
   confidence?: number;
   /** Number of tokens the AI call consumed (0 when unknown). */
   tokens_used?: number;
   /** Estimated USD spend for the run (Decimal-as-string on the wire). */
-  cost_usd_estimate?: number | string;
+  cost_usd_estimate?: number | string | null;
   error_message?: string | null;
   input_type?: string;
 }
@@ -186,7 +188,7 @@ export interface EstimateJobSummary {
   grand_total: number | string;
   model_used?: string | null;
   tokens_used: number;
-  cost_usd_estimate: number | string;
+  cost_usd_estimate: number | string | null;
   duration_ms: number;
   error_message?: string | null;
   created_at: string;

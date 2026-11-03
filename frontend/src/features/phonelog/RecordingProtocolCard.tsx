@@ -278,9 +278,9 @@ export function RecordingProtocolCard({ projectId }: { projectId: string }) {
             })}
           </p>
           <p className="mt-1 text-xs text-content-tertiary">
-            {t('ai.transcription_goes_to_openai', {
+            {t('ai.transcription_service_notice', {
               defaultValue:
-                'Audio is transcribed by OpenAI with your OpenAI key, whatever AI provider you selected in Settings. Recordings are kept for 90 days by default.',
+                'Audio is processed by the configured transcription service. Recordings are kept for 90 days by default.',
             })}
           </p>
         </div>

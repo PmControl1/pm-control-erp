@@ -180,7 +180,23 @@ class StageState(BaseModel):
     accepted_at: datetime | None = None
 
 
-class RunRead(BaseModel):
+class _WorkspaceRunResponse(BaseModel):
+    """Keep shared AI execution details out of employee-facing run payloads."""
+
+    @field_serializer("provider", "model_used", check_fields=False)
+    def _public_ai_identity(self, value: str | None) -> str | None:
+        from app.modules.ai import workspace
+
+        return None if workspace.current() is not None else value
+
+    @field_serializer("failure_reason", check_fields=False)
+    def _public_failure_reason(self, value: str | None) -> str | None:
+        from app.modules.ai import workspace
+
+        return workspace.public_error(value)
+
+
+class RunRead(_WorkspaceRunResponse):
     """Full run state for the wizard."""
 
     model_config = ConfigDict(from_attributes=True)
@@ -223,7 +239,7 @@ class RunRead(BaseModel):
         return _serialise_money(v)
 
 
-class RunSummary(BaseModel):
+class RunSummary(_WorkspaceRunResponse):
     """Compact run row for the run list / resume picker."""
 
     id: uuid.UUID
@@ -690,8 +706,28 @@ class StepOut(BaseModel):
     took_ms: int | None = None
     created_at: datetime
 
+    @field_serializer("content")
+    def _public_step_content(self, value: Any) -> Any:
+        from app.modules.ai import workspace
 
-class ProgressResponse(BaseModel):
+        if workspace.current() is None:
+            return value
+        if self.role == "error":
+            return {"message": workspace.PUBLIC_AI_ERROR}
+        if not isinstance(value, dict):
+            return value
+        # These are execution metadata written by the estimator itself, not
+        # arbitrary nested project/model data returned by an agent tool.
+        public = {k: v for k, v in value.items() if k not in {"provider", "model", "model_used"}}
+        for key in ("agent_error", "failure_reason"):
+            if key in public:
+                public[key] = workspace.public_error(str(public[key]))
+        if public.get("degraded") == "llm_error" and "message" in public:
+            public["message"] = workspace.public_error(str(public["message"]))
+        return public
+
+
+class ProgressResponse(_WorkspaceRunResponse):
     """Poll target - run status + stepper + recent timeline.
 
     The frontend polls this on an interval while a stage runs (no streaming -
@@ -718,7 +754,7 @@ class ProgressResponse(BaseModel):
     recent_steps: list[StepOut] = Field(default_factory=list)
 
 
-class ReadinessResponse(BaseModel):
+class ReadinessResponse(_WorkspaceRunResponse):
     """Pre-flight check surfaced before the user starts a run.
 
     Honest about graceful degradation: a run still works with no AI key or no

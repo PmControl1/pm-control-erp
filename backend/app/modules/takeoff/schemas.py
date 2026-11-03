@@ -728,7 +728,23 @@ class PlanReadRequest(BaseModel):
     do_cost_match: bool = False
 
 
-class AiTakeoffRunResponse(BaseModel):
+class _WorkspacePlanReadResponse(BaseModel):
+    """Expose plan-reading results without the shared AI implementation."""
+
+    @field_serializer("provider", "model_used", check_fields=False)
+    def _public_ai_identity(self, value: str | None) -> str | None:
+        from app.modules.ai import workspace
+
+        return None if workspace.current() is not None else value
+
+    @field_serializer("reason", check_fields=False)
+    def _public_ai_reason(self, value: str | None) -> str | None:
+        from app.modules.ai import workspace
+
+        return workspace.public_error(value)
+
+
+class AiTakeoffRunResponse(_WorkspacePlanReadResponse):
     """Pollable state of one vision plan-read run."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -807,7 +823,7 @@ class ProposalQueueResponse(BaseModel):
     total_count: int = 0
 
 
-class PlanReadMetaResponse(BaseModel):
+class PlanReadMetaResponse(_WorkspacePlanReadResponse):
     """Thresholds, capabilities, and caps for the plan-read UI.
 
     The UI never hardcodes thresholds or limits; it reads them here (same
@@ -827,6 +843,12 @@ class PlanReadMetaResponse(BaseModel):
     provider: str | None = None
     model_used: str | None = None
     reason: str | None = None
+
+    @field_serializer("vision_providers")
+    def _public_vision_providers(self, value: list[str]) -> list[str]:
+        from app.modules.ai import workspace
+
+        return [] if workspace.current() is not None else value
 
     @field_serializer("max_cost_usd", "rolling_spend_usd", when_used="json")
     def _ser_usd(self, v: Decimal | None) -> str | None:

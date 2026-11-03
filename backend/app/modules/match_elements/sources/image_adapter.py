@@ -357,7 +357,14 @@ class ImageSourceAdapter:
         # deploys gate vision on a system-level key anyway.
         provider: str | None = None
         api_key: str | None = None
-        if self.session is not None:
+        from app.modules.ai import workspace
+
+        if workspace.current() is not None:
+            try:
+                provider, api_key = resolve_provider_and_key(None)
+            except ValueError as exc:
+                logger.warning("ImageAdapter: workspace AI unusable: %s", exc)
+        elif self.session is not None:
             try:
                 repo = AISettingsRepository(self.session)
                 # Prefer the session creator's settings if available.

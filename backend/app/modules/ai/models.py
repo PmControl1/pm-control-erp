@@ -10,10 +10,46 @@ Tables:
 import uuid
 from typing import Any
 
-from sqlalchemy import JSON, Float, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import GUID, Base
+
+
+class WorkspaceAIConfig(Base):
+    """The one AI provider the platform owner pays for and everyone uses.
+
+    A single row. When it exists, every AI call in the app uses this provider,
+    key, model and system prompt instead of anything a user saved for
+    themselves, so users never see or enter a key.
+    """
+
+    __tablename__ = "oe_ai_workspace_config"
+
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    model: Mapped[str] = mapped_column(String(200), nullable=False, default="", server_default="")
+    # Fernet ciphertext, never returned by the API.
+    api_key: Mapped[str | None] = mapped_column(String(1000), nullable=True, default=None)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
+    memory_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), nullable=True, default=None)
+
+    def __repr__(self) -> str:
+        return f"<WorkspaceAIConfig provider={self.provider} model={self.model}>"
+
+
+class AIMemory(Base):
+    """Something the assistant remembers about one user across conversations."""
+
+    __tablename__ = "oe_ai_memory"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(GUID(), nullable=False, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    # "user" when the person typed it in Settings, "assistant" when the chat saved it.
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="user", server_default="user")
+
+    def __repr__(self) -> str:
+        return f"<AIMemory user={self.user_id} source={self.source}>"
 
 
 class AISettings(Base):

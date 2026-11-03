@@ -19,6 +19,8 @@ import { AppearanceStyleCard } from './AppearanceStyleCard';
 import { MenuAppearanceCard } from './MenuAppearanceCard';
 import VectorStatusCard from './VectorStatusCard';
 import SemanticModelSettings from './SemanticModelSettings';
+import { WorkspaceAISection } from './WorkspaceAISettings';
+import { useWorkspaceAI } from '@/features/ai/workspaceAi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Eye,
@@ -1608,6 +1610,10 @@ export function SettingsPage() {
   const rawTab = searchParams.get('tab') ?? '';
   const initialTab = (TAB_ALIASES[rawTab] ?? (rawTab as SettingsTab)) || 'general';
   const validTabIds = useMemo(() => visibleTabs.map((t) => t.id), [visibleTabs]);
+  const workspaceAi = useWorkspaceAI().data;
+  const workspaceAiConfigured = workspaceAi?.configured ?? false;
+  const canConfigurePersonalAi = workspaceAi != null && !workspaceAiConfigured;
+  const canViewAiDiagnostics = workspaceAi != null && (!workspaceAi.configured || workspaceAi.can_manage);
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabIds.includes(initialTab) ? initialTab : 'general',
   );
@@ -2110,18 +2116,26 @@ export function SettingsPage() {
           {/* ── AI ────────────────────────────────────────────────── */}
           {activeTab === 'ai' && (
             <>
-              <div className="lg:col-span-2">
-                <InfoHint
-                  text={t('settings.ai_guidance_provider', { defaultValue: 'AI features (estimation, takeoff analysis, semantic search) need an AI provider. Keys are stored encrypted on your server, and the text of each AI request goes to the provider you choose. Choose a local model to keep that text on your own network.' })}
-                />
-              </div>
-              <AIConfigurationCard />
-              <div className="lg:col-span-2">
-                <VectorStatusCard />
-              </div>
-              <div className="lg:col-span-2">
-                <SemanticModelSettings />
-              </div>
+              {canConfigurePersonalAi && (
+                <div className="lg:col-span-2">
+                  <InfoHint
+                    text={t('settings.ai_guidance_provider', { defaultValue: 'AI features (estimation, takeoff analysis, semantic search) need an AI provider. Keys are stored encrypted on your server, and the text of each AI request goes to the provider you choose. Choose a local model to keep that text on your own network.' })}
+                  />
+                </div>
+              )}
+              <WorkspaceAISection />
+              {/* Personal keys only matter when no workspace AI serves everyone. */}
+              {canConfigurePersonalAi && <AIConfigurationCard />}
+              {canViewAiDiagnostics && (
+                <>
+                  <div className="lg:col-span-2">
+                    <VectorStatusCard />
+                  </div>
+                  <div className="lg:col-span-2">
+                    <SemanticModelSettings />
+                  </div>
+                </>
+              )}
             </>
           )}
 

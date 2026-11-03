@@ -108,7 +108,7 @@ export function AISmartPanel({
         const ready =
           typeof s.ai_ready === 'boolean' ? s.ai_ready : hasCloudKey || hasLocal;
         setAiConfigured(ready);
-        setAiProvider((s.provider as string) || '');
+        setAiProvider(s.workspace_managed ? '' : (s.provider as string) || '');
       })
       .catch(() => setAiConfigured(false));
   }, [isOpen]);

@@ -13,3 +13,7 @@ async def on_startup() -> None:
     from app.modules.ai.permissions import register_ai_permissions
 
     register_ai_permissions()
+
+    from app.modules.ai import workspace
+
+    await workspace.start()

@@ -1743,7 +1743,7 @@ export function MatchWizardFlow() {
                               {t('match.wizard.aiConnected', {
                                 defaultValue: 'AI connected',
                               })}
-                              {aiSettingsQ.data?.preferred_model
+                              {!aiSettingsQ.data?.workspace_managed && aiSettingsQ.data?.preferred_model
                                 ? ` · ${aiSettingsQ.data.preferred_model}`
                                 : ''}
                             </span>

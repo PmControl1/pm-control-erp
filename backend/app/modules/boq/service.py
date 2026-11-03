@@ -10689,6 +10689,7 @@ class BOQService:
         """
         import uuid as _uuid
 
+        from app.modules.ai import workspace
         from app.modules.ai.ai_client import resolve_provider_key_model
         from app.modules.ai.repository import AISettingsRepository
 
@@ -10701,7 +10702,7 @@ class BOQService:
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(exc),
+                detail=workspace.public_error(str(exc)),
             ) from exc
 
     async def _call_llm(self, user_id: str, system: str, prompt: str) -> tuple[str, str, int]:

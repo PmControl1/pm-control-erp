@@ -304,8 +304,8 @@ export function VoiceEntry({
           })}
         </p>
         <p className="text-xs text-content-tertiary">
-          {t('voice.transcription_goes_to_openai', {
-            defaultValue: 'Speech is transcribed by OpenAI with your OpenAI key, whatever AI provider you selected in Settings.',
+          {t('voice.transcription_service_notice', {
+            defaultValue: 'Speech is processed by the configured transcription service.',
           })}
         </p>
 
