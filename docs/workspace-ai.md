@@ -26,6 +26,22 @@ their own keys.
 is a comma-separated list of the accounts that may change workspace AI. When it is
 empty, any administrator may. Set it before customers get administrator accounts.
 
+## What employees see
+
+While workspace AI is enabled, ordinary accounts see AI availability and their
+own assistant memories. The selected provider, exact model, keys, owner system
+prompt, provider costs and runtime diagnostics are not included in their settings
+responses. The owner retains the full configuration and connection test under
+**Settings → AI → Workspace AI**. Personal connection tests and runtime changes
+are restricted to the owner while shared AI is active.
+
+Estimate history, agent results and streamed errors also omit runtime identifiers.
+Detailed failures remain in server-side audit records or logs. AI-generated
+answers remain labelled as AI; this does not rewrite user documents or generated
+answer text. Browser-delivered frontend code remains inspectable, and model
+identity can still be inferred from behaviour or the content of an AI answer.
+Configure `PMPM_PLATFORM_OWNER_EMAILS` before inviting staff administrators.
+
 ## Memory
 
 With **Assistant memory** on, the assistant remembers facts and preferences

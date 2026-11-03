@@ -35,6 +35,7 @@ async def _safe_publish(name: str, data: dict, source_module: str = "") -> None:
         _logger_ev.debug("Event publish skipped: %s", name)
 
 
+from app.modules.ai import workspace
 from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
 from app.modules.ai.models import AIEstimateJob, AISettings
 from app.modules.ai.prompts import (
@@ -461,6 +462,22 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
     as "configured" would make the Settings UI show "Key configured" while
     every chat/estimate call fails with a decrypt error.
     """
+    ws = workspace.current()
+    if ws is not None:
+        # The owner configures the provider through /ai/workspace/. Every
+        # feature consumes this provider-neutral readiness contract, including
+        # users with old personal settings. Never encode the workspace choice
+        # in key flags, model overrides, URLs or arbitrary metadata.
+        return AISettingsResponse(
+            id=settings.id,
+            user_id=settings.user_id,
+            workspace_managed=True,
+            ai_ready=bool(ws.api_key),
+            preferred_model="workspace",
+            created_at=settings.created_at,
+            updated_at=settings.updated_at,
+        )
+
     from app.core.crypto import decrypt_secret
     from app.modules.ai.ai_client import (
         AI_TIMEOUT,
@@ -546,7 +563,7 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
     # The ciphertext of the endpoint key lives in metadata; it never leaves.
     public_meta = {k: v for k, v in meta.items() if k != VLLM_API_KEY_META} if _meta_is_dict else {}
 
-    response = AISettingsResponse(
+    return AISettingsResponse(
         id=settings.id,
         user_id=settings.user_id,
         anthropic_api_key_set=_usable(settings.anthropic_api_key),
@@ -582,23 +599,6 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
         created_at=settings.created_at,
         updated_at=settings.updated_at,
     )
-
-    from app.modules.ai import workspace
-
-    ws = workspace.current()
-    if ws is None:
-        return response
-    # Workspace AI serves this user. Report it the way every readiness check
-    # in the app already reads settings, so no page asks for a personal key.
-    update: dict[str, Any] = {
-        "workspace_managed": True,
-        "ai_ready": bool(ws.api_key),
-        "preferred_model": ws.provider,
-        f"{ws.provider}_api_key_set": bool(ws.api_key),
-    }
-    if ws.model:
-        update["model_overrides"] = {**model_overrides, ws.provider: ws.model}
-    return response.model_copy(update=update)
 
 
 def _build_job_response(job: AIEstimateJob) -> EstimateJobResponse:
@@ -644,11 +644,13 @@ def _build_job_response(job: AIEstimateJob) -> EstimateJobResponse:
         status=job.status,
         items=items,
         currency=currency,
-        error_message=job.error_message,
-        model_used=job.model_used,
+        error_message=workspace.public_error(job.error_message),
+        model_used=job.model_used if workspace.current() is None else None,
         tokens_used=job.tokens_used,
         duration_ms=job.duration_ms,
-        cost_usd_estimate=Decimal(str(getattr(job, "cost_usd_estimate", 0.0) or 0.0)),
+        cost_usd_estimate=(
+            Decimal(str(getattr(job, "cost_usd_estimate", 0.0) or 0.0)) if workspace.current() is None else None
+        ),
         grand_total=grand_total.quantize(Decimal("0.01")),
         created_at=job.created_at,
         updated_at=job.updated_at,
@@ -691,11 +693,13 @@ def _build_job_summary(job: AIEstimateJob) -> EstimateJobSummary:
         items_count=items_count,
         currency=currency,
         grand_total=grand_total.quantize(Decimal("0.01")),
-        model_used=job.model_used,
+        model_used=job.model_used if workspace.current() is None else None,
         tokens_used=job.tokens_used,
-        cost_usd_estimate=Decimal(str(getattr(job, "cost_usd_estimate", 0.0) or 0.0)),
+        cost_usd_estimate=(
+            Decimal(str(getattr(job, "cost_usd_estimate", 0.0) or 0.0)) if workspace.current() is None else None
+        ),
         duration_ms=job.duration_ms,
-        error_message=job.error_message,
+        error_message=workspace.public_error(job.error_message),
         created_at=job.created_at,
     )
 
@@ -845,6 +849,8 @@ class AIService:
         Returns:
             Updated AISettingsResponse.
         """
+        if workspace.current() is not None and not await workspace.is_owner_user(self.session, user_id):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "AI settings are managed by the workspace owner.")
         uid = uuid.UUID(user_id)
         settings = await self.settings_repo.get_by_user_id(uid)
 
@@ -1133,7 +1139,7 @@ class AIService:
             # tells the user exactly what to fix.
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(exc),
+                detail=workspace.public_error(str(exc)),
             ) from exc
         except Exception as exc:
             duration_ms = int((time.monotonic() - start_time) * 1000)
@@ -1313,7 +1319,7 @@ class AIService:
             # instead of masking it (call_ai never echoes secrets).
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(exc),
+                detail=workspace.public_error(str(exc)),
             ) from exc
         except Exception as exc:
             duration_ms = int((time.monotonic() - start_time) * 1000)
@@ -1769,7 +1775,7 @@ class AIService:
             # instead of masking it (call_ai never echoes secrets).
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(exc),
+                detail=workspace.public_error(str(exc)),
             ) from exc
         except Exception as exc:
             duration_ms = int((time.monotonic() - start_time) * 1000)
@@ -1931,7 +1937,7 @@ class AIService:
             status="draft",
             metadata_={
                 "ai_job_id": str(job_id),
-                "ai_model": job.model_used or "",
+                **({"ai_model": job.model_used or ""} if workspace.current() is None else {}),
                 "ai_rates_enriched": bool(request.apply_enriched),
                 "ai_enrich_region": request.region or "",
             },

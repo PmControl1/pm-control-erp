@@ -460,7 +460,7 @@ function RecentEstimatesPanel({
                             </span>
                           </>
                         )}
-                        {Number(job.cost_usd_estimate) > 0 && (
+                        {job.cost_usd_estimate != null && Number(job.cost_usd_estimate) > 0 && (
                           <>
                             <span aria-hidden="true">·</span>
                             <span title={t('ai.est_cost_hint', { defaultValue: 'Estimated AI spend for this run' })}>
@@ -2634,7 +2634,7 @@ export function QuickEstimatePage() {
         actions={
           !isCadRoute ? (
             <div className="flex items-center gap-2">
-              {isConfigured && aiSettings?.preferred_model && (
+              {isConfigured && !aiSettings?.workspace_managed && aiSettings?.preferred_model && (
                 <span
                   data-testid="ai-quick-estimate-model-pill"
                   className="inline-flex items-center gap-1.5 rounded-full border border-border-light bg-surface-elevated px-3 py-1 text-xs font-medium text-content-secondary"
@@ -2777,9 +2777,9 @@ export function QuickEstimatePage() {
               </span>
               {t('ai.connected', { defaultValue: 'AI Connected' })}
             </span>
-            <span className="text-xs text-semantic-success">
-              {aiSettings.preferred_model || 'Claude'}
-            </span>
+            {!aiSettings.workspace_managed && aiSettings.preferred_model && (
+              <span className="text-xs text-semantic-success">{aiSettings.preferred_model}</span>
+            )}
           </div>
           <div className="flex items-center gap-2 text-2xs text-semantic-success">
             <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-semantic-success" /> {t('ai.quick_estimate.input_text', { defaultValue: 'Text' })}</span>
@@ -3464,7 +3464,7 @@ export function QuickEstimatePage() {
             {/* Submit button */}
             <div className="mt-5 flex items-center justify-between">
               <div className="text-xs text-content-tertiary">
-                {isConfigured && aiSettings?.preferred_model && (
+                {isConfigured && !aiSettings?.workspace_managed && aiSettings?.preferred_model && (
                   <span className="flex items-center gap-1.5">
                     <Zap size={12} />
                     {t('ai.powered_by', {
@@ -4443,11 +4443,16 @@ export function QuickEstimatePage() {
               )}
             </div>
             <div className="text-xs text-content-tertiary">
-              {t('ai.generated_in', {
-                defaultValue: 'Generated in {{duration}}s using {{model}}',
-                duration: fmtFixed(result.duration_ms / 1000, 1),
-                model: result.model_used,
-              })}
+              {result.model_used && !aiSettings?.workspace_managed
+                ? t('ai.generated_in', {
+                    defaultValue: 'Generated in {{duration}}s using {{model}}',
+                    duration: fmtFixed(result.duration_ms / 1000, 1),
+                    model: result.model_used,
+                  })
+                : t('ai.generated_in_duration', {
+                    defaultValue: 'Generated in {{duration}}s',
+                    duration: fmtFixed(result.duration_ms / 1000, 1),
+                  })}
             </div>
           </div>
 

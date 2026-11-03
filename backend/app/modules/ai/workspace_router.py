@@ -60,14 +60,14 @@ async def _status(session: SessionDep, payload: dict[str, Any]) -> dict[str, Any
     can_manage = await workspace.is_owner(session, payload)
     body: dict[str, Any] = {
         "configured": row is not None,
-        "provider": row.provider if row else None,
-        "model": (row.model or default_model_for(row.provider)) if row else None,
         "memory_enabled": bool(row.memory_enabled) if row else True,
         "can_manage": can_manage,
     }
     if can_manage:
         body.update(
             {
+                "provider": row.provider if row else None,
+                "model": (row.model or default_model_for(row.provider)) if row else None,
                 "providers": list(WORKSPACE_PROVIDERS),
                 "default_models": {p: default_model_for(p) for p in WORKSPACE_PROVIDERS},
                 "system_prompt": row.system_prompt if row else "",
@@ -89,7 +89,7 @@ async def _require_owner(session: SessionDep, payload: dict[str, Any]) -> None:
 
 @router.get("/workspace/")
 async def get_workspace_ai(session: SessionDep, payload: CurrentUserPayload) -> dict[str, Any]:
-    """Whether AI is provided for everyone, and by what. Owners also get the editable fields."""
+    """Return readiness to users; only owners receive provider configuration."""
     return await _status(session, payload)
 
 
@@ -101,12 +101,12 @@ async def save_workspace_ai(body: WorkspaceAIUpdate, session: SessionDep, payloa
     await _require_owner(session, payload)
     provider = body.provider.strip().lower()
     if provider not in WORKSPACE_PROVIDERS:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unsupported provider: {body.provider}")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unsupported provider: {body.provider}")
 
     row = await workspace.load_row(session)
     new_key = (body.api_key or "").strip()
     if not new_key and (row is None or row.provider != provider or not row.api_key):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Enter the API key for this provider.")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Enter the API key for this provider.")
 
     if row is None:
         row = WorkspaceAIConfig(provider=provider)
@@ -193,7 +193,7 @@ async def add_memory(body: MemoryCreate, session: SessionDep, payload: CurrentUs
     try:
         memory = await workspace.add_memory(session, uuid.UUID(str(payload["sub"])), body.content, source="user")
     except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     return _memory_out(memory)
 
 

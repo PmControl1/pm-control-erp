@@ -4223,6 +4223,7 @@ async def ai_chat_boq(
 
     Requires the user to have an AI API key configured in their settings.
     """
+    from app.modules.ai import workspace
     from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
     from app.modules.ai.repository import AISettingsRepository
 
@@ -4243,7 +4244,7 @@ async def ai_chat_boq(
     try:
         provider, api_key, model_override = resolve_provider_key_model(settings)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=workspace.public_error(str(exc))) from exc
 
     # Build prompt. Empty strings render in the prompt as bare blanks
     # which the LLM interprets as "no constraint specified" rather than
@@ -4276,7 +4277,7 @@ async def ai_chat_boq(
         logger.exception("AI chat failed for BOQ %s: %s", boq_id, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI request failed: {exc}",
+            detail=workspace.public_error(f"AI request failed: {exc}"),
         ) from exc
 
     # Parse response. The model is asked for a {"reply", "positions"}
@@ -8714,6 +8715,7 @@ async def smart_import(
         }
 
     # ── 3. AI-powered import ───────────────────────────────────────────
+    from app.modules.ai import workspace
     from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
     from app.modules.ai.prompts import (
         CAD_IMPORT_PROMPT,
@@ -8738,7 +8740,7 @@ async def smart_import(
             return await _smart_native_result(boq_id, native, file.filename or "upload", service, user_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
+            detail=workspace.public_error(str(exc)),
         ) from exc
 
     # Build prompt
@@ -8788,7 +8790,7 @@ async def smart_import(
         logger.exception("Smart import AI call failed for BOQ %s: %s", boq_id, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI service error: {exc}",
+            detail=workspace.public_error(f"AI service error: {exc}"),
         ) from exc
 
     items = extract_json(raw_response)
@@ -8875,7 +8877,7 @@ async def smart_import(
         "errors": errors,
         "total_items": len(items),
         "method": method,
-        "model_used": provider,
+        "model_used": provider if workspace.current() is None else None,
     }
     if is_cad_import:
         result["cad_format"] = extracted.get("cad_format")

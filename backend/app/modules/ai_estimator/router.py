@@ -716,7 +716,7 @@ async def list_catalogues(_current_user_id: CurrentUserId) -> list[schemas.Catal
     "/qdrant/health",
     dependencies=[Depends(RequirePermission("ai_estimator.read"))],
 )
-async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
+async def qdrant_health(_current_user_id: CurrentUserId, session: SessionDep) -> dict[str, object]:
     """Reuse the shared Qdrant health probe so the wizard shows vector-DB state."""
     from app.config import get_settings
     from app.core.vector import reset_qdrant_client
@@ -726,6 +726,13 @@ async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
     health = ensure_qdrant_running(settings.qdrant_url, spawn_if_installed=True)
     if getattr(health, "reachable", False) and getattr(health, "spawn_attempted", False):
         reset_qdrant_client()
+    if not await _may_read_runtime_details(_current_user_id, session):
+        reachable = bool(getattr(health, "reachable", False))
+        return {
+            "reachable": reachable,
+            "installed": bool(getattr(health, "installed", False)),
+            "message": "Semantic search is ready." if reachable else "Semantic search is unavailable.",
+        }
     return {
         "reachable": getattr(health, "reachable", False),
         "url": getattr(health, "url", None),
@@ -740,7 +747,7 @@ async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
     "/embedding-model/status",
     dependencies=[Depends(RequirePermission("ai_estimator.read"))],
 )
-async def embedding_model_status(_current_user_id: CurrentUserId) -> dict[str, object]:
+async def embedding_model_status(_current_user_id: CurrentUserId, session: SessionDep) -> dict[str, object]:
     """Report whether the semantic-search encoder is here, coming, or absent.
 
     Sits beside ``/qdrant/health`` because it answers the same kind of question
@@ -754,14 +761,22 @@ async def embedding_model_status(_current_user_id: CurrentUserId) -> dict[str, o
     """
     from app.core.embedding_installer import download_status
 
-    return download_status()
+    payload = download_status()
+    if await _may_read_runtime_details(_current_user_id, session):
+        return payload
+    # Readiness/progress is useful to the wizard. Model IDs, local paths,
+    # hardware details and upstream error text are owner diagnostics.
+    return {
+        key: payload.get(key)
+        for key in ("state", "enabled", "installed", "percent", "semantic_enabled", "locked", "semantic_locked")
+    }
 
 
 @router.post(
     "/embedding-model/install",
     dependencies=[Depends(RequirePermission("ai_estimator.run"))],
 )
-async def embedding_model_install(_current_user_id: CurrentUserId) -> dict[str, object]:
+async def embedding_model_install(_current_user_id: CurrentUserId, session: SessionDep) -> dict[str, object]:
     """Start the encoder download in the background and return the live state.
 
     Returns immediately: the transfer runs on a daemon thread and nothing here
@@ -776,6 +791,8 @@ async def embedding_model_install(_current_user_id: CurrentUserId) -> dict[str, 
     """
     from app.core.embedding_installer import download_status, start_background_download
     from app.core.semantic_switch import set_semantic_search_enabled
+
+    await _require_runtime_owner(_current_user_id, session)
 
     # Asking for the model is asking for semantic search: one switch, not two.
     set_semantic_search_enabled(True)
@@ -796,6 +813,17 @@ async def _sync_process_registry() -> None:
         logger.warning("Could not apply the semantic switch to running processes", exc_info=True)
 
 
+async def _may_read_runtime_details(user_id: str, session: SessionDep) -> bool:
+    from app.modules.ai import workspace
+
+    return workspace.current() is None or await workspace.is_owner_user(session, user_id)
+
+
+async def _require_runtime_owner(user_id: str, session: SessionDep) -> None:
+    if not await _may_read_runtime_details(user_id, session):
+        raise HTTPException(status_code=403, detail="Only the workspace owner can change search configuration.")
+
+
 @router.put(
     "/embedding-model/enabled",
     dependencies=[Depends(RequireRole("admin"))],
@@ -803,6 +831,7 @@ async def _sync_process_registry() -> None:
 async def embedding_model_set_enabled(
     body: schemas.SemanticSearchSwitch,
     _current_user_id: CurrentUserId,
+    session: SessionDep,
 ) -> dict[str, object]:
     """Turn semantic search on or off for the whole installation.
 
@@ -814,6 +843,8 @@ async def embedding_model_set_enabled(
     """
     from app.core.embedding_installer import download_status, start_background_download
     from app.core.semantic_switch import set_semantic_search_enabled
+
+    await _require_runtime_owner(_current_user_id, session)
 
     enabled = set_semantic_search_enabled(body.enabled)
     started = start_background_download(requested=True) if enabled else False

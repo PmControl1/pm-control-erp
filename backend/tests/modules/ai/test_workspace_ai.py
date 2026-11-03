@@ -104,15 +104,30 @@ async def test_owner_sets_ai_once_and_everyone_uses_it(client: AsyncClient) -> N
         assert saved.json()["key_hint"] == "…5678"
 
         seen = (await client.get("/api/v1/ai/workspace/", headers=member)).json()
-        assert seen["configured"] and seen["provider"] == "deepseek" and not seen["can_manage"]
-        assert "system_prompt" not in seen and "key_hint" not in seen
+        assert seen == {"configured": True, "memory_enabled": True, "can_manage": False}
+        assert saved.json()["provider"] == "deepseek"
+        assert saved.json()["model"]
+        assert "api_key" not in saved.json()
 
         denied = await client.put("/api/v1/ai/workspace/", headers=member, json={"provider": "openai", "api_key": "x"})
         assert denied.status_code == 403
 
         settings = (await client.get("/api/v1/ai/settings/", headers=member)).json()
-        assert settings["ai_ready"] and settings["workspace_managed"] and settings["deepseek_api_key_set"]
+        assert settings["ai_ready"] and settings["workspace_managed"]
+        assert settings["preferred_model"] == "workspace"
+        assert settings["model_overrides"] == {} and settings["default_models"] == {}
+        assert settings["metadata_"] == {}
+        assert not any(value for key, value in settings.items() if key.endswith("_api_key_set"))
         assert resolve_provider_and_key(None) == ("deepseek", "sk-test-12345678")
+
+        for method, url, body in (
+            ("delete", "/api/v1/ai/workspace/", None),
+            ("post", "/api/v1/ai/workspace/test/", None),
+            ("post", "/api/v1/ai/settings/test/", {"provider": "deepseek"}),
+            ("patch", "/api/v1/ai/settings/", {"preferred_model": "openai"}),
+        ):
+            denied = await client.request(method, url, headers=member, **({"json": body} if body else {}))
+            assert denied.status_code == 403, denied.text
 
         # Changing the model keeps the saved key.
         kept = await client.put(

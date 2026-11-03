@@ -5,11 +5,11 @@ import { apiDelete, apiGet, apiPost, apiPut } from '@/shared/lib/api';
 
 export interface WorkspaceAIStatus {
   configured: boolean;
-  provider: string | null;
-  model: string | null;
   memory_enabled: boolean;
   can_manage: boolean;
   // Present only for the owner.
+  provider?: string | null;
+  model?: string | null;
   providers?: string[];
   default_models?: Record<string, string>;
   system_prompt?: string;

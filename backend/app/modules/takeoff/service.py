@@ -3653,6 +3653,7 @@ class TakeoffService:
                 provider/model is not vision-capable. Never a silent fallback
                 to a text-only call (that would fabricate geometry).
         """
+        from app.modules.ai import workspace
         from app.modules.ai.ai_client import default_model_for, resolve_provider_key_model
         from app.modules.ai.repository import AISettingsRepository
         from app.modules.takeoff.plan_read import VISION_PROVIDERS, is_vision_capable
@@ -3663,7 +3664,7 @@ class TakeoffService:
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No AI provider configured. Please add an API key in Settings > AI.",
+                detail=workspace.public_error("No AI provider configured. Please add an API key in Settings > AI."),
             ) from exc
 
         effective_model = model_override or default_model_for(provider)
@@ -3671,7 +3672,7 @@ class TakeoffService:
             providers = ", ".join(sorted(VISION_PROVIDERS))
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
+                detail=workspace.public_error(
                     "Your AI provider/model does not support image analysis. Pick a "
                     f"vision-capable provider ({providers}) in Settings > AI - for "
                     "example Anthropic Claude, OpenAI GPT-4.1, or Gemini."

@@ -71,13 +71,18 @@ async def unified_search_endpoint(
 
 
 @router.get("/status/", response_model=SearchStatusResponse)
-async def search_status_endpoint(_user_id: CurrentUserId) -> SearchStatusResponse:
+async def search_status_endpoint(_user_id: CurrentUserId, session: SessionDep) -> SearchStatusResponse:
     """Return aggregated vector-store status + per-collection counts.
 
     Used by the admin panel and the global Cmd+K modal to show whether
     semantic search is ready and which collections currently have data.
     """
-    return search_status_snapshot()
+    from app.modules.ai import workspace
+
+    snapshot = search_status_snapshot()
+    if workspace.current() is not None and not await workspace.is_owner_user(session, _user_id):
+        return SearchStatusResponse(connected=snapshot.connected, collections=snapshot.collections)
+    return snapshot
 
 
 @router.get("/types/")

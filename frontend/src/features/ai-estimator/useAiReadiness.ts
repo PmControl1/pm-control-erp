@@ -19,6 +19,8 @@ import { aiEstimatorApi } from './api';
 /** True when the user has any usable LLM provider configured. */
 export function hasLlmKey(settings: AISettings | undefined): boolean {
   if (!settings) return false;
+  // Workspace settings deliberately omit provider-specific key flags.
+  if (typeof settings.ai_ready === 'boolean') return settings.ai_ready;
   const keyFlags: (keyof AISettings)[] = [
     'anthropic_api_key_set',
     'openai_api_key_set',
@@ -80,7 +82,7 @@ export function useAiReadiness(): AiReadiness {
   return {
     llmReady: hasLlmKey(settingsQ.data),
     vectorReady,
-    preferredModel: settingsQ.data?.preferred_model || null,
+    preferredModel: settingsQ.data?.workspace_managed ? null : settingsQ.data?.preferred_model || null,
     isLoading: settingsQ.isLoading || qdrantQ.isLoading,
   };
 }

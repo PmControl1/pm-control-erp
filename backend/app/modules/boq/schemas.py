@@ -404,6 +404,16 @@ class BOQResponse(BaseModel):
     #: The user who started the bill; null for bills older than the column.
     created_by: UUID | None = None
 
+    @field_serializer("metadata")
+    def _public_ai_metadata(self, value: dict[str, Any]) -> dict[str, Any]:
+        # Older AI-generated BOQs may still carry the runtime identity. Keep
+        # their stored audit data, but do not disclose it through project reads.
+        from app.modules.ai import workspace
+
+        if workspace.current() is None:
+            return value
+        return {key: item for key, item in value.items() if key != "ai_model"}
+
     # BUG-MATH04: defence-in-depth strip of any residual HTML on output.
     # Input validators only block the *dangerous* subset; legacy rows
     # written before that fix may still contain ``<b>`` etc. Stripping at
@@ -2301,7 +2311,15 @@ class EnhanceDescriptionRequest(BaseModel):
     locale: str = Field(default="en", max_length=10)
 
 
-class EnhanceDescriptionResponse(BaseModel):
+class _PublicWorkspaceAIResponse(BaseModel):
+    @field_serializer("model_used", check_fields=False)
+    def _public_model_used(self, value: str) -> str:
+        from app.modules.ai import workspace
+
+        return value if workspace.current() is None else ""
+
+
+class EnhanceDescriptionResponse(_PublicWorkspaceAIResponse):
     """Enhanced description with specs and standards."""
 
     enhanced_description: str
@@ -2339,7 +2357,7 @@ class PrerequisiteItem(BaseModel):
         return _serialise_money(v)
 
 
-class SuggestPrerequisitesResponse(BaseModel):
+class SuggestPrerequisitesResponse(_PublicWorkspaceAIResponse):
     """List of suggested prerequisite positions."""
 
     suggestions: list[PrerequisiteItem] = Field(default_factory=list)
@@ -2380,7 +2398,7 @@ class ScopeMissingItem(BaseModel):
         return _serialise_money(v)
 
 
-class CheckScopeResponse(BaseModel):
+class CheckScopeResponse(_PublicWorkspaceAIResponse):
     """Scope completeness analysis result."""
 
     completeness_score: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -2467,7 +2485,7 @@ class EscalationFactors(BaseModel):
         return _serialise_money(v)
 
 
-class EscalateRateResponse(BaseModel):
+class EscalateRateResponse(_PublicWorkspaceAIResponse):
     """Rate escalation result.
 
     v3 §10 - ``original_rate`` and ``escalated_rate`` are money;

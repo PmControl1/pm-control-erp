@@ -1610,7 +1610,10 @@ export function SettingsPage() {
   const rawTab = searchParams.get('tab') ?? '';
   const initialTab = (TAB_ALIASES[rawTab] ?? (rawTab as SettingsTab)) || 'general';
   const validTabIds = useMemo(() => visibleTabs.map((t) => t.id), [visibleTabs]);
-  const workspaceAiConfigured = useWorkspaceAI().data?.configured ?? false;
+  const workspaceAi = useWorkspaceAI().data;
+  const workspaceAiConfigured = workspaceAi?.configured ?? false;
+  const canConfigurePersonalAi = workspaceAi != null && !workspaceAiConfigured;
+  const canViewAiDiagnostics = workspaceAi != null && (!workspaceAi.configured || workspaceAi.can_manage);
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabIds.includes(initialTab) ? initialTab : 'general',
   );
@@ -2113,7 +2116,7 @@ export function SettingsPage() {
           {/* ── AI ────────────────────────────────────────────────── */}
           {activeTab === 'ai' && (
             <>
-              {!workspaceAiConfigured && (
+              {canConfigurePersonalAi && (
                 <div className="lg:col-span-2">
                   <InfoHint
                     text={t('settings.ai_guidance_provider', { defaultValue: 'AI features (estimation, takeoff analysis, semantic search) need an AI provider. Keys are stored encrypted on your server, and the text of each AI request goes to the provider you choose. Choose a local model to keep that text on your own network.' })}
@@ -2122,13 +2125,17 @@ export function SettingsPage() {
               )}
               <WorkspaceAISection />
               {/* Personal keys only matter when no workspace AI serves everyone. */}
-              {!workspaceAiConfigured && <AIConfigurationCard />}
-              <div className="lg:col-span-2">
-                <VectorStatusCard />
-              </div>
-              <div className="lg:col-span-2">
-                <SemanticModelSettings />
-              </div>
+              {canConfigurePersonalAi && <AIConfigurationCard />}
+              {canViewAiDiagnostics && (
+                <>
+                  <div className="lg:col-span-2">
+                    <VectorStatusCard />
+                  </div>
+                  <div className="lg:col-span-2">
+                    <SemanticModelSettings />
+                  </div>
+                </>
+              )}
             </>
           )}
 

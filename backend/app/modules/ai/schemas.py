@@ -301,13 +301,14 @@ class EstimateJobResponse(BaseModel):
     model_used: str | None = None
     tokens_used: int = 0
     duration_ms: int = 0
-    cost_usd_estimate: Decimal = Decimal("0")
+    # Workspace provider costs are private; null means withheld, not zero spend.
+    cost_usd_estimate: Decimal | None = Decimal("0")
     grand_total: Decimal = Decimal("0")
     created_at: datetime
     updated_at: datetime
 
     @field_serializer("grand_total", "cost_usd_estimate", when_used="json")
-    def _ser_money(self, v: Decimal) -> str | None:
+    def _ser_money(self, v: Decimal | None) -> str | None:
         return _serialise_money(v)
 
 
@@ -353,13 +354,13 @@ class EstimateJobSummary(BaseModel):
     grand_total: Decimal = Decimal("0")
     model_used: str | None = None
     tokens_used: int = 0
-    cost_usd_estimate: Decimal = Decimal("0")
+    cost_usd_estimate: Decimal | None = Decimal("0")
     duration_ms: int = 0
     error_message: str | None = None
     created_at: datetime
 
     @field_serializer("grand_total", "cost_usd_estimate", when_used="json")
-    def _ser_money(self, v: Decimal) -> str | None:
+    def _ser_money(self, v: Decimal | None) -> str | None:
         return _serialise_money(v)
 
 

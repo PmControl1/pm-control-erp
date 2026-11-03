@@ -76,6 +76,21 @@ def set_current(value: WorkspaceAI | None) -> None:
     _current = value
 
 
+PUBLIC_AI_ERROR = "AI could not complete this request. Please try again or contact your workspace administrator."
+
+
+def public_error(message: str | None) -> str | None:
+    """Keep upstream credentials, endpoints and model diagnostics on the server.
+
+    Personal-provider installations retain their actionable configuration
+    messages. Workspace users get operational status; the owner diagnoses the
+    provider through the protected workspace connection test and server logs.
+    """
+    if not message or _current is None:
+        return message
+    return PUBLIC_AI_ERROR
+
+
 def from_row(row: WorkspaceAIConfig | None) -> WorkspaceAI | None:
     if row is None:
         return None
@@ -158,6 +173,19 @@ async def is_owner(session: AsyncSession, payload: dict[str, Any]) -> bool:
     from app.core.permissions import Role, _resolve_role
 
     return _resolve_role(str(payload.get("role") or "")) == Role.ADMIN
+
+
+async def is_owner_user(session: AsyncSession, user_id: str | uuid.UUID) -> bool:
+    """Resolve owner access for services whose caller is a user ID, not a JWT."""
+    from app.modules.users.models import User
+
+    try:
+        user = await session.get(User, uuid.UUID(str(user_id)))
+    except (TypeError, ValueError):
+        return False
+    if user is None:
+        return False
+    return await is_owner(session, {"sub": str(user.id), "role": user.role})
 
 
 # ── System prompt ────────────────────────────────────────────────────────────

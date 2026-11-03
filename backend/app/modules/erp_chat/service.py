@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.events import publish_after_commit
 from app.modules.ai.ai_client import SELF_HOSTED_PROVIDERS
-from app.modules.ai.workspace import with_workspace_instructions
+from app.modules.ai.workspace import public_error, with_workspace_instructions
 from app.modules.erp_chat.actions import registry as action_registry
 from app.modules.erp_chat.actions.base import ActionConflictError
 from app.modules.erp_chat.actions.service import ChatActionService, propose_tool_result
@@ -630,7 +630,7 @@ class ERPChatService:
             try:
                 provider, api_key, preferred_model = await self._resolve_ai(user_id)
             except ValueError as exc:
-                yield _sse("error", {"message": str(exc)})
+                yield _sse("error", {"message": public_error(str(exc))})
                 yield _sse("done", {})
                 return
 
@@ -666,18 +666,15 @@ class ERPChatService:
                     # rate limit, malformed image). One line at WARNING is
                     # enough - full traceback floods the journal.
                     logger.warning("AI API call refused (round %d): %s", _round, exc)
-                    yield _sse("error", {"message": str(exc)})
+                    yield _sse("error", {"message": public_error(str(exc))})
                     yield _sse("done", {})
                     return
                 except Exception as exc:
-                    # Name the provider. Transport-level failures (an httpx
-                    # HTTPStatusError from raise_for_status: 401 bad key, 429,
-                    # 400 dead model slug) are NOT ValueError and land here, and
-                    # the no-tool branch below serves 17 different providers -
-                    # an unattributed "AI API error" leaves the user with no
-                    # idea which of their configured providers refused.
+                    # Keep provider diagnostics in the server log. Personal
+                    # configurations retain their actionable error; workspace
+                    # users receive the shared member-safe message.
                     logger.exception("AI API call failed (provider=%s round=%d)", provider, _round)
-                    yield _sse("error", {"message": f"AI API error ({provider}): {exc}"})
+                    yield _sse("error", {"message": public_error(f"AI API error ({provider}): {exc}")})
                     yield _sse("done", {})
                     return
 
@@ -706,7 +703,7 @@ class ERPChatService:
                             break
                         # Nothing ran, so there is no turn worth keeping and the
                         # reader's message is the most useful thing we have.
-                        yield _sse("error", {"message": str(exc)})
+                        yield _sse("error", {"message": public_error(str(exc))})
                         yield _sse("done", {})
                         return
                     break
@@ -811,8 +808,8 @@ class ERPChatService:
                                 logger.exception("Tool handler %s failed", tool_name)
                                 tool_result = {
                                     "renderer": "error",
-                                    "data": {"error": str(exc)},
-                                    "summary": f"Tool error: {exc}",
+                                    "data": {"error": public_error(str(exc))},
+                                    "summary": public_error(f"Tool error: {exc}"),
                                 }
                     else:
                         tool_result = {
@@ -935,7 +932,7 @@ class ERPChatService:
 
         except Exception as exc:
             logger.exception("stream_response fatal error")
-            yield _sse("error", {"message": f"Internal error: {exc}"})
+            yield _sse("error", {"message": public_error(f"Internal error: {exc}")})
             yield _sse("done", {})
 
     # ── Message building ─────────────────────────────────────────────────

@@ -36,14 +36,14 @@ export function WorkspaceAISection() {
       {data.can_manage ? (
         <WorkspaceAIOwnerCard status={data} />
       ) : data.configured ? (
-        <WorkspaceAIReadyCard status={data} />
+        <WorkspaceAIReadyCard />
       ) : null}
       {data.memory_enabled && <AIMemoryCard />}
     </>
   );
 }
 
-function WorkspaceAIReadyCard({ status }: { status: WorkspaceAIStatus }) {
+function WorkspaceAIReadyCard() {
   const { t } = useTranslation();
   return (
     <Card className="lg:col-span-2">
@@ -56,8 +56,7 @@ function WorkspaceAIReadyCard({ status }: { status: WorkspaceAIStatus }) {
             </p>
             <p className="mt-1 text-sm text-content-secondary">
               {t('settings.workspace_ai_ready_body', {
-                defaultValue: 'Your workspace provides AI ({{provider}}). There is nothing to set up.',
-                provider: providerName(status.provider),
+                defaultValue: 'Your workspace provides AI. There is nothing to set up.',
               })}
             </p>
           </div>

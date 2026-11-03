@@ -636,7 +636,7 @@ def test_a_failed_download_never_claims_the_boot_failed(hub, capsys: pytest.Capt
 async def test_the_status_endpoint_reports_without_loading_anything(hub) -> None:
     from app.modules.ai_estimator.router import embedding_model_status
 
-    payload = await embedding_model_status("user-1")
+    payload = await embedding_model_status("user-1", None)
 
     assert payload["state"] == installer.STATE_NOT_REQUESTED
     assert payload["model"] == REPO
@@ -659,7 +659,7 @@ async def test_the_install_endpoint_answers_rather_than_erroring_when_it_cannot(
 
     monkeypatch.setattr(installer, "semantic_library_available", lambda: False)
 
-    payload = await embedding_model_install("user-1")
+    payload = await embedding_model_install("user-1", None)
 
     assert payload["started"] is False
     assert payload["state"] == installer.STATE_LIBRARY_MISSING
@@ -676,14 +676,14 @@ async def test_the_install_endpoint_returns_while_the_transfer_is_still_running(
     _FakeHub.stall_gate = gate
 
     started = time.monotonic()
-    payload = await embedding_model_install("user-1")
+    payload = await embedding_model_install("user-1", None)
     assert time.monotonic() - started < 5.0
 
     try:
         assert payload["started"] is True
         _await_state(installer.STATE_DOWNLOADING)
         # And the status endpoint keeps answering with the transfer stuck.
-        during = await embedding_model_status("user-1")
+        during = await embedding_model_status("user-1", None)
         assert during["state"] == installer.STATE_DOWNLOADING
         assert during["installed"] is False
     finally:
