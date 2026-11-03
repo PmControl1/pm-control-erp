@@ -814,7 +814,17 @@ class ValidationModuleService:
         """
         from app.modules.boq.models import BOQMarkup
 
-        rows = (await self.session.execute(select(BOQMarkup).where(BOQMarkup.boq_id == boq_id))).scalars().all()
+        rows = (
+            (
+                await self.session.execute(
+                    select(BOQMarkup)
+                    .where(BOQMarkup.boq_id == boq_id)
+                    .order_by(BOQMarkup.sort_order, BOQMarkup.created_at)
+                )
+            )
+            .scalars()
+            .all()
+        )
         return [
             {
                 "id": str(markup.id),
