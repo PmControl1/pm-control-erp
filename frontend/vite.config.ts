@@ -181,6 +181,38 @@ function jsonLdSoftwareVersion(): Plugin {
   };
 }
 
+// These pages are served directly from public/, outside React. Keep the
+// original notices for explicit release builds and use the test copy in dev too.
+function internalPreviewPages(): Plugin {
+  const notice = readFileSync(path.resolve(__dirname, 'src/internal-test/notice.html'), 'utf8');
+  const pages = new Map([
+    ['/privacy-policy.html', notice],
+    ['/terms.html', notice],
+  ]);
+  let enabled = false;
+  return {
+    name: 'pmpm-internal-preview-pages',
+    configResolved(config) {
+      enabled = config.env.VITE_PMPM_INTERNAL_TEST !== 'false';
+    },
+    configureServer(server) {
+      if (!enabled) return;
+      server.middlewares.use((req, res, next) => {
+        const page = pages.get((req.url ?? '').split('?')[0]);
+        if (!page) return next();
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(page);
+      });
+    },
+    generateBundle() {
+      if (!enabled) return;
+      for (const [url, source] of pages) {
+        this.emitFile({ type: 'asset', fileName: url.slice(1), source });
+      }
+    },
+  };
+}
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
@@ -197,6 +229,7 @@ export default defineConfig({
     pdfjsAssets(),
     localeKeyIndex(__dirname),
     jsonLdSoftwareVersion(),
+    internalPreviewPages(),
     // ── Mobile PWA — Slice 1 ────────────────────────────────────────────
     // Installable PWA with offline-app-shell + i18n bundle caching.
     //
@@ -241,7 +274,7 @@ export default defineConfig({
         name: 'PM Project Management',
         short_name: 'PM Project Management',
         description:
-          'Open-source construction cost estimation, BIM takeoff, BOQ, tendering and field operations.',
+          'Construction cost estimation, BIM takeoff, BOQ, tendering and field operations.',
         theme_color: '#0284c7',
         background_color: '#f7fbff',
         display: 'standalone',

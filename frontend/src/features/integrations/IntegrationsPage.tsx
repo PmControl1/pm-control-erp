@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { TEST_BUILD } from '@/shared/brand';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -414,7 +415,7 @@ const CONNECTORS: ConnectorDef[] = [
       {
         key: 'webhook_url',
         label: 'Endpoint URL',
-        placeholder: 'https://your-server.com/webhooks/openconstructionerp',
+        placeholder: TEST_BUILD ? 'https://your-server.com/webhooks/pmpm' : 'https://your-server.com/webhooks/openconstructionerp',
       },
       {
         key: 'signing_secret',

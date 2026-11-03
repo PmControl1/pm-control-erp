@@ -10,6 +10,7 @@
 // (an offline desktop install, a blocked host) the frame falls back to a drawn
 // panel, so the card never shows a broken image.
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, Newspaper } from 'lucide-react';
@@ -20,6 +21,8 @@ export const FEATURED_ARTICLE_COVER = 'https://openconstructionerp.com/uberizati
 export function FeaturedArticle() {
   const { t } = useTranslation();
   const [coverFailed, setCoverFailed] = useState(false);
+
+  if (TEST_BUILD) return null;
 
   const title = t('sidebar.video_news.title', { defaultValue: 'Uberization of Construction' });
   const subtitle = t('sidebar.video_news.subtitle', {

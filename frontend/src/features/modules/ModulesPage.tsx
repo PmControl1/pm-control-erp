@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { TEST_BUILD } from '@/shared/brand';
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -1222,7 +1223,7 @@ function DataPackagesTab() {
       )}
 
       {/* Community / Build Your Own */}
-      <div className="mt-12">
+      {!TEST_BUILD && <div className="mt-12">
         <Card>
           <div className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/[0.05] via-indigo-500/[0.03] to-blue-500/[0.05]" />
@@ -1266,7 +1267,7 @@ function DataPackagesTab() {
             </div>
           </div>
         </Card>
-      </div>
+      </div>}
       <ConfirmDialog {...confirmProps} />
     </div>
   );
@@ -1820,8 +1821,12 @@ function MarketplaceCard({ module: mod, index, isInstalling, onInstall, isDemoIn
         <div className="min-w-0 flex-1">
           <span className="text-sm font-semibold text-content-primary truncate block">{mod.name}</span>
           <div className="mt-0.5 flex items-center gap-1.5 text-2xs text-content-tertiary">
-            <span>{mod.author}</span>
-            <span className="text-border">|</span>
+            {(!TEST_BUILD || mod.author !== 'OpenConstructionERP Core Team') && (
+              <>
+                <span>{mod.author}</span>
+                <span className="text-border">|</span>
+              </>
+            )}
             <span className="font-mono">v{mod.version}</span>
             <span className="text-border">|</span>
             <span>{formatSize(mod.size_mb)}</span>

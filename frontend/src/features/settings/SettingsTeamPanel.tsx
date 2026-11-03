@@ -24,6 +24,7 @@
  * never shows controls that would post nowhere.
  */
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -374,15 +375,15 @@ export function SettingsTeamPanel() {
       {/* ── License & Plan card ─────────────────────────────────────────── */}
       <Card>
         <CardHeader
-          title={t('settings.license_title', { defaultValue: 'License & plan' })}
-          subtitle={t('settings.license_subtitle', {
+          title={TEST_BUILD ? t('dashboard.system_status', { defaultValue: 'System Status' }) : t('settings.license_title', { defaultValue: 'License & plan' })}
+          subtitle={TEST_BUILD ? undefined : t('settings.license_subtitle', {
             defaultValue: 'Your edition, version and commercial licensing options',
           })}
           action={<BadgeCheck size={20} className="text-oe-blue" aria-hidden="true" />}
         />
         <CardContent>
           {/* Edition + version row */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          {!TEST_BUILD && <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-content-primary">
@@ -408,7 +409,7 @@ export function SettingsTeamPanel() {
               {t('settings.license_read_agpl', { defaultValue: 'Read the AGPL-3.0 license' })}
               <ExternalLink size={11} />
             </a>
-          </div>
+          </div>}
 
           {/* Version / build facts from /api/health */}
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border border-border-light bg-surface-secondary/40 px-4 py-3 sm:grid-cols-3">
@@ -439,7 +440,7 @@ export function SettingsTeamPanel() {
           </dl>
 
           {/* Commercial upgrade path - honest, no in-app payment flow */}
-          <div className="mt-4 rounded-lg border border-oe-blue/20 bg-oe-blue/[0.04] px-4 py-3.5">
+          {!TEST_BUILD && <div className="mt-4 rounded-lg border border-oe-blue/20 bg-oe-blue/[0.04] px-4 py-3.5">
             <div className="flex items-start gap-3">
               <Lock size={16} className="mt-0.5 shrink-0 text-oe-blue" />
               <div className="min-w-0 flex-1">
@@ -463,7 +464,7 @@ export function SettingsTeamPanel() {
                 </a>
               </div>
             </div>
-          </div>
+          </div>}
         </CardContent>
       </Card>
     </div>

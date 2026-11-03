@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Gauge, X, Download, ExternalLink, UploadCloud } from 'lucide-react';
+import { TEST_BUILD } from '@/shared/brand';
 import { apiGet } from '@/shared/lib/api';
 
 const SESSION_KEY = 'oe_demo_modal_dismissed';
@@ -42,7 +43,7 @@ export function DemoBanner() {
   const uploadsDisabled = data?.demo_uploads_disabled === true;
 
   useEffect(() => {
-    if (demoMode && sessionStorage.getItem(SESSION_KEY) !== '1') {
+    if (!TEST_BUILD && demoMode && sessionStorage.getItem(SESSION_KEY) !== '1') {
       setModalOpen(true);
     }
   }, [demoMode]);
@@ -84,44 +85,48 @@ export function DemoBanner() {
             </span>
           </span>
         )}
-        <code className="px-1.5 py-0.5 rounded bg-amber-900/15 text-amber-950 font-mono text-[11px] dark:bg-amber-100/10 dark:text-amber-100">
-          pip install openconstructionerp
-        </code>
-        <span className="flex items-center gap-2.5">
-          <span className="opacity-80">{t('demo_banner.strip_or_download')}</span>
-          <a
-            href="https://openconstructionerp.com/download"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
-          >
-            <Download size={12} className="shrink-0" />
-            Windows
-          </a>
-          <a
-            href="https://openconstructionerp.com/download"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
-          >
-            macOS
-          </a>
-          <a
-            href="https://openconstructionerp.com/download"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
-          >
-            Linux
-          </a>
-        </span>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
-        >
-          {t('demo_banner.strip_why')}
-        </button>
+        {!TEST_BUILD && (
+          <>
+            <code className="px-1.5 py-0.5 rounded bg-amber-900/15 text-amber-950 font-mono text-[11px] dark:bg-amber-100/10 dark:text-amber-100">
+              pip install openconstructionerp
+            </code>
+            <span className="flex items-center gap-2.5">
+              <span className="opacity-80">{t('demo_banner.strip_or_download')}</span>
+              <a
+                href="https://openconstructionerp.com/download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
+              >
+                <Download size={12} className="shrink-0" />
+                Windows
+              </a>
+              <a
+                href="https://openconstructionerp.com/download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
+              >
+                macOS
+              </a>
+              <a
+                href="https://openconstructionerp.com/download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
+              >
+                Linux
+              </a>
+            </span>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-50"
+            >
+              {t('demo_banner.strip_why')}
+            </button>
+          </>
+        )}
       </div>
 
       {/* One-time modal */}

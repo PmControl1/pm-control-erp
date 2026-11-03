@@ -3,6 +3,18 @@
 
 const resource = {
   "translation": {
+    "settings.hosted_model_range": "Хоствани модели Llama, Qwen и други",
+    "settings.inference_service": "Бързо изпълнение на стандартни и дообучени модели",
+    "settings.converter_versions": "Инсталирани и налични версии",
+    "settings.converter_updates": "Сравнете инсталираните пакети за конвертиране с последните налични версии.",
+    "settings.converter_docs": "Документация за конверторите",
+    "settings.converter_formats": "Инсталиране и работа с файлове на Revit® (RVT), IFC и DWG.",
+    "settings.open_converter_docs": "Отвори документацията",
+    "match_elements.embedder_loaded_caption_local": "{{model}} · {{precision}} · ~{{size}} MB · {{n}}+ езика",
+    "match_elements.embedder_required_body_local": "BGE-M3 работи локално и поддържа много езици. Можете да го инсталирате с командата по-долу.",
+    "match_elements.embedder_required_frozen_local": "Тази настолна версия има фиксиран набор от пакети. Използвайте сървърна инсталация или настолна версия, която включва модела BGE-M3.",
+    "geo_hub.source_credits": "Картни данни и компоненти",
+    "geo_hub.source_details": "Вижте източниците на картните данни и компонентите",
     "bid_management.scope_cost_line": "Разходен ред {{line}}, от количествената сметка",
     "changeorders.cost_line": "Разходен ред",
     "changeorders.cost_line_inherit": "Вземи го от позицията в количествената сметка или от договора",
@@ -51768,6 +51780,7 @@ const resource = {
     "videos.more_moments": "Още {{more}} момента",
     "cases.featured_article.eyebrow": "Препоръчана статия",
     "cases.featured_article.label": "Препоръчана статия: {{title}}. Прочети статията, отваря се в нов раздел",
+    "sidebar.learn.section_hint": "Когато скриете раздела, той се премества в горната лента. Натиснете иконата с академичната шапка, за да го върнете.",
     "sidebar.learn.hint_topbar": "Видеоуроци и водени казуси за запознаване с платформата. Ако скриете този раздел, той се свива в иконата с академична шапка в горната лента; един клик върху нея го връща в менюто.",
     "sidebar.learn.hidden_toast_body_topbar": "Вече са скрити зад иконата с академична шапка в горната лента. Един клик върху нея ги връща обратно.",
     "videos.used_in_cases": "Използвано в тези казуси",

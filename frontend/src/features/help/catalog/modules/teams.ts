@@ -8,6 +8,7 @@
 // which has its own card at /users. See ../../types.ts for the shape and key
 // convention.
 
+import { TEST_BUILD } from '@/shared/brand';
 import type { ModuleExplanation } from '../../types';
 
 export const teamsModules: ModuleExplanation[] = [
@@ -47,18 +48,18 @@ export const teamsModules: ModuleExplanation[] = [
         default:
           'As an administrator, use Invite User or Manage users to open User Management, where you invite people, change roles, set per-module access and deactivate accounts.',
       },
-      {
+      ...(TEST_BUILD ? [] : [{
         key: 'howto.teams.how.5',
         default:
           'Check the License & Plan card for your edition (Community, AGPL-3.0), version and modules loaded, and request a commercial license from there if you need support or an enterprise agreement.',
-      },
+      }]),
     ],
     tips: [
-      {
+      ...(TEST_BUILD ? [] : [{
         key: 'howto.teams.tip.1',
         default:
           'Administrators and managers see the full member list here, while editors and viewers see only their own membership and role.',
-      },
+      }]),
       {
         key: 'howto.teams.tip.2',
         default:
@@ -68,5 +69,13 @@ export const teamsModules: ModuleExplanation[] = [
     whenKey: 'howto.teams.when',
     whenDefault:
       'Reach for it to check who is on the project and what role they hold, confirm your edition and version, or hand off to User Management when someone joins, changes role or leaves.',
+    ...(TEST_BUILD && {
+      summaryKey: 'settings.team_subtitle',
+      summaryDefault: 'Who shares this workspace and how access is organised',
+      whatKey: 'howto.teams.tip.1',
+      whatDefault: 'Administrators and managers see the full member list here, while editors and viewers see only their own membership and role.',
+      whenKey: 'howto.users.when',
+      whenDefault: 'Use it when onboarding the team or whenever someone joins, changes role or leaves.',
+    }),
   },
 ];

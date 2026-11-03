@@ -31,7 +31,7 @@ import { safeNextPath } from './nextPath';
 import { SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { useThemeStore } from '@/stores/useThemeStore';
-import { BRAND_NAME } from '@/shared/brand';
+import { BRAND_NAME, TEST_BUILD } from '@/shared/brand';
 
 /* Segmented theme switch (Light / Dark / System) for the login page. */
 function ThemeSwitch() {
@@ -550,7 +550,7 @@ export function LoginPage() {
         </div>
 
         {/* Eyebrow pill */}
-        <div className="mb-5 animate-stagger-in" style={{ animationDelay: '0ms' }}>
+        {!TEST_BUILD && <div className="mb-5 animate-stagger-in" style={{ animationDelay: '0ms' }}>
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/[0.08] dark:bg-emerald-400/[0.1] px-3.5 py-1.5">
             <span className="relative flex h-[6px] w-[6px]">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
@@ -558,15 +558,19 @@ export function LoginPage() {
             </span>
             <span className="text-[11px] font-medium tracking-[0.04em] text-emerald-700 dark:text-emerald-300">Open Source</span>
           </span>
-        </div>
+        </div>}
 
         {/* Marketing headline - kept as h2 because the form panel below has the
             authoritative h1 (visually hidden, always present in DOM). */}
         <h2 className="text-[32px] xl:text-[36px] font-semibold text-content-primary leading-[1.08] tracking-[-0.025em] animate-stagger-in" style={{ animationDelay: '60ms' }}>
-          {t('login.hero_h_a', { defaultValue: 'The' })}{' '}
-          <span className="bg-gradient-to-r from-oe-blue to-sky-500 bg-clip-text text-transparent">#1</span>{' '}
-          {t('login.hero_h_b', { defaultValue: 'open-source workspace for' })}
-          <br />
+          {!TEST_BUILD && (
+            <>
+              {t('login.hero_h_a', { defaultValue: 'The' })}{' '}
+              <span className="bg-gradient-to-r from-oe-blue to-sky-500 bg-clip-text text-transparent">#1</span>{' '}
+              {t('login.hero_h_b', { defaultValue: 'open-source workspace for' })}
+              <br />
+            </>
+          )}
           <span className="bg-gradient-to-r from-oe-blue to-sky-500 bg-clip-text text-transparent">
             {t('login.hero_h_c', { defaultValue: 'construction project management' })}
           </span>
@@ -574,7 +578,7 @@ export function LoginPage() {
 
         {/* Subhead */}
         <p className="mt-5 text-[17px] text-content-secondary/70 leading-[1.65] tracking-[-0.008em] max-w-[420px] animate-stagger-in" style={{ animationDelay: '120ms' }}>
-          {t('login.hero_desc', { defaultValue: 'Plan, estimate, schedule, tender - every step of a project on one professional platform.' })}
+          {TEST_BUILD ? t('login.workspace_tagline', 'Professional construction project workspace') : t('login.hero_desc', { defaultValue: 'Plan, estimate, schedule, tender - every step of a project on one professional platform.' })}
         </p>
 
         {/* Stats row */}
@@ -711,14 +715,14 @@ export function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-4 space-y-1 animate-stagger-in" style={{ animationDelay: '380ms' }}>
+        {!TEST_BUILD && <div className="mt-4 space-y-1 animate-stagger-in" style={{ animationDelay: '380ms' }}>
           <div className="flex items-center gap-2 text-[11px] text-content-quaternary/60">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="opacity-40"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
             <a href="/api/source" target="_blank" rel="noopener noreferrer" className="hover:text-content-tertiary transition-colors">AGPL-3.0</a>
             <span className="opacity-30">&middot;</span>
             <a href="https://OpenConstructionERP.com" target="_blank" rel="noopener noreferrer" className="hover:text-content-tertiary transition-colors">OpenConstructionERP.com</a>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Center column removed - tags moved to left panel footer */}
@@ -799,7 +803,7 @@ export function LoginPage() {
           </div>
 
           {/* Open-source banner (mobile) */}
-          <div className="lg:hidden mb-4 animate-stagger-in" style={{ animationDelay: '100ms' }}>
+          {!TEST_BUILD && <div className="lg:hidden mb-4 animate-stagger-in" style={{ animationDelay: '100ms' }}>
             <div className="rounded-xl bg-gradient-to-r from-oe-blue/10 via-violet-500/10 to-emerald-500/10 border border-oe-blue/20 px-4 py-3 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-1">
                 <span className="relative flex h-2 w-2">
@@ -812,7 +816,7 @@ export function LoginPage() {
                 {t('login.open_source_badge', { defaultValue: 'The #1 Open-Source Construction ERP' })}
               </p>
             </div>
-          </div>
+          </div>}
 
           {/* Form - premium multi-layer glass.
               login-glass-pro adds layered borders, a coloured ambient drop
@@ -969,7 +973,7 @@ export function LoginPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[13px] font-semibold text-content-primary">{acct.name}</div>
-                        <div className="text-[11px] text-content-tertiary dark:text-content-secondary truncate">{acct.email} · {acct.role}</div>
+                        <div className="text-[11px] text-content-tertiary dark:text-content-secondary truncate">{!TEST_BUILD && `${acct.email} · `}{acct.role}</div>
                       </div>
                       <ChevronDown size={15} className="text-content-quaternary -rotate-90 group-hover:text-oe-blue transition-colors shrink-0" />
                     </button>
@@ -1010,7 +1014,7 @@ export function LoginPage() {
               link). Premium two-line cards with a tinted icon badge:
               graphite for the source repo, oe-blue gradient for the
               community hub. Mirrors the page's login-glass-pro language. */}
-          <div className="mt-4 grid grid-cols-2 gap-3 animate-stagger-in" style={{ animationDelay: '520ms' }}>
+          {!TEST_BUILD && <div className="mt-4 grid grid-cols-2 gap-3 animate-stagger-in" style={{ animationDelay: '520ms' }}>
             <a
               href="https://github.com/datadrivenconstruction/OpenConstructionERP"
               target="_blank"
@@ -1057,14 +1061,14 @@ export function LoginPage() {
                 className="shrink-0 text-content-quaternary dark:text-content-tertiary transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-content-secondary"
               />
             </a>
-          </div>
-          <div className="lg:hidden mt-2 text-center text-2xs text-content-quaternary">
+          </div>}
+          {!TEST_BUILD && <div className="lg:hidden mt-2 text-center text-2xs text-content-quaternary">
             <div className="flex items-center justify-center gap-3">
               <a href="https://OpenConstructionERP.com" target="_blank" rel="noopener noreferrer" className="hover:text-content-secondary transition-colors">OpenConstructionERP.com</a>
               <span>·</span>
               <a href="https://github.com/datadrivenconstruction/OpenConstructionERP" target="_blank" rel="noopener noreferrer" className="hover:text-content-secondary transition-colors">GitHub</a>
             </div>
-          </div>
+          </div>}
           {/* Running build version - always visible so it's obvious which
               version is live on a fresh open. Matches the Sidebar / About
               treatment (v{APP_VERSION}). */}
@@ -1078,7 +1082,7 @@ export function LoginPage() {
       {brandOpen && <BrandingEditorModal onClose={() => setBrandOpen(false)} />}
 
       {/* ── About modal ── */}
-      {showInfo && (
+      {!TEST_BUILD && showInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-lg" onClick={() => setShowInfo(false)} />
 

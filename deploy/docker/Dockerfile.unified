@@ -221,6 +221,7 @@ COPY frontend/ .
 # `npm run build` type-checks the whole project (and the e2e test projects) before
 # bundling, which is the slow, memory-hungry part; run `npm run typecheck` in
 # development instead.
+ARG VITE_PMPM_INTERNAL_TEST=true
 RUN NODE_OPTIONS=--max-old-space-size=12288 node ./node_modules/vite/bin/vite.js build
 
 # --- Stage: unified (all-in-one, port 8080) --------------------------------

@@ -21,6 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Download, Info } from 'lucide-react';
 import clsx from 'clsx';
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useDemoReadOnlyStore } from '@/stores/useDemoReadOnlyStore';
 
@@ -151,22 +152,26 @@ export function DemoReadOnlyDialog() {
             })}
           </p>
 
-          <p className="mt-3 text-sm text-content-secondary leading-relaxed">
-            {t('demo_read_only.runs_on_your_machine', {
-              defaultValue:
-                'The product itself runs on your own machine. Installing it takes a few minutes. Your projects, your prices and your drawings stay where you put them and remain yours - they are not sent to us, because there is nowhere for them to be sent.',
-            })}
-          </p>
+          {!TEST_BUILD && (
+            <>
+              <p className="mt-3 text-sm text-content-secondary leading-relaxed">
+                {t('demo_read_only.runs_on_your_machine', {
+                  defaultValue:
+                    'The product itself runs on your own machine. Installing it takes a few minutes. Your projects, your prices and your drawings stay where you put them and remain yours - they are not sent to us, because there is nowhere for them to be sent.',
+                })}
+              </p>
 
-          <h3 className="mt-5 text-sm font-semibold text-content-primary">
-            {t('demo_read_only.install_heading', { defaultValue: 'Ways to install it' })}
-          </h3>
+              <h3 className="mt-5 text-sm font-semibold text-content-primary">
+                {t('demo_read_only.install_heading', { defaultValue: 'Ways to install it' })}
+              </h3>
 
-          <ul className="mt-2 space-y-1.5 text-sm text-content-secondary leading-relaxed list-disc pl-5">
-            {INSTALL_OPTIONS.map((option) => (
-              <li key={option.key}>{t(option.key, { defaultValue: option.fallback })}</li>
-            ))}
-          </ul>
+              <ul className="mt-2 space-y-1.5 text-sm text-content-secondary leading-relaxed list-disc pl-5">
+                {INSTALL_OPTIONS.map((option) => (
+                  <li key={option.key}>{t(option.key, { defaultValue: option.fallback })}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row gap-3 px-6 pb-6">
@@ -186,21 +191,23 @@ export function DemoReadOnlyDialog() {
           >
             {t('demo_read_only.keep_looking', { defaultValue: 'Keep looking around' })}
           </button>
-          <a
-            href={DOWNLOAD_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="demo-read-only-download"
-            className={clsx(
-              'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5',
-              'text-sm font-medium transition-all',
-              'bg-oe-blue text-white hover:bg-oe-blue-hover active:bg-oe-blue-active',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue focus-visible:ring-offset-2',
-            )}
-          >
-            <Download size={16} />
-            {t('demo_read_only.get_it', { defaultValue: 'Get it for your machine' })}
-          </a>
+          {!TEST_BUILD && (
+            <a
+              href={DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="demo-read-only-download"
+              className={clsx(
+                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5',
+                'text-sm font-medium transition-all',
+                'bg-oe-blue text-white hover:bg-oe-blue-hover active:bg-oe-blue-active',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue focus-visible:ring-offset-2',
+              )}
+            >
+              <Download size={16} />
+              {t('demo_read_only.get_it', { defaultValue: 'Get it for your machine' })}
+            </a>
+          )}
         </div>
       </div>
     </div>

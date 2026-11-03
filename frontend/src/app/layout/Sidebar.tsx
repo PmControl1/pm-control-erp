@@ -52,6 +52,7 @@ import { useNavPendingStore } from '@/shared/lib/navigationProgress';
 import { useRecentStore } from '@/stores/useRecentStore';
 import { useGlobalSearchStore } from '@/stores/useGlobalSearchStore';
 import { getModuleNavItems, navItemModuleId } from '@/modules/_registry';
+import { TEST_BUILD } from '@/shared/brand';
 import { APP_VERSION } from '@/shared/lib/version';
 import { useSidebarBadges } from '@/shared/hooks/useSidebarBadges';
 import { useHiddenModules } from '@/shared/hooks/useHiddenModules';
@@ -1150,7 +1151,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
   const visibleWorkspaceItems = workspaceItems.filter(passesRowGates);
 
-  // The Learn card (videos and cases) is drawn apart from the group loop, at
+  // The Learn card (cases and packs) is drawn apart from the group loop, at
   // the very top of the menu, whatever the mode; see `LearnSection`. Its rows
   // pass the same gates as any group's, and hiding it goes through
   // `hiddenGroups`, so it also counts toward the "{N} hidden" chip.
@@ -1170,7 +1171,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     addToast(
       {
         type: 'info',
-        title: t('sidebar.learn.hidden_toast', { defaultValue: 'Video guides and use cases are hidden' }),
+        title: learnLabel,
         message: t('sidebar.learn.hidden_toast_body_topbar', {
           defaultValue: 'They are now behind the graduation cap in the top bar. One click there brings them back.',
         }),
@@ -1416,7 +1417,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
         data-engine="cwicr"
       >
-        {/* Learn: videos and cases, above everything else, Pinned included.
+        {/* Learn: cases and packs, above everything else, Pinned included.
             Hidden from its own header into a cap in the top bar, and restored
             from there. */}
         {learnGroup && learnItems.length > 0 && (
@@ -1749,56 +1750,47 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             )}
           </NavLink>
         </div>
-        {/* Request-a-custom-module CTA — second dashed tile, purple
-             accent, opens a popup instead of navigating. The popup
-             routes the request to two destinations depending on the
-             user's choice:
-               • "Could help others too"  → community / GitHub backlog
-                 → ends up in a future open-source release.
-               • "Only for my company"    → private / bespoke quote
-                 → DDC team replies with scope + price.
-             We keep this distinct from the developer-guide tile above
-             on purpose: contributors who want to build a module
-             themselves use the guide; users who want us to build it
-             for them use this dialog. */}
-        <div className={clsx('pt-1 pb-3', iconified ? 'px-0 flex justify-center' : 'px-3')}>
-          <button
-            type="button"
-            onClick={() => {
-              setCustomModuleOpen(true);
-              onClose?.();
-            }}
-            title={
-              iconified
-                ? t('nav.request_custom_module', { defaultValue: 'Request a custom module' })
-                : undefined
-            }
-            className={clsx(
-              'group flex items-center rounded-lg border border-dashed border-purple-400/40 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-50/40 dark:from-purple-500/10 dark:via-transparent dark:to-slate-900/30 hover:border-purple-500 hover:from-purple-500/10 hover:shadow-sm transition-all text-left',
-              iconified ? 'h-9 w-9 justify-center' : 'w-full gap-2.5 px-2.5 py-2',
-            )}
-            aria-haspopup="dialog"
-            aria-expanded={customModuleOpen}
-          >
-            <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-              <Sparkles size={14} strokeWidth={2.25} />
-            </span>
-            {!iconified && (
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-content-primary leading-tight">
-                  {t('nav.request_custom_module', {
-                    defaultValue: 'Request a custom module',
-                  })}
-                </span>
-                <span className="block text-[10px] text-content-tertiary leading-tight mt-0.5 truncate">
-                  {t('nav.request_custom_module_hint', {
-                    defaultValue: 'Missing something? Tell us what you need',
-                  })}
-                </span>
+        {/* This request form sends visitors to the upstream marketing site. */}
+        {!TEST_BUILD && (
+          <div className={clsx('pt-1 pb-3', iconified ? 'px-0 flex justify-center' : 'px-3')}>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomModuleOpen(true);
+                onClose?.();
+              }}
+              title={
+                iconified
+                  ? t('nav.request_custom_module', { defaultValue: 'Request a custom module' })
+                  : undefined
+              }
+              className={clsx(
+                'group flex items-center rounded-lg border border-dashed border-purple-400/40 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-50/40 dark:from-purple-500/10 dark:via-transparent dark:to-slate-900/30 hover:border-purple-500 hover:from-purple-500/10 hover:shadow-sm transition-all text-left',
+                iconified ? 'h-9 w-9 justify-center' : 'w-full gap-2.5 px-2.5 py-2',
+              )}
+              aria-haspopup="dialog"
+              aria-expanded={customModuleOpen}
+            >
+              <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <Sparkles size={14} strokeWidth={2.25} />
               </span>
-            )}
-          </button>
-        </div>
+              {!iconified && (
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-semibold text-content-primary leading-tight">
+                    {t('nav.request_custom_module', {
+                      defaultValue: 'Request a custom module',
+                    })}
+                  </span>
+                  <span className="block text-[10px] text-content-tertiary leading-tight mt-0.5 truncate">
+                    {t('nav.request_custom_module_hint', {
+                      defaultValue: 'Missing something? Tell us what you need',
+                    })}
+                  </span>
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Admin / setup surfaces — rendered as a 2-column button grid
@@ -1881,7 +1873,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             The GitHub link uses Lucide's Github mark — keeps the row aligned
             with the rest of the sidebar's lucide icons and gives a clear
             visual entry point to the source repo. */}
-        {iconified ? (
+        {!TEST_BUILD && (iconified ? (
           // Icon-only footer: GitHub + Telegram stacked. The expand
           // toggle lives on the floating edge-pill, not down here, so
           // users see only one toggle entry-point — no duplicate UI.
@@ -1971,7 +1963,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               </a>
             </div>
           </div>
-        )}
+        ))}
       </div>
       {/* Mounted at the aside root so the dialog escapes any
           z-index / overflow trap imposed by the inner nav scroller.
@@ -2274,7 +2266,7 @@ function NavGroupSection({
   );
 }
 
-/** The Learn card: Videos and Cases, drawn above every other section.
+/** The Learn card: Cases and Packs, drawn above every other section.
  *
  *  It reads as a card rather than as one more group header, because it is not
  *  one more area of work; it is the way in for somebody still finding their
@@ -2367,7 +2359,7 @@ function LearnSection({
               type="button"
               data-testid="sidebar-learn-hide"
               onClick={onHide}
-              aria-label={t('sidebar.learn.hide', { defaultValue: 'Hide video guides & use cases' })}
+              aria-label={t('sidebar.hide_group', { defaultValue: 'Hide {{label}} section', label })}
               aria-describedby={hintId}
               className={clsx(
                 'flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-[10px] font-medium text-content-tertiary',
@@ -2398,9 +2390,9 @@ function LearnSection({
                 'group-focus-within/learnhead:visible group-focus-within/learnhead:translate-y-0 group-focus-within/learnhead:opacity-100',
               )}
             >
-              {t('sidebar.learn.hint_topbar', {
+              {t('sidebar.learn.section_hint', {
                 defaultValue:
-                  'Tutorial videos and guided cases to learn the platform. Hide this section and it folds into the graduation cap in the top bar; one click there brings it back.',
+                  'Hide this section to move it to the graduation cap in the top bar. Click the cap to bring it back.',
               })}
             </div>
           </>

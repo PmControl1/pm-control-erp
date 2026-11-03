@@ -19,7 +19,7 @@ A partner pack is a small, code-free preset bundle for a country, region or comp
 The CLI scaffolds a ready-to-edit folder with a valid manifest, a placeholder logo, an onboarding script and a README. Edit the placeholders and you are done, no code to write.
 
 ```bash
-openconstructionerp pack new acme-co
+python -m app.cli pack new acme-co
 # -> creates acme-co/ with:
 #      manifest.json    the pack definition (only required file)
 #      logo.svg         your logo, shown in-app
@@ -83,21 +83,11 @@ Open Modules then Partner Packs, find your pack and press Activate. It applies t
 
 ### Optional: ship as a pip package
 
-To distribute on PyPI instead of as a folder or zip, expose the manifest through the entry-point group so it is discovered after `pip install`. A pip-installed pack may require a one-time backend restart.
-
-```toml
-[project.entry-points."openconstructionerp.partner_packs"]
-acme-co = "openconstructionerp_acme_co:MANIFEST"
-```
+To distribute a pack as a Python package, copy the entry-point group from `packs/bulgaria-bg/pyproject.toml`. Set the entry name to your pack slug and its value to your manifest, for example `acme_co:MANIFEST`. A pip-installed pack may require a backend restart.
 
 ### Sharing your pack
 
-- Add it as a package to the platform (publish your pip package) so anyone can install and activate it.
-- Or contribute it directly through a pull request, which makes it visible to everyone out of the box.
-- The pack can display your contact details or website to whoever uses it (your partner website, support email and your co-branding line).
-- We can also share information about you and your pack through our social networks, so more people discover your work.
-
-To list your pack or get featured, contact info@datadrivenconstruction.io. A pack holds presets only, no code. If you need new screens, endpoints or tables, build a module (below) and reference it from your pack via `default_modules`.
+Share the pack folder, zip or Python package with the administrator who will install it. The manifest can include your website and support address. A pack holds presets only, no code. If you need new screens, endpoints or tables, build a module (below) and reference it from your pack via `default_modules`.
 
 ---
 
@@ -113,8 +103,7 @@ Have these ready before starting. If you can run the app locally, you already ha
 - **A clone of the repo** to hack on the module
 
 ```bash
-git clone https://github.com/datadrivenconstruction/OpenConstructionERP.git
-cd PM Project Management
+# Start at the root of your project checkout.
 # Backend
 cd backend && pip install -e ".[dev]"
 uvicorn app.main:create_app --factory --reload --port 8000
@@ -464,7 +453,7 @@ Backend tests use httpx + ASGITransport, with no real HTTP. Frontend tests run i
 
 ```bash
 # Zip install (recommended)
-openconstructionerp module install path/to/my-module-1.0.0.zip
+python -m app.cli module install path/to/my-module-1.0.0.zip
 
 # Manual copy (development)
 cp -r downloaded-module backend/app/modules/
@@ -478,10 +467,9 @@ Then enable it under Modules & Marketplace, System Modules.
 ## Core rules (enforced in PR review)
 
 1. **i18n everywhere.** Every user-visible string goes through `t()`. English strings live in `frontend/src/app/locales/en`.
-2. **No IfcOpenShell, no native IFC.** CAD/BIM is always converted through DDC cad2data into the canonical JSON format.
+2. **No IfcOpenShell, no native IFC.** CAD/BIM is always converted through the configured cad2data converter into the canonical JSON format.
 3. **Validation is not optional.** Any module that ingests data must declare validation rules.
 4. **AI-augmented, human-confirmed.** AI suggestions must show a confidence score and require user confirmation before mutating data.
-5. **AGPL-3.0 compliance.** The platform is dual-licensed (AGPL + Commercial). There is no CLA and no external pull requests: modules are distributed as their own packages.
 
 ---
 
@@ -546,7 +534,7 @@ cd backend/app/modules
 zip -r ~/my-module-0.1.0.zip my_module
 
 # 2. Share the zip; recipients install with:
-openconstructionerp module install ~/my-module-0.1.0.zip
+python -m app.cli module install ~/my-module-0.1.0.zip
 
 # 3. Distribute the zip yourself (your own site or package index).
 #    There is no central module repository to submit to.
@@ -558,5 +546,4 @@ Always bump `manifest.version` on every release; the installer uses it to decide
 
 ## Further reading
 
-- [MODULES.md on GitHub](https://github.com/datadrivenconstruction/OpenConstructionERP/blob/main/MODULES.md): single source of truth
-- [CONTRIBUTING.md](https://github.com/datadrivenconstruction/OpenConstructionERP/blob/main/CONTRIBUTING.md): style, commits, PR process
+The project checkout contains `MODULES.md` for the module API and `CONTRIBUTING.md` for style, commits and the review process.

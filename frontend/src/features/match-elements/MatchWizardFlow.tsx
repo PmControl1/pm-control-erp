@@ -19,6 +19,7 @@
 //   7 Review         inspect candidates per group, adjust, confirm
 //   8 Apply & done   dry-run BOQ rollup → write → summary
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -1242,28 +1243,30 @@ export function MatchWizardFlow() {
           retries, occasional stale-cache shape mismatches, ranker
           tuning). The banner sets the right expectation and gives a
           1-click path to file an issue against the public repo. */}
-      <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 via-white to-white px-3 py-2 shadow-sm dark:border-amber-800/40 dark:from-amber-950/20 dark:via-surface-primary dark:to-surface-primary">
-        <span className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-300/60 bg-amber-100/80 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/40 dark:text-amber-100">
-          <Sparkles className="h-2.5 w-2.5" />
-          {t('match_elements.beta_badge', { defaultValue: 'Beta' })}
-        </span>
-        <p className="min-w-0 flex-1 text-xs leading-snug text-content-secondary">
-          {t('match_elements.beta_blurb', {
-            defaultValue:
-              'CAD-BIM Match → Cost is a new section and still has rough edges. Found a bug or have an idea? Please file an issue - every report tightens the next release.',
-          })}
-        </p>
-        <a
-          href="https://github.com/datadrivenconstruction/OpenConstructionERP/issues/new?labels=match-elements&template=bug_report.yml"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300/60 bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-amber-900 shadow-sm transition-all hover:-translate-y-px hover:bg-amber-50 dark:border-amber-700/40 dark:bg-surface-primary/80 dark:text-amber-100 dark:hover:bg-amber-900/30"
-        >
-          <MessageSquarePlus className="h-3 w-3" />
-          {t('match_elements.beta_cta', { defaultValue: 'Open an issue' })}
-          <ExternalLink className="h-2.5 w-2.5 opacity-70" />
-        </a>
-      </div>
+      {!TEST_BUILD && (
+        <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 via-white to-white px-3 py-2 shadow-sm dark:border-amber-800/40 dark:from-amber-950/20 dark:via-surface-primary dark:to-surface-primary">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-300/60 bg-amber-100/80 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/40 dark:text-amber-100">
+            <Sparkles className="h-2.5 w-2.5" />
+            {t('match_elements.beta_badge', { defaultValue: 'Beta' })}
+          </span>
+          <p className="min-w-0 flex-1 text-xs leading-snug text-content-secondary">
+            {t('match_elements.beta_blurb', {
+              defaultValue:
+                'CAD-BIM Match → Cost is a new section and still has rough edges. Found a bug or have an idea? Please file an issue - every report tightens the next release.',
+            })}
+          </p>
+          <a
+            href="https://github.com/datadrivenconstruction/OpenConstructionERP/issues/new?labels=match-elements&template=bug_report.yml"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300/60 bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-amber-900 shadow-sm transition-all hover:-translate-y-px hover:bg-amber-50 dark:border-amber-700/40 dark:bg-surface-primary/80 dark:text-amber-100 dark:hover:bg-amber-900/30"
+          >
+            <MessageSquarePlus className="h-3 w-3" />
+            {t('match_elements.beta_cta', { defaultValue: 'Open an issue' })}
+            <ExternalLink className="h-2.5 w-2.5 opacity-70" />
+          </a>
+        </div>
+      )}
 
       {/* Can matching work for this project at all? Answered before the
           user uploads anything, with the next step for each gap. It is the

@@ -30,6 +30,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+import { TEST_BUILD } from '@/shared/brand';
 import { copyToClipboard } from '@/shared/lib/browser';
 
 import { fetchEmbedderStatus, type EmbedderStatus } from './api';
@@ -86,9 +87,9 @@ function TrustBadges({ status }: { status: EmbedderStatus }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 font-medium">
+      {!TEST_BUILD && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 font-medium">
         {status.license}
-      </span>
+      </span>}
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-200 font-medium">
         {t('match_elements.embedder_languages_caption', '{{n}}+ languages', {
           n: status.languages_supported,
@@ -127,8 +128,8 @@ function LoadedState({ status }: { status: EmbedderStatus }) {
           </div>
           <div className="text-[11px] text-emerald-800/80 dark:text-emerald-200/80 truncate">
             {t(
-              'match_elements.embedder_loaded_caption',
-              '{{model}} · {{precision}} · ~{{size}} MB · {{license}} · {{n}}+ languages',
+              TEST_BUILD ? 'match_elements.embedder_loaded_caption_local' : 'match_elements.embedder_loaded_caption',
+              '{{model}} · {{precision}} · ~{{size}} MB · {{n}}+ languages',
               {
                 model: status.model_name,
                 precision,
@@ -196,14 +197,14 @@ function LoadedState({ status }: { status: EmbedderStatus }) {
 export function installSentence(status: EmbedderStatus, t: TFunction): string {
   const general = () =>
     t(
-      'match_elements.embedder_required_body',
-      'PM Project Management uses BGE-M3 - a free, open-source multilingual encoder by BAAI. It runs entirely on your machine. No API key. No cloud calls. Install once with one command:',
+      TEST_BUILD ? 'match_elements.embedder_required_body_local' : 'match_elements.embedder_required_body',
+      'BGE-M3 runs on your own machine and supports multiple languages. You can install it with the command below.',
     );
 
   if (status.install_hint_code === 'frozen_no_extra') {
     return t(
-      'match_elements.embedder_required_frozen',
-      'PM Project Management uses BGE-M3, a free, open-source multilingual encoder by BAAI that runs entirely on your machine. This desktop build ships a fixed set of packages, so the model cannot be added here. Use the server install, or a desktop build that already includes it.',
+      TEST_BUILD ? 'match_elements.embedder_required_frozen_local' : 'match_elements.embedder_required_frozen',
+      'This desktop build has a fixed set of packages. Use a server installation or a desktop build that includes the BGE-M3 model.',
     );
   }
   if (status.install_hint_code === 'pip') return general();

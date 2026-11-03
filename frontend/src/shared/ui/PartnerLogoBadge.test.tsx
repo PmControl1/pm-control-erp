@@ -16,6 +16,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+const mode = vi.hoisted(() => ({ internal: false }));
+vi.mock('@/shared/brand', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/brand')>(),
+  get TEST_BUILD() { return mode.internal; },
+}));
+
 import type { PartnerPackResponse } from '@/shared/hooks/usePartnerPack';
 
 /* ── Hook mock ─────────────────────────────────────────────────────── */
@@ -73,6 +79,7 @@ function renderBadge(ui: JSX.Element) {
 }
 
 beforeEach(() => {
+  mode.internal = false;
   cleanup();
   hookMock.usePartnerPack.mockReset();
   hookMock.partnerLogoUrl.mockClear();
@@ -90,6 +97,15 @@ afterEach(() => {
 /* ── Tests ─────────────────────────────────────────────────────────── */
 
 describe('<PartnerLogoBadge />', () => {
+  it.each(['dashboard', 'nav'] as const)('keeps the active partner badge out of the internal %s view', async (variant) => {
+    mode.internal = true;
+    hookMock.usePartnerPack.mockReturnValue({ isLoading: false, data: ACTIVE_PACK });
+    const PartnerLogoBadge = await importBadge();
+
+    const { container } = renderBadge(<PartnerLogoBadge variant={variant} />);
+    expect(container.firstChild).toBeNull();
+  });
+
   it('renders nothing while the partner-pack query is loading', async () => {
     hookMock.usePartnerPack.mockReturnValue({ isLoading: true, data: undefined });
     const PartnerLogoBadge = await importBadge();

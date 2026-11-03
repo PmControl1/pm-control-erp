@@ -10,6 +10,9 @@
 /** Product name shown in the UI, page titles, emails and exports. */
 export const BRAND_NAME = 'PM Project Management';
 
+/** PM test builds are the default. Release builds explicitly restore the software notices. */
+export const TEST_BUILD = import.meta.env.VITE_PMPM_INTERNAL_TEST !== 'false';
+
 /** Short form for tight spaces (PWA prompts, narrow headers). */
 export const BRAND_SHORT_NAME = 'PM Project Management';
 

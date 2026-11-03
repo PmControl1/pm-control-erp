@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { TEST_BUILD } from '@/shared/brand';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
@@ -202,7 +203,10 @@ export function PackDetailPage() {
   const TypeIcon = meta.icon;
   const description = t(`modules.pp_desc_${packNameSlug(pack.slug)}`, { defaultValue: pack.description });
   const regulatorRefs = asStringArray(pack.metadata.regulator_refs);
-  const supportEmail = typeof pack.metadata.support_email === 'string' ? pack.metadata.support_email : null;
+  const rawEmail = pack.metadata.support_email;
+  const supportEmail = typeof rawEmail === 'string' && !(TEST_BUILD && rawEmail.toLowerCase() === 'info@datadrivenconstruction.io')
+    ? rawEmail
+    : null;
   const accent = pack.branding.accent_color ?? pack.branding.primary_color;
   const moduleName = (id: string) => presetModuleName(t, i18n.language, id);
   const languageList = entry.languages.map((l) => names.languageName(l) ?? l.toUpperCase());

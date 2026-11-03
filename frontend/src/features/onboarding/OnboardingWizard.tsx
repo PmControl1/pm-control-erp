@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TEST_BUILD } from '@/shared/brand';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import i18n, { type TFunction } from 'i18next';
@@ -5224,12 +5225,12 @@ export function OnboardingWizard() {
           </div>
 
           {/* Trust footer — small line directly below the card. */}
-          <p className="mt-3 text-center text-[11px] text-content-tertiary">
+          {!TEST_BUILD && <p className="mt-3 text-center text-[11px] text-content-tertiary">
             {t('onboarding.footer_trust', {
               defaultValue:
                 'Free and open-source · Your data stays on your server · AGPL-3.0',
             })}
-          </p>
+          </p>}
         </div>
       </div>
     </div>

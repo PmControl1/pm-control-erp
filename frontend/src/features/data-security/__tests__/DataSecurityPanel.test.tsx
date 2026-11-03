@@ -50,6 +50,12 @@ const apiMocks = vi.hoisted(() => ({
 }));
 vi.mock('@/shared/lib/api', () => apiMocks);
 
+const brand = vi.hoisted(() => ({ TEST_BUILD: false }));
+vi.mock('@/shared/brand', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/brand')>(),
+  get TEST_BUILD() { return brand.TEST_BUILD; },
+}));
+
 import { DataSecurityPanel } from '../DataSecurityPanel';
 
 /* ── Fixtures + helpers ────────────────────────────────────────────── */
@@ -82,6 +88,7 @@ function renderPanel() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  brand.TEST_BUILD = false;
 });
 afterEach(() => {
   cleanup();
@@ -110,6 +117,18 @@ describe('DataSecurityPanel', () => {
       'href',
       'https://github.com/datadrivenconstruction/OpenConstructionERP',
     );
+  });
+
+  it('shows registration and privacy facts without the upstream license or repository in internal previews', async () => {
+    brand.TEST_BUILD = true;
+    apiMocks.apiGet.mockResolvedValue(posture());
+    renderPanel();
+
+    await screen.findByTestId('data-security-panel');
+    expect(screen.getByText('Admin Approve')).toBeInTheDocument();
+    expect(screen.getByText(/no external AI calls/i)).toBeInTheDocument();
+    expect(screen.queryByText('AGPL-3.0')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Open on GitHub/i })).not.toBeInTheDocument();
   });
 
   it('names the configured providers when AI is on', async () => {

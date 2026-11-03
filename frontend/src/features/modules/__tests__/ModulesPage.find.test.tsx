@@ -149,6 +149,11 @@ function germanName(moduleName: string): string {
 }
 
 describe('finding a module without knowing which tab it is on', () => {
+  it('keeps the developer guide reachable from the modules page', () => {
+    const { container } = renderPage();
+    expect(container.querySelector('a[href="/modules/developer-guide"]')).toBeInTheDocument();
+  });
+
   it('offers the search field on the tab the page opens on', () => {
     renderPage();
     expect(selectedTabId()).toBe('modules-tab-profiles');

@@ -17,6 +17,7 @@
  * its own loading / error states.
  */
 
+import { BRAND_NAME, TEST_BUILD } from '@/shared/brand';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -308,7 +309,7 @@ export function SharePage() {
         </div>
 
         <p className="mt-4 text-center text-2xs text-content-quaternary">
-          PM Project Management · datadrivenconstruction.io
+          {BRAND_NAME}{!TEST_BUILD && ' · datadrivenconstruction.io'}
         </p>
       </div>
     </div>

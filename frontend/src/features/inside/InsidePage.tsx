@@ -29,6 +29,7 @@ import {
 import { Card, Badge, Button, Input, Breadcrumb } from '@/shared/ui';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { Changelog, getRecentReleases } from '@/features/about/Changelog';
+import { TEST_BUILD } from '@/shared/brand';
 import { useInsideAccess } from './useInsideAccess';
 import { INSIDE_ROADMAP } from './roadmap';
 
@@ -109,12 +110,12 @@ function LockedTeaser() {
               {t('inside.unlock_title', { defaultValue: 'Enter supporter code' })}
             </h2>
           </div>
-          <p className="text-xs text-content-secondary leading-relaxed mb-4">
+          {!TEST_BUILD && <p className="text-xs text-content-secondary leading-relaxed mb-4">
             {t('inside.unlock_body', {
               defaultValue:
                 'Donors get a supporter access code after donating. Enter it below to unlock the Inside track panel on this device.',
             })}
-          </p>
+          </p>}
           <form onSubmit={handleSubmit} className="space-y-2">
             <Input
               value={code}
@@ -141,7 +142,7 @@ function LockedTeaser() {
             </Button>
           </form>
 
-          <div className="mt-5 pt-5 border-t border-border-light">
+          {!TEST_BUILD && <div className="mt-5 pt-5 border-t border-border-light">
             <p className="text-xs font-semibold text-content-primary mb-1">
               {t('inside.no_code_title', { defaultValue: "Don't have a code yet?" })}
             </p>
@@ -163,14 +164,14 @@ function LockedTeaser() {
                 </Button>
               </a>
             </div>
-          </div>
+          </div>}
 
-          <p className="mt-auto pt-4 text-2xs text-content-tertiary leading-relaxed">
+          {!TEST_BUILD && <p className="mt-auto pt-4 text-2xs text-content-tertiary leading-relaxed">
             {t('inside.donate_no_paywall', {
               defaultValue:
                 'The platform and its code stay free and open (AGPL-3.0) whether or not you unlock this panel.',
             })}
-          </p>
+          </p>}
         </div>
       </Card>
     </div>

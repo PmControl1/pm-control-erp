@@ -1,7 +1,7 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// The Learn card (Videos, Cases) at the top of the sidebar: where it sits, that
+// The Learn card (Cases, Packs) at the top of the sidebar: where it sits, that
 // the user can hide it and bring it back, and that the choice survives a
 // reload. "Survives a reload" is read off the store module itself: the store
 // reads localStorage once, at import, so re-rendering the sidebar would only
@@ -28,8 +28,8 @@ vi.mock('@/shared/lib/api', async () => {
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, opts?: { defaultValue?: unknown }) =>
-      typeof opts?.defaultValue === 'string' ? opts.defaultValue : key,
+    t: (key: string, opts?: { defaultValue?: unknown; label?: string }) =>
+      typeof opts?.defaultValue === 'string' ? opts.defaultValue.replace('{{label}}', opts.label ?? '') : key,
     i18n: { language: 'en', changeLanguage: vi.fn() },
   }),
   Trans: ({ children }: { children: ReactNode }) => children,
@@ -115,7 +115,7 @@ describe('the featured article', () => {
 });
 
 describe('the Learn card', () => {
-  it('opens the menu, above Pinned, with Videos, Cases and Packs', () => {
+  it('opens the menu, above Pinned, with Cases and Packs', () => {
     localStorage.setItem('oce-pinned-routes', JSON.stringify(['/boq']));
     renderSidebar();
 
@@ -123,13 +123,13 @@ describe('the Learn card', () => {
     const hrefs = within(learn)
       .getAllByRole('link')
       .map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/videos', '/cases', '/packs']);
+    expect(hrefs).toEqual(['/cases', '/packs']);
 
     const firstLinks = within(nav())
       .getAllByRole('link')
-      .slice(0, 4)
+      .slice(0, 3)
       .map((a) => a.getAttribute('href'));
-    expect(firstLinks).toEqual(['/videos', '/cases', '/packs', '/boq']);
+    expect(firstLinks).toEqual(['/cases', '/packs', '/boq']);
   });
 
   it('marks Packs as the current page on a single pack too', () => {
@@ -175,8 +175,8 @@ describe('the Learn card', () => {
     expect(toast?.action).toBeDefined();
 
     const restore = screen.getByTestId('header-learn-restore');
-    expect(restore.getAttribute('aria-label')).toBe('Show video guides & use cases');
-    expect(restore.getAttribute('title')).toBe('Put Video guides and Use cases back at the top of the menu');
+    expect(restore.getAttribute('aria-label')).toBe('Show Learn section');
+    expect(restore.getAttribute('title')).toBe('Show Learn section');
     fireEvent.click(restore);
 
     await screen.findByTestId('sidebar-learn');
