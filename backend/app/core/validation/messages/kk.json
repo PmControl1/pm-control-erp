@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "Сметаның тақырыбында количествена сметка-ны қайта таңдаңыз немесе байланысты жойыңыз",
       "unmatched": "Бұл КСС жолдарын «{bill}» количествена сметка-мен сәйкестендіру мүмкін емес: нөмірлеу қайталанады немесе жоқ",
       "unmatched_suggestion": "Жолдарды количествена сметка-дағыдай нөмірлеп, қайта тексеріңіз"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

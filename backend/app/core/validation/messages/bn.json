@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "বিলের শিরোনামে количествена сметка আবার বেছে নিন, অথবা সংযোগটি সরান",
       "unmatched": "এই КСС-এর লাইনগুলো количествена сметка '{bill}'-এর সঙ্গে মেলানো যায় না: ক্রমিক নম্বর পুনরাবৃত্ত বা অনুপস্থিত",
       "unmatched_suggestion": "লাইনগুলো количествена сметка-র মতো করে নম্বর দিন, তারপর আবার যাচাই করুন"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

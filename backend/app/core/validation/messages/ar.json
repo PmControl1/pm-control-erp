@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "اختر количествена сметка مرة أخرى في رأس الجدول أو أزل الربط",
       "unmatched": "لا يمكن مطابقة بنود هذه КСС مع количествена сметка '{bill}': الترقيم مكرر أو مفقود",
       "unmatched_suggestion": "رقّم البنود كما ترقّمها количествена сметка ثم أعد التحقق"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

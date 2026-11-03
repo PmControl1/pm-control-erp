@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "Chọn lại количествена сметка ở phần đầu bảng hoặc gỡ liên kết",
       "unmatched": "Không thể đối chiếu các dòng của КСС này với количествена сметка '{bill}': số thứ tự bị trùng hoặc thiếu",
       "unmatched_suggestion": "Đánh số các dòng như количествена сметка rồi kiểm tra lại"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

@@ -68,6 +68,12 @@ a check digit. A VAT-registered company's ДДС number is "BG" and its ЕИК.
 - **Five reference documents** covering the КСС, the ЗУТ categories, public
   procurement under the ЗОП, ДДС and the euro changeover.
 
+Existing installations can preview and repair inherited DIN 276 settings with
+the reversible operator command documented in
+[Bulgarian КСС validation](../../docs/operations/bulgaria-kss-validation.md).
+That guide also explains source Excel ДДС checks, live markup configuration,
+and how to test the comparison.
+
 ## Standards referenced
 
 - Закон за устройство на територията (ЗУТ), чл. 137

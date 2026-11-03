@@ -3268,8 +3268,17 @@ class BOQService:
         if "metadata" in fields:
             incoming_meta = fields.pop("metadata")
             existing_meta = boq.metadata_ if isinstance(boq.metadata_, dict) else {}
+            # The tender link determines what an approved КСС is checked
+            # against. Treat changing or clearing it like a bill edit, even
+            # when a caller bypasses the editor's disabled picker. Other
+            # header metadata keeps its existing behavior.
+            from app.modules.boq.kss_tender import tender_bill_id
+
+            merged_meta = {**existing_meta, **incoming_meta} if isinstance(incoming_meta, dict) else incoming_meta
+            if tender_bill_id(existing_meta) != tender_bill_id(merged_meta):
+                await self._ensure_boq_writable(boq_id)
             if isinstance(incoming_meta, dict):
-                fields["metadata_"] = {**existing_meta, **incoming_meta}
+                fields["metadata_"] = merged_meta
             else:
                 fields["metadata_"] = incoming_meta
 

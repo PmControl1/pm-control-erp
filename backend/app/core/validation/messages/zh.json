@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "请在清单抬头重新选择 количествена сметка，或解除关联",
       "unmatched": "本 КСС 的各行无法与 количествена сметка“{bill}”对应：编号重复或缺失",
       "unmatched_suggestion": "请按 количествена сметка 的编号为各行编号，然后重新校验"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

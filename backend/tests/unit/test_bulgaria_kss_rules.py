@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from decimal import Decimal
 from types import SimpleNamespace
 from typing import Any
 
@@ -103,10 +104,9 @@ def _markup(name: str, category: str = "tax", percentage: str = "20.0", **extra:
 # ── Registration and reach ─────────────────────────────────────────────────────
 
 
-def test_the_bulgaria_set_holds_its_five_rules() -> None:
+def test_the_bulgaria_set_holds_its_core_rules_and_imported_totals_check() -> None:
     ids = {entry["rule_id"] for entry in rule_registry.list_rules(rule_set=BULGARIA_RULE_SET)}
-    assert ids == {rule.rule_id for rule in BULGARIA_RULES}
-    assert len(ids) == 5
+    assert ids == {rule.rule_id for rule in BULGARIA_RULES} | {"bulgaria.imported_vat_totals"}
 
 
 def test_a_bulgarian_project_gets_the_bulgarian_rules_and_not_din276() -> None:
@@ -266,6 +266,113 @@ def test_the_sofia_demo_stack_passes() -> None:
     )
     for rule in (BulgarianVatChargedOnce(), BulgarianVatRate(), BulgarianVatOnWholeTotal()):
         assert _failures(_run(rule, data)) == [], rule.rule_id
+
+
+def _scoped_markup_amounts(data: dict[str, Any]) -> dict[str, Decimal]:
+    """Quote the actual BOQ calculator beside the scoped validation cases."""
+    from app.modules.boq.service import _calculate_markup_amounts_scoped
+
+    positions = [SimpleNamespace(**p) for p in data["positions"]]
+    markups = [
+        SimpleNamespace(overrides_id=None, **m) if "overrides_id" not in m else SimpleNamespace(**m)
+        for m in data["markups"]
+    ]
+    direct = sum((Decimal(str(p.total)) for p in positions), Decimal(0))
+    return {m.id: amount for m, amount in _calculate_markup_amounts_scoped(direct, markups, positions)}
+
+
+def _two_sections(markups: list[dict[str, Any]]) -> dict[str, Any]:
+    rows = [
+        ("s1", None, "I", "ЗЕМНИ РАБОТИ", "", 0),
+        ("p1", "s1", "1", "Изкоп", "м3", 100),
+        ("s2", None, "II", "БЕТОНОВИ РАБОТИ", "", 0),
+        ("p2", "s2", "2", "Кофраж", "м2", 100),
+    ]
+    return {"positions": _positions(rows, rate=10), "markups": markups}
+
+
+def test_extra_scoped_vat_is_rejected_when_it_double_taxes_only_one_section() -> None:
+    data = _two_sections(
+        [
+            _markup("ДДС", sort_order=1),
+            _markup("ДДС раздел I", scope_position_id="s1", sort_order=2),
+        ]
+    )
+    assert _scoped_markup_amounts(data) == {"ДДС": Decimal("400"), "ДДС раздел I": Decimal("200")}
+    failures = _failures(_run(BulgarianVatChargedOnce(), data))
+    assert len(failures) == 1
+    assert failures[0].details["vat_lines"] == ["ДДС", "ДДС раздел I"]
+
+
+def test_a_scoped_vat_override_replaces_the_global_line_without_double_charging() -> None:
+    data = _two_sections(
+        [
+            _markup("ДДС", sort_order=1),
+            _markup("ДДС раздел I", scope_position_id="s1", overrides_id="ДДС", sort_order=99),
+        ]
+    )
+    assert _scoped_markup_amounts(data) == {"ДДС": Decimal("200"), "ДДС раздел I": Decimal("200")}
+    for rule in (BulgarianVatLinePresent(), BulgarianVatChargedOnce(), BulgarianVatRate(), BulgarianVatOnWholeTotal()):
+        assert _failures(_run(rule, data)) == [], rule.rule_id
+
+
+def test_scoped_contingency_is_not_left_out_of_the_global_vat_base() -> None:
+    data = _two_sections(
+        [
+            _markup("ДДС", sort_order=2),
+            _markup(
+                "Непредвидени раздел I", category="contingency", percentage="10", scope_position_id="s1", sort_order=1
+            ),
+        ]
+    )
+    assert _scoped_markup_amounts(data) == {"ДДС": Decimal("400"), "Непредвидени раздел I": Decimal("100")}
+    failures = _failures(_run(BulgarianVatOnWholeTotal(), data))
+    assert len(failures) == 1
+    assert failures[0].details["lines"] == ["Непредвидени раздел I"]
+    data["markups"][0]["apply_to"] = "cumulative"
+    assert _scoped_markup_amounts(data)["ДДС"] == Decimal("420")
+    assert _failures(_run(BulgarianVatOnWholeTotal(), data)) == []
+
+
+def test_a_scoped_markup_after_vat_is_rejected() -> None:
+    data = _two_sections(
+        [
+            _markup("ДДС", sort_order=1),
+            _markup("Печалба раздел I", category="profit", percentage="5", scope_position_id="s1", sort_order=2),
+        ]
+    )
+    failures = _failures(_run(BulgarianVatOnWholeTotal(), data))
+    assert len(failures) == 1
+    assert failures[0].details["lines"] == ["Печалба раздел I"]
+
+
+def test_section_only_vat_covers_priced_work_without_a_spurious_missing_vat_warning() -> None:
+    data = _two_sections(
+        [
+            _markup("ДДС раздел I", scope_position_id="s1"),
+            _markup("ДДС раздел II", scope_position_id="s2"),
+        ]
+    )
+    assert _failures(_run(BulgarianVatLinePresent(), data)) == []
+    data["markups"].pop()
+    assert len(_failures(_run(BulgarianVatLinePresent(), data))) == 1
+
+
+def test_nearer_vat_override_inherits_the_global_order_and_wins_over_its_parent() -> None:
+    data = _two_sections(
+        [
+            _markup("Непредвидени", category="contingency", percentage="10", sort_order=1),
+            _markup("ДДС", sort_order=2, apply_to="cumulative"),
+            _markup("ДДС раздел I", scope_position_id="s1", overrides_id="ДДС", sort_order=0, apply_to="cumulative"),
+            _markup("ДДС позиция 1", scope_position_id="p1", overrides_id="ДДС", sort_order=0, apply_to="cumulative"),
+        ]
+    )
+    amounts = _scoped_markup_amounts(data)
+    assert amounts["ДДС раздел I"] == 0
+    assert amounts["ДДС позиция 1"] == Decimal("220")
+    assert amounts["ДДС"] == Decimal("220")
+    assert _failures(_run(BulgarianVatChargedOnce(), data)) == []
+    assert _failures(_run(BulgarianVatOnWholeTotal(), data)) == []
 
 
 # ── КСС against its количествена сметка ──────────────────────────────────────

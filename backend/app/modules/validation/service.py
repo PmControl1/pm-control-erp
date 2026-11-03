@@ -827,6 +827,7 @@ class ValidationModuleService:
                 "sort_order": markup.sort_order,
                 "is_active": markup.is_active,
                 "scope_position_id": (str(markup.scope_position_id) if markup.scope_position_id else None),
+                "overrides_id": (str(markup.overrides_id) if markup.overrides_id else None),
             }
             for markup in rows
         ]

@@ -98,6 +98,18 @@ async def with_kss_tender_bill(
     """Return ``data`` plus ``kss_tender`` when the bill names a tender bill; ``data`` is not changed."""
     if session is None:
         return data
+    # The spreadsheet's totals are an immutable source audit, kept separately
+    # from live markups and before any currency conversion or later edit.
+    from app.modules.boq.importers.bulgaria_totals import SOURCE_TOTALS_KEY
+    from app.modules.boq.models import BOQ
+
+    own_id = boq_id if isinstance(boq_id, uuid.UUID) else uuid.UUID(str(boq_id))
+    bill = await session.get(BOQ, own_id)
+    metadata = bill.metadata_ if bill is not None and isinstance(bill.metadata_, dict) else {}
+    last_import = metadata.get("last_import")
+    source = last_import.get(SOURCE_TOTALS_KEY) if isinstance(last_import, dict) else None
+    if isinstance(source, dict):
+        data = {**data, SOURCE_TOTALS_KEY: source}
     tender = await load_kss_tender(session, boq_id)
     if tender is None:
         return data

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections import Counter, defaultdict
 from typing import Any
 
 from app.core.euro_conversion import fixed_euro_rate, is_replaced_by_euro, to_euro
@@ -112,6 +113,51 @@ def canonical_unit(unit: str) -> str:
     if not text:
         return text
     return _UNIT_FORMS.get(_unit_key(text), text)
+
+
+def normalise_section_ordinals(imported: Any) -> None:
+    """Give restarted item numbers unique storage ordinals, preserving the source.
+
+    A Bulgarian sheet can number both раздел I and раздел II from 1, whereas
+    BOQ storage requires an ordinal to be unique across the bill. Only repeated
+    numbers under distinct, identifiable sections are qualified (``I.1``).
+    A duplicate within one section remains a duplicate for the normal import
+    guard to reject. Source numbers stay available to the tender comparison,
+    including when a priced copy omitted a row and no longer has a duplicate.
+    """
+    positions = imported.positions
+    counts = Counter(position.ordinal for position in positions)
+    section_counts = Counter(position.ordinal for position in positions if position.is_section)
+    sections: dict[int, str] = {}
+    lines_by_ordinal: dict[str, list[Any]] = defaultdict(list)
+    section = ""
+    for position in positions:
+        metadata = dict(position.metadata or {})
+        metadata.setdefault("kss_source_ordinal", position.ordinal)
+        position.metadata = metadata
+        if position.is_section:
+            section = position.ordinal
+        else:
+            sections[id(position)] = section
+            lines_by_ordinal[position.ordinal].append(position)
+
+    reserved = set(counts)
+    for ordinal, count in counts.items():
+        if count < 2:
+            continue
+        lines = lines_by_ordinal[ordinal]
+        parents = [sections[id(position)] for position in lines]
+        if not parents or not all(parents) or len(parents) != len(set(parents)):
+            continue
+        if any(section_counts[parent] != 1 for parent in parents):
+            continue
+        replacements = [f"{parent.rstrip('.')}.{ordinal}" for parent in parents]
+        if any(len(value) > 50 or value in reserved for value in replacements):
+            continue
+        for position, replacement in zip(lines, replacements, strict=True):
+            position.metadata.setdefault("import_original_ordinal", position.ordinal)
+            position.ordinal = replacement
+            reserved.add(replacement)
 
 
 # ── Currency named in the price headings ──────────────────────────────────

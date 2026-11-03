@@ -50,7 +50,7 @@ async function optionLabels(): Promise<string[]> {
 
 beforeEach(() => {
   api.get.mockImplementation(async (url: string) => {
-    expect(url).toBe('/v1/boq/boqs/?project_id=p1');
+    expect(url).toBe('/v1/boq/boqs/?project_id=p1&offset=0&limit=100');
     return BILLS;
   });
   api.patch.mockResolvedValue({});
@@ -85,6 +85,24 @@ describe('the picker', () => {
   it('offers the other bills of the project, not the bill itself', async () => {
     renderPicker();
     expect(await optionLabels()).toEqual(['None', 'КС Жилищна сграда', 'Бюджет']);
+  });
+
+  it('offers a tender from later pages without sharing the first-page register cache', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      id: `bill-${index}`,
+      project_id: 'p1',
+      name: `Bill ${index}`,
+    }));
+    api.get.mockImplementation(async (url: string) => {
+      if (url.endsWith('offset=0&limit=100')) return firstPage;
+      if (url.endsWith('offset=100&limit=100')) return [BILLS[1]];
+      throw new Error(`Unexpected page: ${url}`);
+    });
+    renderPicker();
+    await waitFor(() => expect(screen.getByRole('option', { name: 'КС Жилищна сграда' })).toBeTruthy());
+    expect(api.get).toHaveBeenCalledWith('/v1/boq/boqs/?project_id=p1&offset=100&limit=100');
+    fireEvent.change(screen.getByTestId('kss-tender-bill'), { target: { value: 'tender' } });
+    await waitFor(() => expect(api.patch).toHaveBeenCalledWith('/v1/boq/boqs/kss', { metadata: { kss_tender_bill_id: 'tender' } }));
   });
 
   it('writes the chosen bill into the one metadata key', async () => {

@@ -11960,6 +11960,7 @@ def register_builtin_rules() -> None:
     # Imported here and not at the top of the file: the module reads its
     # locale, position and currency helpers from this package, so a top-level
     # import would run before those names exist.
+    from app.core.validation.rules.bulgaria_import_totals import BulgarianImportedVatTotals
     from app.core.validation.rules.bulgaria_kss import BULGARIA_RULES
     from app.core.validation.rules.italy_prezzario import ITALY_PREZZARIO_RULES
     from app.core.validation.rules.project_completeness import PROJECT_COMPLETENESS_RULES
@@ -12235,6 +12236,7 @@ def register_builtin_rules() -> None:
         *((rule_class(), None) for rule_class in ITALY_PREZZARIO_RULES),
         # Bulgaria (КСС against its количествена сметка, ДДС)
         *((rule_class(), None) for rule_class in BULGARIA_RULES),
+        (BulgarianImportedVatTotals(), None),
     ]
 
     for rule, sets in rules:

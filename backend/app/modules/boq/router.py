@@ -3851,10 +3851,34 @@ async def _run_import_validation(
             pack_rule_sets=_pack_added_rule_sets(project),
         )
 
+        import_data: dict[str, Any] = {"positions": positions_data}
+        if "bulgaria" in rule_sets:
+            # The import report must compare the linked designer's bill and
+            # inspect the same tax stack/source totals as the Validate button.
+            from app.modules.boq.kss_tender import with_kss_tender_bill
+
+            import_data["markups"] = [
+                {
+                    "id": str(markup.id),
+                    "name": markup.name,
+                    "markup_type": markup.markup_type,
+                    "category": markup.category,
+                    "percentage": markup.percentage,
+                    "fixed_amount": markup.fixed_amount,
+                    "apply_to": markup.apply_to,
+                    "sort_order": markup.sort_order,
+                    "is_active": markup.is_active,
+                    "scope_position_id": str(markup.scope_position_id) if markup.scope_position_id else None,
+                    "overrides_id": str(markup.overrides_id) if markup.overrides_id else None,
+                }
+                for markup in await service.list_markups(boq_id)
+            ]
+            import_data = await with_kss_tender_bill(session, boq_id, import_data)
+
         report = await validation_engine.validate(
             data=await with_poz_catalogue_for_rule_sets(
                 session,
-                await with_project_context(session, boq_data.project_id, {"positions": positions_data}),
+                await with_project_context(session, boq_data.project_id, import_data),
                 rule_sets,
             ),
             rule_sets=rule_sets,
@@ -7934,7 +7958,12 @@ async def _run_native_import(
 
     # Persist top-level import metadata so the round-trip exporter can
     # reproduce the original layout.
-    if (created + updated) > 0:
+    from app.modules.boq.importers.bulgaria_totals import SOURCE_TOTALS_KEY
+
+    # An Excel file can correct only its tax/summary cells while every work
+    # position remains unchanged. Refresh and validate that source audit too.
+    source_totals_refreshed = SOURCE_TOTALS_KEY in imported_boq.metadata and int(apply_summary["unchanged"]) > 0
+    if (created + updated) > 0 or source_totals_refreshed:
         try:
             boq_obj = await service.get_boq(boq_id)
             meta = dict(boq_obj.metadata_) if isinstance(boq_obj.metadata_, dict) else {}
@@ -7961,7 +7990,7 @@ async def _run_native_import(
     # Run inline validation using the importer's declared rule packs
     # (philosophy: validation is a first-class citizen of every import).
     validation_report = None
-    if (created + updated) > 0:
+    if (created + updated) > 0 or source_totals_refreshed:
         if on_phase is not None:
             await on_phase("validating")
         validation_report = await _run_import_validation(boq_id, service, service.session)

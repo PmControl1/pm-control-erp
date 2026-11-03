@@ -23,9 +23,9 @@ bill alone:
 
 A ДДС line is a markup line of the ``tax`` category, or one named ДДС or VAT
 whatever its category, since a line typed by hand often keeps the default
-category. Rate, count and order are read from the bill-wide lines; the rate is
-also checked on a line confined to one section, because such a line stands in
-for the bill-wide ДДС there.
+category. Count and order are checked on the effective stack for each part
+of the work, including section additions and overrides, just as the bill's
+calculator applies them. Every active VAT line is checked for its rate.
 
 The rules live in their own module, like ``italy_prezzario``; the registration
 in ``register_builtin_rules`` is the only line the two files share.
@@ -36,6 +36,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from types import SimpleNamespace
 from typing import Any
 
 from app.core.validation.engine import (
@@ -130,6 +131,74 @@ def _has_priced_work(context: ValidationContext) -> bool:
     return any((_as_decimal(pos.get("total")) or Decimal(0)) != 0 for pos in _get_leaf_positions(context))
 
 
+def _effective_markup_stacks(context: ValidationContext, *, priced_only: bool = False) -> list[list[dict[str, Any]]]:
+    """The actual markup stacks that apply to the bill's work.
+
+    A scoped line can replace a bill-wide line or add to it. Inspecting only
+    bill-wide rows would miss double VAT on a section and contingency outside
+    the VAT base. Reuse the calculator's inheritance and ordering helpers so
+    validation follows the same stacks as the price calculation.
+    """
+    raw = _markups(context)
+    if not any(_active(m) and m.get("scope_position_id") for m in raw):
+        return [_bill_wide_stack(context)]
+
+    from app.modules.boq.service import _effective_stack, _scope_chain
+
+    lines = [
+        SimpleNamespace(
+            id=str(m.get("id") or f"@markup-{index}"),
+            scope_position_id=str(m["scope_position_id"]) if m.get("scope_position_id") else None,
+            overrides_id=str(m["overrides_id"]) if m.get("overrides_id") else None,
+            sort_order=_as_decimal(m.get("sort_order")) or Decimal(0),
+            payload=m,
+        )
+        for index, m in enumerate(raw)
+    ]
+    bill_wide = sorted([m for m in lines if m.scope_position_id is None], key=lambda m: m.sort_order)
+    scoped: dict[str, list[Any]] = {}
+    for line in lines:
+        if line.scope_position_id is not None and _active(line.payload):
+            scoped.setdefault(line.scope_position_id, []).append(line)
+
+    positions = context.data.get("positions") or []
+    parent_of = {
+        str(p["id"]): str(p["parent_id"]) if p.get("parent_id") else None
+        for p in positions
+        if isinstance(p, dict) and p.get("id") is not None
+    }
+    leaves = _get_leaf_positions(context)
+    if priced_only:
+        leaves = [p for p in leaves if (_as_decimal(p.get("total")) or Decimal(0)) != 0]
+    stacks: list[list[dict[str, Any]]] = []
+    seen: set[tuple[str, ...]] = set()
+    scope_ids = set(scoped)
+    seen_chains: set[tuple[str, ...]] = set()
+    for position in leaves:
+        chain = _scope_chain(str(position.get("id")), parent_of, scope_ids)
+        if chain in seen_chains:
+            continue
+        seen_chains.add(chain)
+        effective = [m for m in _effective_stack(bill_wide, scoped, chain) if _active(m.payload)]
+        key = tuple(m.id for m in effective)
+        if key not in seen:
+            seen.add(key)
+            stacks.append([m.payload for m in effective])
+    return stacks or [_bill_wide_stack(context)]
+
+
+def _distinct_results(results: list[RuleResult]) -> list[RuleResult]:
+    """A bill-wide problem shared by several sections needs one finding."""
+    seen: set[tuple[str | None, bool, str]] = set()
+    distinct: list[RuleResult] = []
+    for result in results:
+        key = (result.element_ref, result.passed, result.message)
+        if key not in seen:
+            seen.add(key)
+            distinct.append(result)
+    return distinct
+
+
 def _result(
     rule: ValidationRule,
     *,
@@ -168,7 +237,9 @@ class BulgarianVatLinePresent(ValidationRule):
         if not _has_priced_work(context):
             return []
         locale = _get_locale(context)
-        passed = any(is_vat_line(m) for m in _bill_wide_stack(context))
+        passed = all(
+            any(is_vat_line(m) for m in stack) for stack in _effective_markup_stacks(context, priced_only=True)
+        )
         return [
             _result(
                 self,
@@ -188,23 +259,26 @@ class BulgarianVatChargedOnce(ValidationRule):
     description = "A КСС carries one ДДС line; a second one charges the tax twice"
 
     async def validate(self, context: ValidationContext) -> list[RuleResult]:
-        lines = [m for m in _bill_wide_stack(context) if is_vat_line(m)]
-        if not lines:
-            return []
         locale = _get_locale(context)
-        passed = len(lines) == 1
-        names = ", ".join(f'"{m.get("name") or ""}"' for m in lines)
-        return [
-            _result(
-                self,
-                passed=passed,
-                message=_ok(locale)
-                if passed
-                else translate(f"{self.rule_id}.fail", locale=locale, count=len(lines), names=names),
-                details={"vat_lines": [str(m.get("name") or "") for m in lines]},
-                suggestion=None if passed else translate(f"{self.rule_id}.suggestion", locale=locale),
+        results: list[RuleResult] = []
+        for stack in _effective_markup_stacks(context):
+            lines = [m for m in stack if is_vat_line(m)]
+            if not lines:
+                continue
+            passed = len(lines) == 1
+            names = ", ".join(f'"{m.get("name") or ""}"' for m in lines)
+            results.append(
+                _result(
+                    self,
+                    passed=passed,
+                    message=_ok(locale)
+                    if passed
+                    else translate(f"{self.rule_id}.fail", locale=locale, count=len(lines), names=names),
+                    details={"vat_lines": [str(m.get("name") or "") for m in lines]},
+                    suggestion=None if passed else translate(f"{self.rule_id}.suggestion", locale=locale),
+                )
             )
-        ]
+        return _distinct_results(results)
 
 
 class BulgarianVatRate(ValidationRule):
@@ -252,41 +326,39 @@ class BulgarianVatOnWholeTotal(ValidationRule):
     description = 'ДДС is charged on all of "Общо без ДДС" and nothing is added after it'
 
     async def validate(self, context: ValidationContext) -> list[RuleResult]:
-        stack = _bill_wide_stack(context)
-        if not any(is_vat_line(m) for m in stack):
-            return []
         locale = _get_locale(context)
         results: list[RuleResult] = []
-        for index, vat in enumerate(stack):
-            if not is_vat_line(vat):
-                continue
-            before = [m for m in stack[:index] if not is_vat_line(m)]
-            after = [m for m in stack[index + 1 :] if not is_vat_line(m)]
-            on_whole = str(vat.get("apply_to") or "direct_cost").strip().lower() in _WHOLE_BASES
-            left_out = [] if on_whole else before
-            name = str(vat.get("name") or "")
-            failures: list[tuple[str, list[dict[str, Any]]]] = []
-            if left_out:
-                failures.append((f"{self.rule_id}.base", left_out))
-            if after:
-                failures.append((f"{self.rule_id}.after", after))
-            ref = str(vat.get("id")) if vat.get("id") else None
-            if not failures:
-                results.append(_result(self, passed=True, message=_ok(locale), element_ref=ref))
-                continue
-            for key, lines in failures:
-                names = ", ".join(f'"{m.get("name") or ""}"' for m in lines)
-                results.append(
-                    _result(
-                        self,
-                        passed=False,
-                        message=translate(key, locale=locale, name=name, names=names),
-                        element_ref=ref,
-                        details={"vat_line": name, "lines": [str(m.get("name") or "") for m in lines]},
-                        suggestion=translate(f"{self.rule_id}.suggestion", locale=locale),
+        for stack in _effective_markup_stacks(context):
+            for index, vat in enumerate(stack):
+                if not is_vat_line(vat):
+                    continue
+                before = [m for m in stack[:index] if not is_vat_line(m)]
+                after = [m for m in stack[index + 1 :] if not is_vat_line(m)]
+                on_whole = str(vat.get("apply_to") or "direct_cost").strip().lower() in _WHOLE_BASES
+                left_out = [] if on_whole else before
+                name = str(vat.get("name") or "")
+                failures: list[tuple[str, list[dict[str, Any]]]] = []
+                if left_out:
+                    failures.append((f"{self.rule_id}.base", left_out))
+                if after:
+                    failures.append((f"{self.rule_id}.after", after))
+                ref = str(vat.get("id")) if vat.get("id") else None
+                if not failures:
+                    results.append(_result(self, passed=True, message=_ok(locale), element_ref=ref))
+                    continue
+                for key, lines in failures:
+                    names = ", ".join(f'"{m.get("name") or ""}"' for m in lines)
+                    results.append(
+                        _result(
+                            self,
+                            passed=False,
+                            message=translate(key, locale=locale, name=name, names=names),
+                            element_ref=ref,
+                            details={"vat_line": name, "lines": [str(m.get("name") or "") for m in lines]},
+                            suggestion=translate(f"{self.rule_id}.suggestion", locale=locale),
+                        )
                     )
-                )
-        return results
+        return _distinct_results(results)
 
 
 # ── КСС against its количествена сметка ─────────────────────────────────────
@@ -324,14 +396,14 @@ def _keys(positions: list[dict[str, Any]], lines: list[dict[str, Any]]) -> dict[
     own: list[str] = []
     path: list[str] = []
     for line in lines:
-        number = _ordinal_key(line.get("ordinal"))
+        number = _ordinal_key(_position_metadata(line).get("kss_source_ordinal", line.get("ordinal")))
         chain = [number]
         seen: set[str] = set()
         parent = line.get("parent_id")
         while parent and str(parent) in by_id and str(parent) not in seen:
             seen.add(str(parent))
             node = by_id[str(parent)]
-            chain.append(_ordinal_key(node.get("ordinal")))
+            chain.append(_ordinal_key(_position_metadata(node).get("kss_source_ordinal", node.get("ordinal"))))
             parent = node.get("parent_id")
         own.append(number)
         path.append("/".join(reversed(chain)))

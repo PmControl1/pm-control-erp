@@ -53,8 +53,16 @@ export function KssTenderBillPicker({ boqId, projectId, metadata, locked }: KssT
   const current = tenderBillId(metadata);
 
   const { data: boqs } = useQuery({
-    queryKey: ['boqs', projectId],
-    queryFn: () => boqApi.list(projectId),
+    queryKey: ['boqs', projectId, 'kss-tender'],
+    queryFn: async () => {
+      const bills = [];
+      const limit = 100;
+      for (let offset = 0; ; offset += limit) {
+        const page = await boqApi.list(projectId, { offset, limit });
+        bills.push(...page);
+        if (page.length < limit) return bills;
+      }
+    },
     enabled: !!projectId,
   });
   const choices = (boqs ?? []).filter((b) => b.id !== boqId);

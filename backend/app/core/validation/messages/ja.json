@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "明細書のヘッダーで количествена сметка を選び直すか、リンクを解除してください",
       "unmatched": "この КСС の行を количествена сметка「{bill}」と照合できません。番号が重複しているか、ありません",
       "unmatched_suggestion": "количествена сметка と同じ番号を行に付けてから、もう一度検証してください"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

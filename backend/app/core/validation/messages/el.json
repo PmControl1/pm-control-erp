@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "Επιλέξτε ξανά την количествена сметка στην κεφαλίδα του προϋπολογισμού ή αφαιρέστε τη σύνδεση",
       "unmatched": "Οι γραμμές αυτής της КСС δεν μπορούν να αντιστοιχιστούν με την количествена сметка '{bill}': η αρίθμηση επαναλαμβάνεται ή λείπει",
       "unmatched_suggestion": "Αριθμήστε τις γραμμές όπως η количествена сметка και επαληθεύστε ξανά"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

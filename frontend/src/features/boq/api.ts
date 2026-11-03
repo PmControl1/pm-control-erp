@@ -1855,7 +1855,10 @@ export function fetchCategoryTree(
 
 export const boqApi = {
   /* BOQ CRUD */
-  list: (projectId: string) => apiGet<BOQ[]>(`/v1/boq/boqs/?project_id=${projectId}`),
+  list: (projectId: string, page?: { offset: number; limit: number }) =>
+    apiGet<BOQ[]>(
+      `/v1/boq/boqs/?project_id=${projectId}${page ? `&offset=${page.offset}&limit=${page.limit}` : ''}`,
+    ),
   /**
    * Rename an estimate, change its description, or set metadata keys. The
    * server merges `metadata` into what the bill already carries.

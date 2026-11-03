@@ -1321,6 +1321,12 @@
       "tender_missing_suggestion": "Kies de количествена сметка opnieuw in de kop van de begroting of verwijder de koppeling",
       "unmatched": "De regels van deze КСС kunnen niet aan de количествена сметка '{bill}' worden gekoppeld: de nummering herhaalt zich of ontbreekt",
       "unmatched_suggestion": "Nummer de regels zoals de количествена сметка ze nummert en valideer opnieuw"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
     }
   }
 }

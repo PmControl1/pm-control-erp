@@ -18,6 +18,7 @@
     "bulgaria.vat_line_present",
     "bulgaria.vat_charged_once",
     "bulgaria.vat_rate",
-    "bulgaria.vat_on_whole_total"
+    "bulgaria.vat_on_whole_total",
+    "bulgaria.imported_vat_totals"
   ]
 }
