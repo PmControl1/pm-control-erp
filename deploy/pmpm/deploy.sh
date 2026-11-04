@@ -22,6 +22,11 @@ fi
 
 set -a; . ./.env; set +a
 : "${PMPM_DOMAIN:?Set PMPM_DOMAIN in .env}"
+: "${PMPM_PLATFORM_OWNER_USER_IDS:?Set PMPM_PLATFORM_OWNER_USER_IDS in .env to the owner administrator UUID(s); see the README private bootstrap}"
+if [[ -z "${PMPM_PLATFORM_OWNER_USER_IDS//[[:space:],]/}" ]]; then
+  echo "Set PMPM_PLATFORM_OWNER_USER_IDS in .env to the owner administrator UUID(s)." >&2
+  exit 1
+fi
 
 # /api/health answers HTTP 200 even when it reports "degraded" - the database
 # unreachable, an enabled module missing, the schema behind the models, the
@@ -85,12 +90,22 @@ fi
 if ! timeout 60 docker compose exec -T app python - <<'PYTHON'
 import asyncio
 from app.database import async_session_factory
+from app.modules.ai import workspace
 from app.modules.users.repository import UserRepository
 
 async def check():
     async with async_session_factory() as session:
-        if not await UserRepository(session).has_admin():
+        users = UserRepository(session)
+        if not await users.has_admin():
             raise SystemExit("No active administrator. Follow the README bootstrap before starting Caddy.")
+        for owner_id in workspace.owner_user_ids():
+            user = await users.get_by_id(owner_id)
+            if user and await workspace.is_owner(session, {"sub": str(user.id)}):
+                return
+        raise SystemExit(
+            "No configured active platform owner. Set PMPM_PLATFORM_OWNER_USER_IDS to an existing "
+            "active administrator UUID, recreate the app, then retry. See the README private bootstrap."
+        )
 
 asyncio.run(check())
 PYTHON

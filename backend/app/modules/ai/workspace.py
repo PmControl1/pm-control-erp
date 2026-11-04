@@ -148,44 +148,50 @@ async def start() -> None:
 # ── Who may change it ────────────────────────────────────────────────────────
 
 
-def owner_emails() -> set[str]:
-    """``PLATFORM_OWNER_EMAILS``: when set, only these accounts manage workspace AI."""
-    raw = os.environ.get("PLATFORM_OWNER_EMAILS", "")
-    return {part.strip().lower() for part in raw.split(",") if part.strip()}
+def owner_user_ids() -> set[uuid.UUID]:
+    """Explicit, immutable account IDs allowed to manage this installation's AI.
+
+    Missing or malformed configuration grants nobody access. Email addresses
+    cannot establish ownership: a staff administrator can erase an account and
+    recreate its email address, but cannot choose the new account's UUID.
+    """
+    raw = os.environ.get("PLATFORM_OWNER_USER_IDS", "").strip()
+    if not raw:
+        return set()
+    try:
+        return {uuid.UUID(part.strip()) for part in raw.split(",")}
+    except ValueError:
+        return set()
 
 
 async def is_owner(session: AsyncSession, payload: dict[str, Any]) -> bool:
-    """True for the platform owner.
+    """Require an allowlisted, active administrator from the live database.
 
-    With ``PLATFORM_OWNER_EMAILS`` set, only those accounts qualify. Without
-    it, any administrator does, so a fresh install works with no setup.
+    Token role/email claims and the legacy email setting confer no ownership.
+    The first administrator still registers through the private bootstrap;
+    the operator then pins that account ID before enabling public access.
     """
-    emails = owner_emails()
-    if emails:
-        from app.modules.users.models import User
-
-        try:
-            user = await session.get(User, uuid.UUID(str(payload.get("sub"))))
-        except (TypeError, ValueError):
-            return False
-        return bool(user and user.email and user.email.strip().lower() in emails)
-
-    from app.core.permissions import Role, _resolve_role
-
-    return _resolve_role(str(payload.get("role") or "")) == Role.ADMIN
+    try:
+        user_id = uuid.UUID(str(payload.get("sub")))
+    except (TypeError, ValueError):
+        return False
+    return await is_owner_user(session, user_id)
 
 
 async def is_owner_user(session: AsyncSession, user_id: str | uuid.UUID) -> bool:
     """Resolve owner access for services whose caller is a user ID, not a JWT."""
-    from app.modules.users.models import User
-
     try:
-        user = await session.get(User, uuid.UUID(str(user_id)))
+        uid = uuid.UUID(str(user_id))
     except (TypeError, ValueError):
         return False
-    if user is None:
+    if uid not in owner_user_ids():
         return False
-    return await is_owner(session, {"sub": str(user.id), "role": user.role})
+
+    from app.core.permissions import Role, _resolve_role
+    from app.modules.users.models import User
+
+    user = await session.get(User, uid)
+    return bool(user and user.is_active and user.deleted_at is None and _resolve_role(user.role) == Role.ADMIN)
 
 
 # ── System prompt ────────────────────────────────────────────────────────────

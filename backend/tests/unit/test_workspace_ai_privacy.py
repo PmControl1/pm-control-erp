@@ -54,11 +54,15 @@ async def test_workspace_status_discloses_configuration_only_to_owner(monkeypatc
 
 @pytest.mark.asyncio
 async def test_explicit_owner_allowlist_does_not_grant_other_administrators_access(monkeypatch):
-    monkeypatch.setenv("PLATFORM_OWNER_EMAILS", "owner@example.com")
-    user = SimpleNamespace(id=uuid4(), email="colleague@example.com", role="admin")
+    owner_id = uuid4()
+    monkeypatch.setenv("PLATFORM_OWNER_USER_IDS", str(owner_id))
+    user = SimpleNamespace(id=uuid4(), email="colleague@example.com", role="admin", is_active=True, deleted_at=None)
     session = SimpleNamespace(get=AsyncMock(return_value=user))
     assert not await workspace.is_owner_user(session, user.id)
+    # Changing an email cannot claim a configured owner's identity.
     user.email = "OWNER@example.com"
+    assert not await workspace.is_owner_user(session, user.id)
+    user.id = owner_id
     assert await workspace.is_owner_user(session, user.id)
 
 
