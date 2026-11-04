@@ -100,7 +100,6 @@ import {
   FileWarning,
   Flag,
   Wrench,
-  MonitorPlay,
 } from 'lucide-react';
 
 
@@ -208,9 +207,9 @@ export const LEARN_GROUP_ID = 'grp_learn';
 // The locale keys are added by a later pass; until then the English
 // default renders. Item labelKeys reuse the existing locale strings.
 export const navGroups: NavGroup[] = [
-  // ── 0. LEARN (videos and cases) ────────────────────────────────────
-  // The two ways into the product for somebody new: watch it, or walk a
-  // guided case in the app. The sidebar does not render this group in the
+  // ── 0. LEARN (cases and regional packs) ────────────────────────────────────
+  // Guided cases and regional packs help somebody new learn the product.
+  // The sidebar does not render this group in the
   // loop with the others: it draws it as its own card above everything else,
   // Pinned included, in Simple, Advanced and workspace menus alike, and lets
   // the user hide the whole card from its header and bring it back from the
@@ -227,7 +226,6 @@ export const navGroups: NavGroup[] = [
     defaultLabel: 'Learn',
     defaultOpen: true,
     items: [
-      { labelKey: 'nav.videos', defaultLabel: 'Video guides', to: '/videos', icon: MonitorPlay },
       { labelKey: 'nav.cases', to: '/cases', icon: Route },
       { labelKey: 'nav.packs', defaultLabel: 'Packs', to: '/packs', icon: PackageOpen },
     ],

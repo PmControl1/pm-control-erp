@@ -32,8 +32,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { DashboardCasesCard } from '../DashboardCasesCard';
@@ -41,9 +40,6 @@ import { useDashboardLayoutStore } from '@/stores/useDashboardLayoutStore';
 import { useCasesStore } from '@/features/cases/useCasesStore';
 import { PLAYBOOKS } from '@/features/cases/playbooks';
 import { dealCaseFaces } from '@/features/cases/caseFaces';
-import { startHereVideo } from '@/features/videos/academy';
-import { dashboardVideos } from '@/features/videos/DashboardVideosStrip';
-import { useVideosStore } from '@/features/videos/useVideosStore';
 
 vi.mock('react-i18next', () => {
   const t = (key: string, opts?: Record<string, unknown>) => {
@@ -116,14 +112,10 @@ function caseTileCount(): number {
 }
 
 function renderCard() {
-  // The video half reads the active project's country through React Query.
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/']}>
-        <DashboardCasesCard />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <MemoryRouter initialEntries={['/']}>
+      <DashboardCasesCard />
+    </MemoryRouter>,
   );
 }
 
@@ -281,86 +273,5 @@ describe('DashboardCasesCard faces', () => {
     // reason that has nothing to do with the faces. Scaled down with the
     // gallery when it was cut from four rows to two, and to one.
     expect(checked).toBeGreaterThan(4);
-  });
-});
-
-describe('DashboardCasesCard video guides', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    useVideosStore.setState({ role: 'estimator', market: 'any', started: {}, watched: {} });
-  });
-
-  /** The case tiles of the gallery, without its closing "All cases" tile. */
-  function caseTiles(): HTMLElement[] {
-    const card = screen.getByTestId('dashboard-cases-card');
-    return within(card.querySelector('div.grid') as HTMLElement).getAllByRole('button').slice(0, -1);
-  }
-
-  it('shows as many videos as cases, on the same grid, picked for the role', async () => {
-    renderCard();
-    const strip = await screen.findByTestId('dashboard-videos', {}, { timeout: 30000 });
-    const tiles = within(strip).getAllByTestId('dashboard-video');
-    const cases = caseTiles();
-    const expected = dashboardVideos({ role: 'estimator', market: null, language: 'en' }, cases.length);
-    expect(tiles).toHaveLength(cases.length);
-    expect(tiles.map((t) => t.getAttribute('aria-label'))).toEqual(expected.map((v) => `Play: ${v.title}`));
-    // Same columns, and each video hides at the same breakpoint as the case above it.
-    const card = screen.getByTestId('dashboard-cases-card');
-    expect(within(strip).getByTestId('dashboard-videos-grid').className).toBe(
-      (card.querySelector('div.grid') as HTMLElement).className,
-    );
-    tiles.forEach((tile, i) => {
-      const hide = (el: Element) => el.className.split(' ').filter((c) => c.endsWith(':hidden'));
-      expect(hide(tile.parentElement!)).toEqual(hide(cases[i]!));
-    });
-    for (const v of expected) {
-      expect(v.status).toBe('published');
-      expect(v.cover).toMatch(/^https:\/\/i\.ytimg\.com\//);
-    }
-    // The cases come first: the videos are the row under them.
-    expect(strip.compareDocumentPosition(card.querySelector('div.grid')!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
-    expect(within(strip).getByText('Video guides')).toBeTruthy();
-    expect(within(card).getByText('Use cases')).toBeTruthy();
-  });
-
-  it('leaves the setup lesson out: whoever reads the dashboard has installed the platform', async () => {
-    renderCard();
-    const strip = await screen.findByTestId('dashboard-videos', {}, { timeout: 30000 });
-    const setup = startHereVideo()!;
-    const labels = within(strip).getAllByTestId('dashboard-video').map((t) => t.getAttribute('aria-label'));
-    expect(labels).not.toContain(`Play: ${setup.title}`);
-    expect(dashboardVideos({ role: 'estimator', market: null, language: 'en' }, 8).some((v) => v.startHere)).toBe(false);
-  });
-
-  it('marks every tile as a video with a readable running time', async () => {
-    renderCard();
-    const strip = await screen.findByTestId('dashboard-videos', {}, { timeout: 30000 });
-    const tiles = within(strip).getAllByTestId('dashboard-video');
-    for (const tile of tiles) {
-      expect(within(tile).getByText('Video')).toBeTruthy();
-      // Nothing on the dashboard plays by itself.
-      expect(tile.querySelector('video, iframe')).toBeNull();
-    }
-    const durations = within(strip).getAllByTestId('dashboard-video-duration');
-    expect(durations.length).toBeGreaterThan(0);
-    for (const d of durations) expect(d.className).toContain('text-xs');
-  });
-
-  it('plays nothing on the dashboard: a tile opens the Videos page at that video, the last tile the library', async () => {
-    renderCard();
-    const strip = await screen.findByTestId('dashboard-videos', {}, { timeout: 30000 });
-    expect(document.querySelector('iframe')).toBeNull();
-    const first = dashboardVideos({ role: 'estimator', market: null, language: 'en' }, 1)[0]!;
-    fireEvent.click(within(strip).getAllByTestId('dashboard-video')[0]!);
-    expect(navigateSpy).toHaveBeenCalledWith(`/videos?v=${first.id}`);
-    fireEvent.click(within(strip).getByTestId('dashboard-videos-all'));
-    expect(navigateSpy).toHaveBeenCalledWith('/videos');
-  });
-
-  it('shows fewer videos in a narrower card, matching its cases', async () => {
-    useDashboardLayoutStore.setState({ order: [], hidden: [], spans: { [WIDGET_ID]: 2 } });
-    renderCard();
-    const strip = await screen.findByTestId('dashboard-videos', {}, { timeout: 30000 });
-    expect(within(strip).getAllByTestId('dashboard-video')).toHaveLength(caseTiles().length);
   });
 });
