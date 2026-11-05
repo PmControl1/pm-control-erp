@@ -1150,7 +1150,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
   const visibleWorkspaceItems = workspaceItems.filter(passesRowGates);
 
-  // The Learn card (videos and cases) is drawn apart from the group loop, at
+  // The Learn card (cases and regional packs) is drawn apart from the group loop, at
   // the very top of the menu, whatever the mode; see `LearnSection`. Its rows
   // pass the same gates as any group's, and hiding it goes through
   // `hiddenGroups`, so it also counts toward the "{N} hidden" chip.
@@ -1170,7 +1170,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     addToast(
       {
         type: 'info',
-        title: t('sidebar.learn.hidden_toast', { defaultValue: 'Video guides and use cases are hidden' }),
+        title: learnLabel,
         message: t('sidebar.learn.hidden_toast_body_topbar', {
           defaultValue: 'They are now behind the graduation cap in the top bar. One click there brings them back.',
         }),
@@ -1416,7 +1416,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
         data-engine="cwicr"
       >
-        {/* Learn: videos and cases, above everything else, Pinned included.
+        {/* Learn: cases and regional packs, above everything else, Pinned included.
             Hidden from its own header into a cap in the top bar, and restored
             from there. */}
         {learnGroup && learnItems.length > 0 && (
@@ -2274,7 +2274,7 @@ function NavGroupSection({
   );
 }
 
-/** The Learn card: Videos and Cases, drawn above every other section.
+/** The Learn card: cases and regional packs, drawn above every other section.
  *
  *  It reads as a card rather than as one more group header, because it is not
  *  one more area of work; it is the way in for somebody still finding their
@@ -2367,7 +2367,7 @@ function LearnSection({
               type="button"
               data-testid="sidebar-learn-hide"
               onClick={onHide}
-              aria-label={t('sidebar.learn.hide', { defaultValue: 'Hide video guides & use cases' })}
+              aria-label={t('sidebar.hide_group', { defaultValue: 'Hide {{label}} section', label })}
               aria-describedby={hintId}
               className={clsx(
                 'flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-[10px] font-medium text-content-tertiary',
@@ -2398,10 +2398,7 @@ function LearnSection({
                 'group-focus-within/learnhead:visible group-focus-within/learnhead:translate-y-0 group-focus-within/learnhead:opacity-100',
               )}
             >
-              {t('sidebar.learn.hint_topbar', {
-                defaultValue:
-                  'Tutorial videos and guided cases to learn the platform. Hide this section and it folds into the graduation cap in the top bar; one click there brings it back.',
-              })}
+              {t('sidebar.hide_group', { defaultValue: 'Hide {{label}} section', label })}
             </div>
           </>
         )}

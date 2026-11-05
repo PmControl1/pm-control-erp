@@ -277380,13 +277380,6 @@
       "total_files": 16
     },
     {
-      "name": "videos",
-      "ts_files": 27,
-      "css_files": 0,
-      "test_files": 7,
-      "total_files": 27
-    },
-    {
       "name": "voice",
       "ts_files": 7,
       "css_files": 0,
@@ -278993,8 +278986,8 @@
     "total_routes": 4627,
     "total_schemas": 4120,
     "total_python_files": 2810,
-    "frontend_features": 209,
-    "frontend_ts_files": 3606,
+    "frontend_features": 208,
+    "frontend_ts_files": 3579,
     "frontend_backend_mapped": 187
   },
   "frontend_backend_mapping": {
@@ -279204,7 +279197,6 @@
     "validation": "validation",
     "value": "value",
     "variations": "variations",
-    "videos": null,
     "voice": "voice",
     "waste-factors": "waste_factors"
   }

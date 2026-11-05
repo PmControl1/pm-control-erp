@@ -23,7 +23,6 @@ import { rulesTabFromParams } from '@/features/bim/quantityRuleLinks';
 import { NlRuleBuilderPanel } from '@/features/compliance';
 import { useModuleRouteElements } from '@/modules/ModuleRoutes';
 import { DatabaseSetupPage } from '@/features/setup';
-import { ModuleVideosSlot } from '@/features/videos/ModuleVideosSlot';
 import { Logo, ShortcutsDialog, CommandPalette, ToastContainer, DemoReadOnlyDialog, BackgroundInstallBanner, ErrorBoundary, NotFoundPage, ProductTour, OfflineBanner, DesktopPortBanner, PWAInstallPrompt } from '@/shared/ui';
 import { AdminOnly } from '@/shared/auth/AdminOnly';
 import GlobalSearchModal from '@/features/search/GlobalSearchModal';
@@ -770,11 +769,6 @@ const HowItWorksPage = lazy(() => import('@/features/help/HowItWorksPage'));
 const CasesPage = lazy(() =>
   import('@/features/cases').then((m) => ({ default: m.CasesPage }))
 );
-// Videos - tutorial and training videos. Lazy: the page is a list of posters,
-// and nothing on it is needed at boot.
-const VideosPage = lazy(() =>
-  import('@/features/videos').then((m) => ({ default: m.VideosPage }))
-);
 // The case editor, split from the hub: most readers never author one.
 const CaseEditorPage = lazy(() =>
   import('@/features/cases').then((m) => ({ default: m.CaseEditorPage }))
@@ -889,11 +883,6 @@ function AppShell() {
       <ErrorBoundary scope="app">
         <AppLayout title={title}>
           <Suspense fallback={<PageLoadingInline />}>
-            {/* "Videos for this step": renders nothing on a screen with no
-                videos, and a failure in it must never take the page down. */}
-            <ErrorBoundary key={`videos:${location.pathname}`} fallback={null}>
-              <ModuleVideosSlot />
-            </ErrorBoundary>
             <ErrorBoundary key={location.pathname}>
               <PageTitleContext.Provider value={setTitle}>
                 <Outlet />
@@ -1589,7 +1578,8 @@ export default function App() {
             and the form has no business loading for the ones who do not.
             /cases/new is declared before the stepper for readability only -
             the router ranks a static segment above a dynamic one regardless. */}
-        <Route path="/videos" element={<P title="Videos"><VideosPage /></P>} />
+        {/* Keep saved tutorial links useful after removing the video library. */}
+        <Route path="/videos" element={<Navigate to="/cases" replace />} />
         <Route path="/packs" element={<P title="Packs"><PacksPage /></P>} />
         <Route path="/packs/:slug" element={<P title="Packs"><PackDetailPage /></P>} />
         <Route path="/cases" element={<P title="Cases"><CasesPage /></P>} />

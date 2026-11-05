@@ -25,7 +25,7 @@
 // the column count, the preview count and the type scale all have to come from
 // the same number. They do, in GALLERY_BY_SPAN below.
 
-import { Suspense, lazy, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
@@ -52,10 +52,6 @@ import { iconFor } from '@/features/cases/icons';
 import { CaseArt } from '@/features/cases/CaseArt';
 import { useDashboardLayoutStore } from '@/stores/useDashboardLayoutStore';
 import { DASHBOARD_WIDGET_BY_ID } from './widgetRegistry';
-
-// The video half of the card. Lazy, so the video catalogue arrives with this
-// card and not with the dashboard's own chunk.
-const DashboardVideosStrip = lazy(() => import('@/features/videos/DashboardVideosStrip'));
 
 /** This card's id in the dashboard widget registry. Its width and its
  *  visibility are both stored against it, so the id is the whole link between
@@ -90,8 +86,8 @@ interface GalleryShape {
 
 /**
  * How the gallery is drawn at each width: always ONE row, ending on the tile
- * that opens the whole library. Two rows of seventeen cases pushed the videos
- * and everything below them down by a screen, and the founder asked for one
+ * that opens the whole library. Two rows of seventeen cases pushed everything
+ * below them down by a screen, and the founder asked for one
  * row (17.10.2026). The column ladders are unchanged; what changed is that a
  * tile which would start a second row at the current breakpoint is hidden, so
  * every width shows exactly one full row and never a short second one.
@@ -473,14 +469,6 @@ export function DashboardCasesCard() {
         </div>
       )}
 
-      {/* Video guides picked for the reader's role and country, on the
-          same grid as the case tiles, tile for tile. AFTER the cases, not above them: the cases are what this
-          card is for, and a row of bright thumbnails at its top pulled the eye
-          away from them. The fallback holds the row's height so nothing
-          jumps. */}
-      <Suspense fallback={<div className="mt-3 h-24" aria-hidden="true" />}>
-        <DashboardVideosStrip count={shape.count} columns={shape.columns} tileVisibility={shape.tileVisibility} />
-      </Suspense>
     </div>
   );
 }

@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { baseLanguage, distinctTags, keyLanguage, languageTag, preferLanguage } from '../contentLanguage';
-import { dashboardVideos } from '@/features/videos/DashboardVideosStrip';
-import type { AcademyVideo } from '@/features/videos/academyTypes';
 import { validationSummary } from '../RegionalPackCard';
 import { DASHBOARD_WIDGET_BY_ID } from '../widgetRegistry';
 
@@ -63,44 +61,6 @@ describe('distinctTags', () => {
   it('lists each tag once, in first-seen order, skipping tiles in the UI language', () => {
     expect(distinctTags([null, 'EN', 'DE', 'EN', null])).toEqual(['EN', 'DE']);
     expect(distinctTags([null, null])).toEqual([]);
-  });
-});
-
-describe('dashboardVideos and the reader language', () => {
-  const video = (id: string, language: string): AcademyVideo => ({
-    id,
-    youtubeId: `${id}xxxxxxxxx`.slice(0, 11),
-    status: 'published',
-    channel: 'academy',
-    language,
-    series: 's',
-    seriesOrder: 1,
-    stage: 'estimate',
-    roles: [],
-    cases: [],
-    routes: [],
-    title: id,
-    description: '',
-    cover: '/assets/videos/academy/x.webp',
-    chapters: [],
-  });
-
-  it('puts videos spoken in the UI language first, then the English ones, dropping none', () => {
-    const list = [video('en1', 'en'), video('en2', 'en'), video('bg1', 'bg'), video('en3', 'en')];
-    expect(dashboardVideos({ role: null, market: null, language: 'bg' }, 4, list).map((v) => v.id)).toEqual([
-      'bg1',
-      'en1',
-      'en2',
-      'en3',
-    ]);
-  });
-
-  it('keeps the English strip whole for a language with no video of its own', () => {
-    const list = [video('en1', 'en'), video('en2', 'en')];
-    expect(dashboardVideos({ role: null, market: null, language: 'bg' }, 2, list).map((v) => v.id)).toEqual([
-      'en1',
-      'en2',
-    ]);
   });
 });
 
