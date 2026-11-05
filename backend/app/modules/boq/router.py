@@ -8729,6 +8729,9 @@ async def smart_import(
     user_uuid = uuid.UUID(user_id)
     ai_settings = await settings_repo.get_by_user_id(user_uuid)
 
+    # Keep the request's privacy boundary even if the owner disables shared AI
+    # or another worker refreshes the cache while the provider call is pending.
+    workspace_managed = workspace.current() is not None
     try:
         provider, api_key, model_override = resolve_provider_key_model(ai_settings)
     except ValueError as exc:
@@ -8740,7 +8743,7 @@ async def smart_import(
             return await _smart_native_result(boq_id, native, file.filename or "upload", service, user_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=workspace.public_error(str(exc)),
+            detail=workspace.PUBLIC_AI_ERROR if workspace_managed else workspace.public_error(str(exc)),
         ) from exc
 
     # Build prompt
@@ -8790,7 +8793,9 @@ async def smart_import(
         logger.exception("Smart import AI call failed for BOQ %s: %s", boq_id, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=workspace.public_error(f"AI service error: {exc}"),
+            detail=workspace.PUBLIC_AI_ERROR
+            if workspace_managed
+            else workspace.public_error(f"AI service error: {exc}"),
         ) from exc
 
     items = extract_json(raw_response)
@@ -8877,7 +8882,7 @@ async def smart_import(
         "errors": errors,
         "total_items": len(items),
         "method": method,
-        "model_used": provider if workspace.current() is None else None,
+        "model_used": None if workspace_managed else provider,
     }
     if is_cad_import:
         result["cad_format"] = extracted.get("cad_format")

@@ -145,6 +145,23 @@ async def start() -> None:
         _refresh_task = asyncio.get_running_loop().create_task(_refresh_forever(), name="workspace-ai-refresh")
 
 
+async def stop() -> None:
+    """Finish the refresh worker before its database and event loop shut down."""
+    global _refresh_task
+    task = _refresh_task
+    try:
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+    finally:
+        if _refresh_task is task:
+            _refresh_task = None
+        set_current(None)
+
+
 # ── Who may change it ────────────────────────────────────────────────────────
 
 

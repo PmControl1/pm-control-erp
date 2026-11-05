@@ -44,6 +44,7 @@ async def db_engine():
 
     get_settings.cache_clear()
     # Import all models so Base.metadata is fully populated before create_all.
+    import app.modules.ai.models  # noqa: F401
     import app.modules.clash.models  # noqa: F401
     import app.modules.projects.models  # noqa: F401
     import app.modules.users.models  # noqa: F401
@@ -211,7 +212,7 @@ async def test_upsert_shared_signatures_link_to_same_issue(session):
 
 
 async def _count_bulk_suppress_queries(session, n_issues: int, *, unrelated_query: bool = False) -> int:
-    from sqlalchemy import event, select, text
+    from sqlalchemy import event, select
 
     from app.database import engine
     from app.modules.clash.models import ClashIssue, ClashResult, ClashSuppression
@@ -234,16 +235,20 @@ async def _count_bulk_suppress_queries(session, n_issues: int, *, unrelated_quer
     counter = _QueryCounter()
     connection = (await session.connection()).sync_connection
     observer = _QueryCounter() if unrelated_query else None
-    probe = "SELECT 1 /* unrelated query-count probe */"
     event.listen(connection, "before_cursor_execute", counter._handler)
     if observer is not None:
         event.listen(engine.sync_engine, "before_cursor_execute", observer._handler)
     try:
         if observer is not None:
-            # Deterministically demonstrate why an engine-wide counter can
-            # report an extra statement unrelated to the operation.
-            async with engine.connect() as other:
-                await other.execute(text(probe))
+            # The periodic Workspace AI refresh uses a separate session.
+            # Reproduce its real SELECT without changing shared AI state.
+            from app.modules.ai import workspace
+
+            previous = workspace.current()
+            try:
+                await workspace.refresh()
+            finally:
+                workspace.set_current(previous)
         out = await svc.bulk_suppress(project_id, issue_ids, reason="dup", user_id=None)
     finally:
         event.remove(connection, "before_cursor_execute", counter._handler)
@@ -263,8 +268,8 @@ async def _count_bulk_suppress_queries(session, n_issues: int, *, unrelated_quer
         "(expected <= 6 - the member-row fan-out must be a single batched query).\n" + trace
     )
     if observer is not None:
-        assert probe in observer.statements
-        assert probe not in counter.statements
+        assert any("FROM oe_ai_workspace_config" in statement for statement in observer.statements)
+        assert not any("FROM oe_ai_workspace_config" in statement for statement in counter.statements)
         assert observer.count >= counter.count + 1
 
     # Read column values back from PostgreSQL after removing the counter;
@@ -309,5 +314,5 @@ async def test_bulk_suppress_audit_fanout_is_bounded(session):
 
 
 async def test_bulk_suppress_counter_excludes_other_connections(session):
-    """An unrelated same-engine query cannot masquerade as an N+1 regression."""
+    """A Workspace AI refresh cannot masquerade as a clash N+1 regression."""
     await _count_bulk_suppress_queries(session, 30, unrelated_query=True)

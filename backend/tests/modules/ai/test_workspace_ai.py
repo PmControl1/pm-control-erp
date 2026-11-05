@@ -67,10 +67,15 @@ async def client():
     async with app.router.lifespan_context(app):
         from app.database import Base, engine
 
+        refresh_worker = workspace._refresh_task
+        assert refresh_worker is not None and not refresh_worker.done()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
+    assert refresh_worker.cancelled()
+    assert workspace._refresh_task is None
+    assert workspace.current() is None
 
 
 async def _login(client: AsyncClient, role: str, *, email: str | None = None) -> dict[str, str]:
