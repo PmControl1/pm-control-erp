@@ -386,7 +386,7 @@ all = [
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
-    "pytest-cov>=6.0.0",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.5.0",
     # Per-test wall-clock guard. The nightly full suite runs the integration
     # tree serially against one PostgreSQL and used to be killed by the job
