@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
@@ -66,20 +67,26 @@ async def client():
     async with app.router.lifespan_context(app):
         from app.database import Base, engine
 
+        refresh_worker = workspace._refresh_task
+        assert refresh_worker is not None and not refresh_worker.done()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
+    assert refresh_worker.cancelled()
+    assert workspace._refresh_task is None
+    assert workspace.current() is None
 
 
-async def _login(client: AsyncClient, role: str) -> dict[str, str]:
+async def _login(client: AsyncClient, role: str, *, email: str | None = None) -> dict[str, str]:
     from sqlalchemy import update
 
     from app.database import async_session_factory
     from app.modules.users.models import User
 
     tag = uuid.uuid4().hex[:8]
-    email, password = f"ws-ai-{role}-{tag}@test.io", f"WorkspaceAi{tag}9"
+    email = email or f"ws-ai-{role}-{tag}@test.io"
+    password = f"WorkspaceAi{tag}9"
     reply = await client.post(
         "/api/v1/users/auth/register", json={"email": email, "password": password, "full_name": f"WS {tag}"}
     )
@@ -88,11 +95,16 @@ async def _login(client: AsyncClient, role: str) -> dict[str, str]:
         await session.execute(update(User).where(User.email == email).values(role=role, is_active=True))
         await session.commit()
     login = await client.post("/api/v1/users/auth/login", json={"email": email, "password": password})
+    assert login.status_code == 200, login.text
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
-async def test_owner_sets_ai_once_and_everyone_uses_it(client: AsyncClient) -> None:
+async def test_owner_sets_ai_once_and_everyone_uses_it(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     owner = await _login(client, "admin")
+    identity = await client.get("/api/v1/users/me/", headers=owner)
+    assert identity.status_code == 200, identity.text
+    monkeypatch.setenv("PLATFORM_OWNER_USER_IDS", identity.json()["id"])
+    staff_admin = await _login(client, "admin")
     member = await _login(client, "editor")
     try:
         saved = await client.put(
@@ -103,31 +115,34 @@ async def test_owner_sets_ai_once_and_everyone_uses_it(client: AsyncClient) -> N
         assert saved.status_code == 200, saved.text
         assert saved.json()["key_hint"] == "…5678"
 
-        seen = (await client.get("/api/v1/ai/workspace/", headers=member)).json()
-        assert seen == {"configured": True, "memory_enabled": True, "can_manage": False}
         assert saved.json()["provider"] == "deepseek"
         assert saved.json()["model"]
         assert "api_key" not in saved.json()
 
-        denied = await client.put("/api/v1/ai/workspace/", headers=member, json={"provider": "openai", "api_key": "x"})
-        assert denied.status_code == 403
-
-        settings = (await client.get("/api/v1/ai/settings/", headers=member)).json()
-        assert settings["ai_ready"] and settings["workspace_managed"]
-        assert settings["preferred_model"] == "workspace"
-        assert settings["model_overrides"] == {} and settings["default_models"] == {}
-        assert settings["metadata_"] == {}
-        assert not any(value for key, value in settings.items() if key.endswith("_api_key_set"))
         assert resolve_provider_and_key(None) == ("deepseek", "sk-test-12345678")
 
-        for method, url, body in (
-            ("delete", "/api/v1/ai/workspace/", None),
-            ("post", "/api/v1/ai/workspace/test/", None),
-            ("post", "/api/v1/ai/settings/test/", {"provider": "deepseek"}),
-            ("patch", "/api/v1/ai/settings/", {"preferred_model": "openai"}),
-        ):
-            denied = await client.request(method, url, headers=member, **({"json": body} if body else {}))
-            assert denied.status_code == 403, denied.text
+        for employee in (staff_admin, member):
+            seen = await client.get("/api/v1/ai/workspace/", headers=employee)
+            assert seen.status_code == 200, seen.text
+            assert seen.json() == {"configured": True, "memory_enabled": True, "can_manage": False}
+
+            settings = (await client.get("/api/v1/ai/settings/", headers=employee)).json()
+            assert settings["ai_ready"] and settings["workspace_managed"]
+            assert settings["preferred_model"] == "workspace"
+            assert settings["model_overrides"] == {} and settings["default_models"] == {}
+            assert settings["metadata_"] == {}
+            assert not any(value for key, value in settings.items() if key.endswith("_api_key_set"))
+
+            for method, url, body in (
+                ("put", "/api/v1/ai/workspace/", {"provider": "openai", "api_key": "replacement-key"}),
+                ("delete", "/api/v1/ai/workspace/", None),
+                ("post", "/api/v1/ai/workspace/test/", None),
+                ("post", "/api/v1/ai/settings/test/", {"provider": "deepseek"}),
+                ("patch", "/api/v1/ai/settings/", {"preferred_model": "openai"}),
+            ):
+                denied = await client.request(method, url, headers=employee, **({"json": body} if body else {}))
+                assert denied.status_code == 403, denied.text
+            assert resolve_provider_and_key(None) == ("deepseek", "sk-test-12345678")
 
         # Changing the model keeps the saved key.
         kept = await client.put(
@@ -139,6 +154,121 @@ async def test_owner_sets_ai_once_and_everyone_uses_it(client: AsyncClient) -> N
         removed = await client.delete("/api/v1/ai/workspace/", headers=owner)
         assert removed.status_code == 200 and not removed.json()["configured"]
     assert workspace.current() is None
+
+
+@pytest.mark.parametrize("state", ["demoted", "inactive", "erased"])
+async def test_owner_authorization_uses_current_database_state(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch, state: str
+) -> None:
+    from sqlalchemy import delete, update
+
+    from app.core.crypto import decrypt_secret
+    from app.database import async_session_factory
+    from app.modules.ai.models import WorkspaceAIConfig
+    from app.modules.users.models import User
+
+    owner = await _login(client, "admin")
+    identity = await client.get("/api/v1/users/me/", headers=owner)
+    assert identity.status_code == 200, identity.text
+    owner_id = uuid.UUID(identity.json()["id"])
+    monkeypatch.setenv("PLATFORM_OWNER_USER_IDS", str(owner_id))
+    key = "sk-http-owner-state-12345678"
+    try:
+        saved = await client.put("/api/v1/ai/workspace/", headers=owner, json={"provider": "deepseek", "api_key": key})
+        assert saved.status_code == 200, saved.text
+        async with async_session_factory() as session:
+            row = await workspace.load_row(session)
+            assert row is not None
+            stored_key = row.api_key
+            assert stored_key != key and decrypt_secret(stored_key) == key
+            values = {
+                "demoted": {"role": "editor"},
+                "inactive": {"is_active": False},
+                # Keep the active flag set to exercise the erasure marker itself,
+                # independently of authentication's inactive-account rejection.
+                "erased": {"deleted_at": datetime.now(UTC)},
+            }[state]
+            await session.execute(update(User).where(User.id == owner_id).values(**values))
+            await session.commit()
+
+        # Use a new session so the identity is read from committed PostgreSQL
+        # state rather than a session identity map or the original admin JWT.
+        async with async_session_factory() as session:
+            assert not await workspace.is_owner_user(session, owner_id)
+        seen = await client.get("/api/v1/ai/workspace/", headers=owner)
+        if seen.status_code == 200:
+            assert seen.json() == {"configured": True, "memory_enabled": True, "can_manage": False}
+        else:
+            assert seen.status_code == 401, seen.text
+        denied = await client.put(
+            "/api/v1/ai/workspace/", headers=owner, json={"provider": "openai", "api_key": "replacement-key"}
+        )
+        assert denied.status_code in (401, 403), denied.text
+        async with async_session_factory() as session:
+            row = await workspace.load_row(session)
+            assert row is not None and row.provider == "deepseek" and row.api_key == stored_key
+        assert resolve_provider_and_key(None) == ("deepseek", key)
+    finally:
+        # The intentionally invalid owner cannot clean up through the API.
+        async with async_session_factory() as session:
+            await session.execute(delete(WorkspaceAIConfig).where(WorkspaceAIConfig.updated_by == owner_id))
+            await session.commit()
+        workspace.set_current(None)
+
+
+async def test_recreated_owner_email_cannot_manage_workspace(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from sqlalchemy import delete, update
+
+    from app.database import async_session_factory
+    from app.modules.ai.models import WorkspaceAIConfig
+    from app.modules.users.models import User
+
+    owner = await _login(client, "admin")
+    identity = await client.get("/api/v1/users/me/", headers=owner)
+    assert identity.status_code == 200, identity.text
+    owner_id = uuid.UUID(identity.json()["id"])
+    owner_email = identity.json()["email"]
+    monkeypatch.setenv("PLATFORM_OWNER_USER_IDS", str(owner_id))
+    # Prove the former setting cannot authorize a new account with that email.
+    monkeypatch.setenv("PLATFORM_OWNER_EMAILS", owner_email)
+    key = "sk-http-recreated-owner-12345678"
+    try:
+        saved = await client.put("/api/v1/ai/workspace/", headers=owner, json={"provider": "deepseek", "api_key": key})
+        assert saved.status_code == 200, saved.text
+        async with async_session_factory() as session:
+            await session.execute(
+                update(User)
+                .where(User.id == owner_id)
+                .values(email=f"erased-{owner_id.hex}@test.io", is_active=False, deleted_at=datetime.now(UTC))
+            )
+            await session.commit()
+
+        replacement = await _login(client, "admin", email=owner_email)
+        replacement_identity = await client.get("/api/v1/users/me/", headers=replacement)
+        assert replacement_identity.status_code == 200, replacement_identity.text
+        replacement_id = uuid.UUID(replacement_identity.json()["id"])
+        assert replacement_id != owner_id
+        async with async_session_factory() as session:
+            assert not await workspace.is_owner_user(session, owner_id)
+            assert not await workspace.is_owner_user(session, replacement_id)
+        seen = await client.get("/api/v1/ai/workspace/", headers=replacement)
+        assert seen.status_code == 200, seen.text
+        assert seen.json() == {"configured": True, "memory_enabled": True, "can_manage": False}
+        denied = await client.put(
+            "/api/v1/ai/workspace/", headers=replacement, json={"provider": "openai", "api_key": "replacement-key"}
+        )
+        assert denied.status_code == 403, denied.text
+        async with async_session_factory() as session:
+            row = await workspace.load_row(session)
+            assert row is not None and row.provider == "deepseek" and row.updated_by == owner_id
+        assert resolve_provider_and_key(None) == ("deepseek", key)
+    finally:
+        async with async_session_factory() as session:
+            await session.execute(delete(WorkspaceAIConfig).where(WorkspaceAIConfig.updated_by == owner_id))
+            await session.commit()
+        workspace.set_current(None)
 
 
 async def test_memory_is_private_to_each_user(client: AsyncClient) -> None:

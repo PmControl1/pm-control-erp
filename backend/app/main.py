@@ -5499,6 +5499,15 @@ def create_app() -> FastAPI:
         except Exception:
             logger.debug("geo tile client shutdown failed", exc_info=True)
 
+        # Keep shared AI available while event subscribers drain above, then
+        # await its independent refresher before disposing the database pool.
+        try:
+            from app.modules.ai import workspace
+
+            await workspace.stop()
+        except Exception:
+            logger.debug("workspace AI refresh shutdown failed", exc_info=True)
+
         await engine.dispose()
 
         # Stop the embedded PostgreSQL cluster last (after the engine pool is

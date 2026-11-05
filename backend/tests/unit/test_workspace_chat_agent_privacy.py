@@ -219,7 +219,10 @@ def test_personal_boq_ai_result_retains_model(monkeypatch):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("provider_failure", [False, True])
-async def test_smart_import_hides_workspace_model_and_provider_errors(monkeypatch, workspace_ai, provider_failure):
+@pytest.mark.parametrize("disable_mid_request", [False, True])
+async def test_smart_import_hides_workspace_model_and_provider_errors(
+    monkeypatch, workspace_ai, provider_failure, disable_mid_request
+):
     from io import BytesIO
 
     from fastapi import HTTPException, Response, UploadFile
@@ -245,7 +248,16 @@ async def test_smart_import_hides_workspace_model_and_provider_errors(monkeypatc
     provider = AsyncMock(return_value=('[{"description":"Concrete","unit":"m3","quantity":10,"unit_rate":50}]', 20))
     if provider_failure:
         provider.side_effect = ValueError("deepseek rejected private-model-id at provider.example")
-    monkeypatch.setattr(ai_client, "call_ai", provider)
+
+    async def call_provider(*args, **kwargs):
+        assert workspace.current() is workspace_ai
+        if disable_mid_request:
+            # The in-flight request still used the owner's credentials. A
+            # cache refresh/disable must not unmask its provider or errors.
+            workspace.set_current(None)
+        return await provider(*args, **kwargs)
+
+    monkeypatch.setattr(ai_client, "call_ai", call_provider)
     kwargs = {
         "boq_id": uuid4(),
         "user_id": user_id,
@@ -268,3 +280,4 @@ async def test_smart_import_hides_workspace_model_and_provider_errors(monkeypatc
         service.add_position.assert_awaited_once()
         assert service.add_position.await_args.args[0].description == "Concrete"
         assert service.add_position.await_args.args[0].quantity == 10
+    provider.assert_awaited_once()
