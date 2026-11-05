@@ -18,18 +18,22 @@ Likewise ``bulk_suppress`` now pulls every member result row of the
 selected issues in ONE query (``results_for_issue_ids``) and groups them
 in Python, instead of a per-issue SELECT inside its loop.
 
-Both guards instrument SQLAlchemy's ``before_cursor_execute`` to count
+Both guards instrument the session connection's ``before_cursor_execute`` to count
 real data statements (PRAGMA / SAVEPOINT / RELEASE admin chatter is
 skipped, mirroring ``test_clash_n_plus_one``) and assert the count does
-NOT grow with the row / issue count.
+NOT grow with the row / issue count. Other sessions sharing the engine
+must not enter the operation's count.
 """
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
+
+logger = logging.getLogger(__name__)
 
 # ── Fixture ────────────────────────────────────────────────────────────────
 
@@ -62,7 +66,7 @@ async def session(db_engine) -> AsyncIterator:
 
 
 class _QueryCounter:
-    """Counts real SQL statements issued on a SQLAlchemy async engine."""
+    """Counts real SQL statements on the connection it is attached to."""
 
     def __init__(self) -> None:
         self.count = 0
@@ -156,7 +160,6 @@ def _make_results(run_id: uuid.UUID, n: int, *, distinct: bool) -> list:
 async def _count_upsert_queries(session, n_results: int, *, distinct: bool) -> tuple[int, list]:
     from sqlalchemy import event
 
-    from app.database import engine
     from app.modules.clash.service import ClashService
 
     project_id, run = await _seed_project_and_run(session)
@@ -165,13 +168,14 @@ async def _count_upsert_queries(session, n_results: int, *, distinct: bool) -> t
     await session.flush()
 
     counter = _QueryCounter()
-    sync_engine = engine.sync_engine
-    event.listen(sync_engine, "before_cursor_execute", counter._handler)
+    connection = (await session.connection()).sync_connection
+    event.listen(connection, "before_cursor_execute", counter._handler)
     try:
         svc = ClashService(session)
         await svc.upsert_clashes_with_signatures(run, rows)
     finally:
-        event.remove(sync_engine, "before_cursor_execute", counter._handler)
+        event.remove(connection, "before_cursor_execute", counter._handler)
+    logger.info("Clash upsert: results=%s statements=%s", n_results, counter.count)
     return counter.count, rows
 
 
@@ -206,37 +210,104 @@ async def test_upsert_shared_signatures_link_to_same_issue(session):
     assert len({r.issue_id for r in rows}) == 4, "rows must collapse onto 4 distinct issues"
 
 
-async def test_bulk_suppress_audit_fanout_is_bounded(session):
-    """bulk_suppress over many issues issues a fixed query count (no per-issue SELECT)."""
-    from sqlalchemy import event
+async def _count_bulk_suppress_queries(session, n_issues: int, *, unrelated_query: bool = False) -> int:
+    from sqlalchemy import event, select, text
 
     from app.database import engine
+    from app.modules.clash.models import ClashIssue, ClashResult, ClashSuppression
     from app.modules.clash.service import ClashService
 
-    # Seed a run with distinct-signature results, upsert their issues, then
-    # bulk-suppress every resulting issue.
+    # Two members per issue make the audit guard exercise a real fan-out.
     project_id, run = await _seed_project_and_run(session)
-    rows = _make_results(run.id, 30, distinct=True)
+    rows = _make_results(run.id, n_issues * 2, distinct=True)
+    for i, row in enumerate(rows):
+        row.signature_hash = f"{i // 2:040x}"
+        row.signature = row.signature_hash[:16]
     session.add_all(rows)
     await session.flush()
     svc = ClashService(session)
     await svc.upsert_clashes_with_signatures(run, rows)
     await session.flush()
     issue_ids = sorted({r.issue_id for r in rows})
-    assert len(issue_ids) == 30
+    assert len(issue_ids) == n_issues
 
     counter = _QueryCounter()
-    sync_engine = engine.sync_engine
-    event.listen(sync_engine, "before_cursor_execute", counter._handler)
+    connection = (await session.connection()).sync_connection
+    observer = _QueryCounter() if unrelated_query else None
+    probe = "SELECT 1 /* unrelated query-count probe */"
+    event.listen(connection, "before_cursor_execute", counter._handler)
+    if observer is not None:
+        event.listen(engine.sync_engine, "before_cursor_execute", observer._handler)
     try:
+        if observer is not None:
+            # Deterministically demonstrate why an engine-wide counter can
+            # report an extra statement unrelated to the operation.
+            async with engine.connect() as other:
+                await other.execute(text(probe))
         out = await svc.bulk_suppress(project_id, issue_ids, reason="dup", user_id=None)
     finally:
-        event.remove(sync_engine, "before_cursor_execute", counter._handler)
+        event.remove(connection, "before_cursor_execute", counter._handler)
+        if observer is not None:
+            event.remove(engine.sync_engine, "before_cursor_execute", observer._handler)
 
-    assert out["suppressed_count"] == 30
-    # get_issues_by_ids + get_suppressions_by_signatures + results_for_issue_ids
-    # + final flush, plus a little headroom - NOT one SELECT per issue.
+    assert out["suppressed_count"] == n_issues
+    assert out["skipped_count"] == 0
+    reads = [statement for statement in counter.statements if statement.lstrip().upper().startswith("SELECT")]
+    trace = "\n".join(counter.statements)
+    assert len(reads) == 3, trace
+    assert sum("FROM OE_CLASH_RESULT" in statement.upper() for statement in reads) == 1, trace
+    # Three batched reads plus batched issue UPDATE, history UPDATE and
+    # suppression INSERT. Keep the original ceiling, including writes.
     assert counter.count <= 6, (
-        f"N+1 regression: bulk_suppress of 30 issues issued {counter.count} statements "
-        "(expected <= 6 - the member-row fan-out must be a single batched query).\n" + "\n".join(counter.statements)
+        f"N+1 regression: bulk_suppress of {n_issues} issues issued {counter.count} statements "
+        "(expected <= 6 - the member-row fan-out must be a single batched query).\n" + trace
     )
+    if observer is not None:
+        assert probe in observer.statements
+        assert probe not in counter.statements
+        assert observer.count >= counter.count + 1
+
+    # Read column values back from PostgreSQL after removing the counter;
+    # checking only the objects already in the identity map misses lost writes.
+    statuses = (await session.execute(select(ClashIssue.status).where(ClashIssue.id.in_(issue_ids)))).scalars().all()
+    reasons = (
+        (await session.execute(select(ClashSuppression.reason).where(ClashSuppression.project_id == project_id)))
+        .scalars()
+        .all()
+    )
+    histories = (await session.execute(select(ClashResult.history).where(ClashResult.run_id == run.id))).scalars().all()
+    assert statuses == ["ignored"] * n_issues
+    assert reasons == ["dup"] * n_issues
+    assert len(histories) == n_issues * 2
+    for history in histories:
+        assert len(history) == 1
+        assert (
+            history[0].items()
+            >= {
+                "actor": "system",
+                "field": "suppression",
+                "before": "new",
+                "after": "ignored",
+            }.items()
+        )
+    logger.info(
+        "Clash bulk suppress: issues=%s members=%s statements=%s reads=%s unrelated_probe=%s engine_statements=%s",
+        n_issues,
+        len(histories),
+        counter.count,
+        len(reads),
+        unrelated_query,
+        observer.count if observer is not None else None,
+    )
+    return counter.count
+
+
+async def test_bulk_suppress_audit_fanout_is_bounded(session):
+    """Reads and writes stay bounded as both issue and member counts grow."""
+    counts = [await _count_bulk_suppress_queries(session, n) for n in (1, 30, 100)]
+    assert counts == [counts[0]] * len(counts), f"query count scaled with issue count: {counts}"
+
+
+async def test_bulk_suppress_counter_excludes_other_connections(session):
+    """An unrelated same-engine query cannot masquerade as an N+1 regression."""
+    await _count_bulk_suppress_queries(session, 30, unrelated_query=True)
