@@ -20,7 +20,7 @@ export const BRAND_SHORT_NAME = 'PM Project Management';
 export const BRAND_LOGO_URL = '/brand/pmpm-logo.svg';
 
 /** Where the in-app bug and support menus send email. Empty hides those entries. */
-export const BRAND_SUPPORT_EMAIL = '';
+export const BRAND_SUPPORT_EMAIL: string = '';
 
 /**
  * Public URL of THIS modified version's source code. AGPL-3.0 §13 requires
