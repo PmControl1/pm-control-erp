@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "surat keterangan bebas tanggung jawab pemberi kerja",
     "insurance": "sertifikat asuransi",
     "license": "izin kontraktor"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Daftar ini tidak memiliki baris ДДС; КСС ditutup dengan \"Общо без ДДС\", \"ДДС 20 %\", dan \"Всичко с ДДС\"",
+      "suggestion": "Tambahkan baris ДДС 20 % sebagai tambahan terakhir. Kontraktor yang tidak terdaftar menurut ЗДДС tidak memungut ДДС dan dapat mengabaikan ini"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС dikenakan {count} kali pada daftar ini: {names}",
+      "suggestion": "Pertahankan satu baris ДДС dan nonaktifkan yang lain"
+    },
+    "vat_rate": {
+      "fail": "Baris ДДС '{name}' mengenakan {rate} %; pekerjaan konstruksi dikenai tarif 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Baris ДДС '{name}' berupa jumlah tetap; ДДС adalah 20 % dari total sebelum pajak",
+      "suggestion": "Atur baris ДДС sebagai persentase sebesar 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Baris ДДС '{name}' hanya dikenakan pada biaya langsung dan tidak mencakup {names}; ДДС terutang atas seluruh \"Общо без ДДС\"",
+      "after": "{names} berada setelah baris ДДС '{name}', sehingga tidak dikenai ДДС dan berada di luar \"Всичко с ДДС\"",
+      "suggestion": "Jadikan ДДС baris tambahan terakhir dan terapkan secara kumulatif pada semua yang di atasnya"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Baris {ordinal} dari количествена сметка '{bill}' ({description}) tidak ada dalam КСС ini",
+      "extra": "Baris {ordinal} ({description}) tidak ada dalam количествена сметка '{bill}'",
+      "description": "Baris {ordinal}: uraian berbeda dari количествена сметка ('{description}', bukan '{tender_description}')",
+      "unit": "Baris {ordinal}: satuan {unit}, bukan {tender_unit} sesuai количествена сметка",
+      "quantity": "Baris {ordinal}: volume {quantity}, bukan {tender_quantity} sesuai количествена сметка",
+      "suggestion": "Beri harga pada количествена сметка sebagaimana diterbitkan: pertahankan setiap uraian, satuan, dan volume, dan jangan menambah baris. Sampaikan setiap perbedaan kepada pihak pengadaan",
+      "tender_missing": "Daftar ini terhubung ke количествена сметка yang sudah tidak ada dalam proyek",
+      "tender_missing_suggestion": "Pilih kembali количествена сметка di kepala daftar, atau hapus tautannya",
+      "unmatched": "Baris КСС ini tidak dapat dicocokkan dengan количествена сметка '{bill}': penomoran berulang atau tidak ada",
+      "unmatched_suggestion": "Beri nomor baris seperti penomoran количествена сметка, lalu validasi ulang"
+    },
+    "imported_vat_totals": {
+      "amount": "Pada lembar Excel sumber “{sheet}”, baris {row}: nilainya {actual}; nilai yang diharapkan adalah {expected} berdasarkan pekerjaan, cadangan biaya tak terduga, dan ДДС dalam berkas sumber.",
+      "rate": "Pada lembar Excel sumber “{sheet}”, baris {row}: ДДС tercantum sebesar {rate}%; validasi pekerjaan konstruksi mengharapkan 20%.",
+      "review": "Total ДДС pada lembar Excel sumber “{sheet}” tidak dapat diverifikasi: beberapa kelompok pajak, rekapitulasi tanpa rincian pekerjaan sendiri, atau baris yang terlewat saat pembacaan perlu ditinjau.",
+      "suggestion": "Periksa lembar kerja asli dan impor kembali berkas yang telah diperbaiki. Pemeriksaan ini mengaudit nilai dalam berkas sumber; tambahan biaya ERP saat ini diperiksa secara terpisah."
+    }
   }
 }

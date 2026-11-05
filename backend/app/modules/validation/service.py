@@ -814,7 +814,17 @@ class ValidationModuleService:
         """
         from app.modules.boq.models import BOQMarkup
 
-        rows = (await self.session.execute(select(BOQMarkup).where(BOQMarkup.boq_id == boq_id))).scalars().all()
+        rows = (
+            (
+                await self.session.execute(
+                    select(BOQMarkup)
+                    .where(BOQMarkup.boq_id == boq_id)
+                    .order_by(BOQMarkup.sort_order, BOQMarkup.created_at)
+                )
+            )
+            .scalars()
+            .all()
+        )
         return [
             {
                 "id": str(markup.id),
@@ -827,6 +837,7 @@ class ValidationModuleService:
                 "sort_order": markup.sort_order,
                 "is_active": markup.is_active,
                 "scope_position_id": (str(markup.scope_position_id) if markup.scope_position_id else None),
+                "overrides_id": (str(markup.overrides_id) if markup.overrides_id else None),
             }
             for markup in rows
         ]
@@ -842,8 +853,14 @@ class ValidationModuleService:
         positions = await self._load_boq_positions(boq_id, project_id)
         header = await self._load_boq_header(boq_id, project_id)
         markups = await self._load_boq_markups(boq_id)
+        from app.modules.boq.kss_tender import with_kss_tender_bill
+
         return await with_project_context(
             self.session,
             project_id,
-            {"boq": header, "positions": positions, "markups": markups},
+            await with_kss_tender_bill(
+                self.session,
+                boq_id,
+                {"boq": header, "positions": positions, "markups": markups},
+            ),
         )

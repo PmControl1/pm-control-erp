@@ -18,6 +18,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import * as brand from '@/shared/brand';
 import { DemoReadOnlyDialog } from './DemoReadOnlyDialog';
 import { apiGet, apiPatch, isDemoReadOnlyRefusal } from '@/shared/lib/api';
 import { useDemoReadOnlyStore } from '@/stores/useDemoReadOnlyStore';
@@ -120,6 +121,7 @@ function stubFetch(refusal: { status: number; body: unknown }) {
 }
 
 beforeEach(() => {
+  vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(true);
   useDemoReadOnlyStore.setState({ open: false });
 });
 
@@ -177,10 +179,13 @@ describe('a refused write on the public demonstration', () => {
     expect(dialog).toBeInTheDocument();
     expect(screen.getByText('This is a demonstration')).toBeInTheDocument();
     expect(screen.getByText(/nothing you change here is kept/i)).toBeInTheDocument();
-    expect(screen.getByText(/runs on your own machine/i)).toBeInTheDocument();
+    expect(screen.queryByText(/runs on your own machine/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('demo-read-only-download')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ways to install it')).not.toBeInTheDocument();
   });
 
-  it('names every way to install it, and links to where they live', async () => {
+  it('names every way to install it in release mode, and links to where they live', async () => {
+    vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(false);
     const user = userEvent.setup();
     stubFetch({ status: 403, body: DEMO_REFUSAL_BODY });
     renderScreen();

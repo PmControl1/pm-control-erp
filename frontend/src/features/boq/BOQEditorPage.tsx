@@ -56,6 +56,7 @@ import { AIChatPanel } from './AIChatPanel';
 import { importLanded, importToastText, type ImportToastResult } from './importToastText';
 import { editorErrorText } from './editorErrorText';
 import { BOQRenameTitle } from './BOQRenameTitle';
+import { KssTenderBillPicker, runsBulgarianRules } from './KssTenderBillPicker';
 import { carriesPriceList, saveImportedPriceList } from './saveImportedPriceList';
 import { importProgressText, isImportJob, waitForImportJob, type ImportProgress } from './importJob';
 import { alreadyImported, importFailureFromBody, importFailureText } from './importFailureText';
@@ -5187,6 +5188,14 @@ export function BOQEditorPage() {
         <div className="flex flex-wrap items-center gap-2">
           {boq.description && (
             <p className="text-sm text-content-secondary truncate flex-1 min-w-[12rem]">{boq.description}</p>
+          )}
+          {runsBulgarianRules(project) && (
+            <KssTenderBillPicker
+              boqId={boq.id}
+              projectId={boq.project_id}
+              metadata={boq.metadata}
+              locked={boq.is_locked || boq.status === 'final'}
+            />
           )}
           <div className="flex flex-wrap items-center gap-2 min-w-0">
             {!boq.is_locked && boq.status === 'draft' && (

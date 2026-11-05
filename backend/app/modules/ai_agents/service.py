@@ -22,6 +22,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.ai import workspace
 from app.modules.ai_agents.base import (
     Agent,
     AgentResult,
@@ -682,7 +683,7 @@ class AgentService:
                 run_id,
                 status="failed",
                 failure_reason="exception",
-                final_output=str(exc)[:500],
+                final_output=(workspace.public_error(str(exc)) or "")[:500],
                 finished_at=_iso_now(),
             )
             refreshed = await self.run_repo.get_by_id(run_id)

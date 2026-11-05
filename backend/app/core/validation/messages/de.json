@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "Unbedenklichkeitsbescheinigung zur Arbeitgeberhaftung",
     "insurance": "Versicherungsnachweis",
     "license": "Unternehmerlizenz"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Das LV hat keine ДДС-Zeile; eine КСС schließt mit „Общо без ДДС“, „ДДС 20 %“ und „Всичко с ДДС“",
+      "suggestion": "Fügen Sie als letzten Zuschlag eine ДДС-Zeile mit 20 % hinzu. Ein Auftragnehmer, der nicht nach dem ЗДДС registriert ist, berechnet keine ДДС und kann dies ignorieren"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС wird in diesem LV {count}-mal berechnet: {names}",
+      "suggestion": "Behalten Sie eine ДДС-Zeile und schalten Sie die anderen ab"
+    },
+    "vat_rate": {
+      "fail": "Die ДДС-Zeile '{name}' berechnet {rate} %; Bauleistungen werden mit 20 % besteuert (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Die ДДС-Zeile '{name}' ist ein Festbetrag; ДДС beträgt 20 % der Summe vor Steuer",
+      "suggestion": "Stellen Sie die ДДС-Zeile auf einen Prozentsatz von 20 ein"
+    },
+    "vat_on_whole_total": {
+      "base": "Die ДДС-Zeile '{name}' wird nur auf die direkten Kosten berechnet und lässt {names} aus; ДДС ist auf das gesamte „Общо без ДДС“ fällig",
+      "after": "{names} folgt nach der ДДС-Zeile '{name}', trägt daher keine ДДС und liegt außerhalb von „Всичко с ДДС“",
+      "suggestion": "Machen Sie ДДС zur letzten Zuschlagszeile und wenden Sie sie kumulativ auf alles darüber an"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Zeile {ordinal} der количествена сметка '{bill}' ({description}) fehlt in dieser КСС",
+      "extra": "Zeile {ordinal} ({description}) ist nicht in der количествена сметка '{bill}' enthalten",
+      "description": "Zeile {ordinal}: Die Beschreibung weicht von der количествена сметка ab ('{description}' statt '{tender_description}')",
+      "unit": "Zeile {ordinal}: Einheit {unit} statt {tender_unit} laut количествена сметка",
+      "quantity": "Zeile {ordinal}: Menge {quantity} statt {tender_quantity} laut количествена сметка",
+      "suggestion": "Bepreisen Sie die количествена сметка wie ausgegeben: Beschreibungen, Einheiten und Mengen unverändert lassen und keine Zeilen hinzufügen. Abweichungen klären Sie stattdessen mit dem öffentlichen Auftraggeber",
+      "tender_missing": "Dieses LV ist mit einer количествена сметка verknüpft, die im Projekt nicht mehr existiert",
+      "tender_missing_suggestion": "Wählen Sie die количествена сметка im Kopf des LV erneut aus oder entfernen Sie die Verknüpfung",
+      "unmatched": "Die Zeilen dieser КСС lassen sich der количествена сметка '{bill}' nicht zuordnen: Die Nummerierung wiederholt sich oder fehlt",
+      "unmatched_suggestion": "Nummerieren Sie die Zeilen wie die количествена сметка und prüfen Sie erneut"
+    },
+    "imported_vat_totals": {
+      "amount": "Excel-Quellblatt „{sheet}“, Zeile {row}: Der Betrag ist {actual}; anhand der Bauleistungen, der Reserve für Unvorhergesehenes und der Umsatzsteuer (ДДС) in der Quelldatei wird {expected} erwartet.",
+      "rate": "Excel-Quellblatt „{sheet}“, Zeile {row}: Die Umsatzsteuer (ДДС) ist mit {rate} % angegeben; die Prüfung der Bauleistungen erwartet 20 %.",
+      "review": "Die Umsatzsteuersummen (ДДС) im Excel-Quellblatt „{sheet}“ können nicht geprüft werden: Mehrere Steuerblöcke, eine Zusammenfassung ohne eigene Leistungspositionen oder beim Einlesen ausgelassene Zeilen müssen überprüft werden.",
+      "suggestion": "Prüfen Sie die ursprüngliche Tabelle und importieren Sie die korrigierte Datei erneut. Diese Prüfung kontrolliert die Quellbeträge; die aktuellen ERP-Zuschläge werden gesondert geprüft."
+    }
   }
 }

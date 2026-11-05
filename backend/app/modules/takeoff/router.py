@@ -68,6 +68,7 @@ from app.core.converter_source import (
     host_packages,
     host_platform_key,
     install_dir_name,
+    package_tag,
     parse_sha256sums,
     release_asset_url,
     release_page_url,
@@ -731,7 +732,7 @@ def _expected_package_digest(pkg: ConverterPackage, repo: str, tag: str) -> str:
     """The SHA-256 a downloaded package must have.
 
     The digest published in the release's checksum file (``SHA256SUMS.txt`` for
-    Windows, ``SHA256SUMS-linux-macos.txt`` for Linux and macOS) is authoritative
+    Windows, the separate Linux and macOS release) is authoritative
     for a tag we do not pin. For the pinned tag it has to agree with the digest
     committed in ``converter_source`` as well, so that neither a tampered release
     page nor a stale constant can pass a wrong file.
@@ -741,7 +742,7 @@ def _expected_package_digest(pkg: ConverterPackage, repo: str, tag: str) -> str:
         # The release lists its assets in its checksum files; one it no longer
         # lists was removed or replaced upstream.
         raise ConverterPackageMissingError(pkg.asset, tag, repo)
-    if tag == DEFAULT_CONVERTER_TAG and repo == DEFAULT_CONVERTER_REPO:
+    if tag == (pkg.release_tag or DEFAULT_CONVERTER_TAG) and repo == DEFAULT_CONVERTER_REPO:
         if published != pkg.sha256:
             raise RuntimeError(
                 f"{pkg.checksums_asset} of release {tag} lists {published} for {pkg.asset}, "
@@ -804,7 +805,7 @@ def _download_converter_package(converter_id: str, *, clean: bool = False, platf
     pkg = host_packages(key).get(converter_id)
     if pkg is None:
         raise RuntimeError(f"There is no DDC converter package for {converter_id!r} on {key}.")
-    repo, tag = _DDC_REPO, _DDC_TAG
+    repo, tag = _DDC_REPO, package_tag(pkg)
 
     _set_install_progress(
         converter_id,
@@ -4250,6 +4251,7 @@ async def analyze_document(
     import time
     import uuid as _uuid
 
+    from app.modules.ai import workspace
     from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
     from app.modules.ai.prompts import (
         SMART_IMPORT_PROMPT,
@@ -4286,7 +4288,7 @@ async def analyze_document(
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
-            detail=str(exc),
+            detail=workspace.public_error(str(exc)),
         ) from exc
 
     # 4. Build prompt
@@ -4309,12 +4311,12 @@ async def analyze_document(
             model=model_override,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail=workspace.public_error(str(exc))) from exc
     except Exception as exc:
         logger.exception("AI analysis failed for document %s: %s", doc_id, exc)
         raise HTTPException(
             status_code=502,
-            detail=f"AI analysis failed: {exc}",
+            detail=workspace.public_error(f"AI analysis failed: {exc}"),
         ) from exc
 
     duration_ms = int((time.monotonic() - start_time) * 1000)

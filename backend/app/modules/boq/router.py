@@ -3631,9 +3631,13 @@ _COUNTRY_RULE_SETS: dict[str, list[str]] = {
     "GR": ["greece", "din276"],
     "UA": ["ukraine", "din276"],
     "HR": ["din276"],
-    # Bulgaria, with its country pack: a КСС is mapped onto DIN 276, the
-    # registry's answer for BG, and a project without the pack ran nothing.
-    "BG": ["din276"],
+    # Bulgaria. A КСС is grouped by kind of work and carries no DIN 276 cost
+    # group, so the din276 row this used to be failed every line of an
+    # ordinary КСС with an error. The bulgaria set checks what a tender reads
+    # instead: the КСС keeps its количествена сметка, and ДДС is one 20 % line
+    # on the whole total. A project that names DIN 276 as its standard still
+    # gets din276 through ``_STANDARD_RULE_SETS``.
+    "BG": ["bulgaria"],
     "CZ": ["din276"],
     "BE": ["din276"],
     "PL": ["poland"],
@@ -3847,10 +3851,34 @@ async def _run_import_validation(
             pack_rule_sets=_pack_added_rule_sets(project),
         )
 
+        import_data: dict[str, Any] = {"positions": positions_data}
+        if "bulgaria" in rule_sets:
+            # The import report must compare the linked designer's bill and
+            # inspect the same tax stack/source totals as the Validate button.
+            from app.modules.boq.kss_tender import with_kss_tender_bill
+
+            import_data["markups"] = [
+                {
+                    "id": str(markup.id),
+                    "name": markup.name,
+                    "markup_type": markup.markup_type,
+                    "category": markup.category,
+                    "percentage": markup.percentage,
+                    "fixed_amount": markup.fixed_amount,
+                    "apply_to": markup.apply_to,
+                    "sort_order": markup.sort_order,
+                    "is_active": markup.is_active,
+                    "scope_position_id": str(markup.scope_position_id) if markup.scope_position_id else None,
+                    "overrides_id": str(markup.overrides_id) if markup.overrides_id else None,
+                }
+                for markup in await service.list_markups(boq_id)
+            ]
+            import_data = await with_kss_tender_bill(session, boq_id, import_data)
+
         report = await validation_engine.validate(
             data=await with_poz_catalogue_for_rule_sets(
                 session,
-                await with_project_context(session, boq_data.project_id, {"positions": positions_data}),
+                await with_project_context(session, boq_data.project_id, import_data),
                 rule_sets,
             ),
             rule_sets=rule_sets,
@@ -4024,6 +4052,8 @@ async def validate_boq(
     from app.modules.boq.markup_rule_inputs import markup_amounts_for_rules
 
     markup_context = await markup_amounts_for_rules(service, boq_id, markups_data)
+    # The количествена сметка a Bulgarian КСС names, for the bulgaria rule set.
+    from app.modules.boq.kss_tender import with_kss_tender_bill
 
     # Determine rule sets from project config. Empty classification /
     # region means "no preference"; the rule registry resolves to a
@@ -4049,7 +4079,11 @@ async def validate_boq(
             await with_project_context(
                 session,
                 boq_data.project_id,
-                {"positions": positions_data, "markups": markups_data, **markup_context},
+                await with_kss_tender_bill(
+                    session,
+                    boq_id,
+                    {"positions": positions_data, "markups": markups_data, **markup_context},
+                ),
             ),
             rule_sets,
         ),
@@ -4189,6 +4223,7 @@ async def ai_chat_boq(
 
     Requires the user to have an AI API key configured in their settings.
     """
+    from app.modules.ai import workspace
     from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
     from app.modules.ai.repository import AISettingsRepository
 
@@ -4209,7 +4244,7 @@ async def ai_chat_boq(
     try:
         provider, api_key, model_override = resolve_provider_key_model(settings)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=workspace.public_error(str(exc))) from exc
 
     # Build prompt. Empty strings render in the prompt as bare blanks
     # which the LLM interprets as "no constraint specified" rather than
@@ -4242,7 +4277,7 @@ async def ai_chat_boq(
         logger.exception("AI chat failed for BOQ %s: %s", boq_id, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI request failed: {exc}",
+            detail=workspace.public_error(f"AI request failed: {exc}"),
         ) from exc
 
     # Parse response. The model is asked for a {"reply", "positions"}
@@ -7924,7 +7959,12 @@ async def _run_native_import(
 
     # Persist top-level import metadata so the round-trip exporter can
     # reproduce the original layout.
-    if (created + updated) > 0:
+    from app.modules.boq.importers.bulgaria_totals import SOURCE_TOTALS_KEY
+
+    # An Excel file can correct only its tax/summary cells while every work
+    # position remains unchanged. Refresh and validate that source audit too.
+    source_totals_refreshed = SOURCE_TOTALS_KEY in imported_boq.metadata and int(apply_summary["unchanged"]) > 0
+    if (created + updated) > 0 or source_totals_refreshed:
         try:
             boq_obj = await service.get_boq(boq_id)
             meta = dict(boq_obj.metadata_) if isinstance(boq_obj.metadata_, dict) else {}
@@ -7951,7 +7991,7 @@ async def _run_native_import(
     # Run inline validation using the importer's declared rule packs
     # (philosophy: validation is a first-class citizen of every import).
     validation_report = None
-    if (created + updated) > 0:
+    if (created + updated) > 0 or source_totals_refreshed:
         if on_phase is not None:
             await on_phase("validating")
         validation_report = await _run_import_validation(boq_id, service, service.session)
@@ -8675,6 +8715,7 @@ async def smart_import(
         }
 
     # ── 3. AI-powered import ───────────────────────────────────────────
+    from app.modules.ai import workspace
     from app.modules.ai.ai_client import call_ai, extract_json, resolve_provider_key_model
     from app.modules.ai.prompts import (
         CAD_IMPORT_PROMPT,
@@ -8688,6 +8729,9 @@ async def smart_import(
     user_uuid = uuid.UUID(user_id)
     ai_settings = await settings_repo.get_by_user_id(user_uuid)
 
+    # Keep the request's privacy boundary even if the owner disables shared AI
+    # or another worker refreshes the cache while the provider call is pending.
+    workspace_managed = workspace.current() is not None
     try:
         provider, api_key, model_override = resolve_provider_key_model(ai_settings)
     except ValueError as exc:
@@ -8699,7 +8743,7 @@ async def smart_import(
             return await _smart_native_result(boq_id, native, file.filename or "upload", service, user_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
+            detail=workspace.PUBLIC_AI_ERROR if workspace_managed else workspace.public_error(str(exc)),
         ) from exc
 
     # Build prompt
@@ -8749,7 +8793,9 @@ async def smart_import(
         logger.exception("Smart import AI call failed for BOQ %s: %s", boq_id, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI service error: {exc}",
+            detail=workspace.PUBLIC_AI_ERROR
+            if workspace_managed
+            else workspace.public_error(f"AI service error: {exc}"),
         ) from exc
 
     items = extract_json(raw_response)
@@ -8836,7 +8882,7 @@ async def smart_import(
         "errors": errors,
         "total_items": len(items),
         "method": method,
-        "model_used": provider,
+        "model_used": None if workspace_managed else provider,
     }
     if is_cad_import:
         result["cad_format"] = extracted.get("cad_format")

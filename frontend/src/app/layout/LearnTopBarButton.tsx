@@ -1,7 +1,7 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// Where the Learn section (Cases and Packs) goes when it is hidden from the
+// Where the Learn section (cases and regional packs) goes when it is hidden from the
 // top of the menu: one graduation cap in the top bar. Clicking it puts the
 // section back and the cap leaves. It shows at every width, a phone included,
 // because it is the only way back.

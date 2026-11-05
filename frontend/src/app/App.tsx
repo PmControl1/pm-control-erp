@@ -1579,6 +1579,7 @@ export default function App() {
             and the form has no business loading for the ones who do not.
             /cases/new is declared before the stepper for readability only -
             the router ranks a static segment above a dynamic one regardless. */}
+        {/* Keep saved tutorial links useful after removing the video library. */}
         <Route path="/videos" element={<Navigate to="/cases" replace />} />
         <Route path="/packs" element={<P title="Packs"><PacksPage /></P>} />
         <Route path="/packs/:slug" element={<P title="Packs"><PackDetailPage /></P>} />

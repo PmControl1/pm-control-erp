@@ -125,7 +125,7 @@ const litHrefs = (): string[] =>
 
 const moreExpanded = () => screen.getByTestId('sidebar-more-modules').getAttribute('aria-expanded');
 
-// The Learn card (Cases and Packs) sits above everything else in every mode,
+// The Learn card (Cases, Packs) sits above everything else in every mode,
 // workspace included, until the user hides it.
 const LEARN = ['/cases', '/packs'];
 

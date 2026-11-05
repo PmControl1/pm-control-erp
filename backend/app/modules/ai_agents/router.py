@@ -26,6 +26,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, 
 
 from app.database import async_session_factory
 from app.dependencies import CurrentUserId, CurrentUserPayload, RequirePermission, SessionDep, verify_project_access
+from app.modules.ai import workspace
 from app.modules.ai_agents.accuracy_schemas import (
     AccuracyScoreboardOut,
     AccuracyScoreOut,
@@ -578,6 +579,8 @@ async def agents_health(
         provider, _api_key, model = resolve_provider_key_model(settings)
     except ValueError:
         return AgentHealthResponse(llm_configured=False)
+    if workspace.current() is not None and not await workspace.is_owner_user(session, user_id):
+        return AgentHealthResponse(llm_configured=True)
     return AgentHealthResponse(
         llm_configured=True,
         provider=provider,
@@ -878,7 +881,7 @@ async def _run_in_background_as_user(
                     run_id,
                     status="failed",
                     failure_reason="exception",
-                    final_output=str(exc)[:500],
+                    final_output=(workspace.public_error(str(exc)) or "")[:500],
                     finished_at=_iso_now(),
                 )
                 await bg_session.commit()
@@ -1171,8 +1174,30 @@ async def apply_run_proposals(
 # ── Serialisation helper ─────────────────────────────────────────────────
 
 
+def _serialise_step(step: Any) -> AgentStepResponse:
+    """Keep stored transport diagnostics out of the member-facing timeline."""
+    response = AgentStepResponse.model_validate(step)
+    content = response.content
+    if (
+        response.role == "error"
+        and isinstance(content, dict)
+        and content.get("reason") == "llm_error"
+        and isinstance(content.get("message"), str)
+    ):
+        response = response.model_copy(
+            update={"content": {**content, "message": workspace.public_error(content["message"])}}
+        )
+    return response
+
+
 def _serialise_run(run: Any, *, steps: list[Any]) -> AgentRunResponse:
-    """Convert ORM models to the response schema."""
+    """Convert ORM models to the response schema, filtering transport errors."""
+    final_output = run.final_output
+    if final_output and run.status == "failed" and run.failure_reason in {"exception", "llm_error"}:
+        final_output = workspace.public_error(final_output)
+    trust = getattr(run, "trust", None)
+    if workspace.current() is not None and isinstance(trust, dict):
+        trust = {key: value for key, value in trust.items() if key not in {"provider", "model"}}
     return AgentRunResponse(
         id=run.id,
         agent_name=run.agent_name,
@@ -1182,13 +1207,13 @@ def _serialise_run(run: Any, *, steps: list[Any]) -> AgentRunResponse:
         trigger_source=getattr(run, "trigger_source", "manual") or "manual",
         failure_reason=run.failure_reason,
         user_input=run.user_input,
-        final_output=run.final_output,
-        trust=getattr(run, "trust", None),
+        final_output=final_output,
+        trust=trust,
         iterations=run.iterations,
         total_tokens=run.total_tokens,
         started_at=run.started_at,
         finished_at=run.finished_at,
         created_at=run.created_at,
         updated_at=run.updated_at,
-        steps=[AgentStepResponse.model_validate(s) for s in steps],
+        steps=[_serialise_step(s) for s in steps],
     )

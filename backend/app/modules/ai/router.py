@@ -41,6 +41,7 @@ from app.dependencies import (
     check_ai_rate_limit,
     verify_project_access,
 )
+from app.modules.ai import workspace
 from app.modules.ai.ai_client import (
     DEFAULT_MODELS,
     SELF_HOSTED_PROVIDERS,
@@ -248,6 +249,9 @@ async def test_ai_connection(
 
     Returns success status and response latency.
     """
+    if workspace.current() is not None and not await workspace.is_owner_user(service.session, user_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "AI connection diagnostics are managed by the workspace owner.")
+
     # Every provider the dispatch knows, read from the same table rather than
     # listed again here, so a provider added there is testable at once.
     _VALID_PROVIDERS = tuple(DEFAULT_MODELS)
@@ -1143,7 +1147,9 @@ async def advisor_chat(
         # For the stale-model-name case (issue #129) prefer a localized,
         # explicitly actionable message; otherwise forward the sanitized text.
         is_model_problem = "set the model name" in str(exc) or "denied access to model" in str(exc)
-        if is_model_problem:
+        if workspace.current() is not None:
+            answer = workspace.public_error(str(exc))
+        elif is_model_problem:
             _model_msgs = {
                 "ru": "Имя модели ИИ устарело или недоступно. Откройте Настройки > ИИ и укажите актуальное имя модели.",
                 "de": "Der KI-Modellname ist veraltet oder nicht verfügbar. Öffnen Sie Einstellungen > KI und geben Sie einen aktuellen Modellnamen ein.",
@@ -1172,7 +1178,9 @@ async def advisor_chat(
             "fr": "IA non configurée. Veuillez ajouter votre clé API dans les Paramètres.",
             "es": "IA no configurada. Agregue su clave API en Configuración.",
         }
-        answer = _err_msgs.get(locale, "AI is not configured. Please set up an AI provider in Settings.")
+        answer = workspace.public_error(
+            _err_msgs.get(locale, "AI is not configured. Please set up an AI provider in Settings.")
+        )
         used_db = False
 
     # 6. Build source references - only include if items seem relevant
@@ -1204,3 +1212,9 @@ async def advisor_chat(
         "sources": sources,
         "query": message,
     }
+
+
+# ── Workspace AI and memory ──────────────────────────────────────────────────
+from app.modules.ai.workspace_router import router as _workspace_router  # noqa: E402
+
+router.include_router(_workspace_router)

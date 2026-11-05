@@ -35,6 +35,8 @@ export interface BOQ {
   tax_date?: string | null;
   /** The user who started the bill; null for bills older than the field. */
   created_by?: string | null;
+  /** Free-form bill metadata, e.g. `kss_tender_bill_id` on a Bulgarian КСС. */
+  metadata?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -1853,9 +1855,15 @@ export function fetchCategoryTree(
 
 export const boqApi = {
   /* BOQ CRUD */
-  list: (projectId: string) => apiGet<BOQ[]>(`/v1/boq/boqs/?project_id=${projectId}`),
-  /** Rename an estimate or change its description. */
-  update: (boqId: string, data: { name?: string; description?: string }) =>
+  list: (projectId: string, page?: { offset: number; limit: number }) =>
+    apiGet<BOQ[]>(
+      `/v1/boq/boqs/?project_id=${projectId}${page ? `&offset=${page.offset}&limit=${page.limit}` : ''}`,
+    ),
+  /**
+   * Rename an estimate, change its description, or set metadata keys. The
+   * server merges `metadata` into what the bill already carries.
+   */
+  update: (boqId: string, data: { name?: string; description?: string; metadata?: Record<string, unknown> }) =>
     apiPatch<BOQ>(`/v1/boq/boqs/${boqId}`, data),
   /**
    * The bill register of several projects in one request, keyed by project id.

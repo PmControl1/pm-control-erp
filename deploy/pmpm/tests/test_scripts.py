@@ -10,7 +10,7 @@ import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 DOCKER = r'''#!/usr/bin/env python3
-import json, os, pathlib, shutil, sys
+import importlib.util, json, os, pathlib, shutil, sys, types, uuid
 args = sys.argv[1:]
 HEALTHY = '{"status":"healthy","database":"ok"}'
 with open(os.environ['MOCK_DOCKER_LOG'], 'a') as out:
@@ -26,8 +26,41 @@ if args and args[0] == 'exec' and 'pg_restore' in args:
 if args[:4] == ['compose', 'exec', '-T', 'app'] and 'curl' in args:
     print(os.environ.get('MOCK_APP_HEALTH', HEALTHY))
 if args[:4] == ['compose', 'exec', '-T', 'app'] and 'python' in args:
-    sys.stdin.read()
-    if os.environ.get('MOCK_NO_ADMIN') == '1': sys.exit(28)
+    # Execute the real deployment preflight and UUID authorization helper with
+    # a fake database. This verifies the Caddy gate rather than accepting every
+    # Python command as a successful bootstrap check.
+    script = sys.stdin.read()
+    for name in ['app', 'app.database', 'app.core', 'app.core.permissions',
+                 'app.modules', 'app.modules.ai', 'app.modules.users',
+                 'app.modules.users.models', 'app.modules.users.repository']:
+        sys.modules[name] = types.ModuleType(name)
+    sys.modules['app.core.permissions'].Role = types.SimpleNamespace(ADMIN='admin')
+    sys.modules['app.core.permissions']._resolve_role = lambda role: role
+    sys.modules['app.modules.users.models'].User = object
+    class Session:
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def get(self, model, user_id):
+            if os.environ.get('MOCK_NO_OWNER') == '1': return None
+            if str(user_id) != '11111111-1111-4111-8111-111111111111': return None
+            return types.SimpleNamespace(
+                id=user_id, role=os.environ.get('MOCK_OWNER_ROLE', 'admin'),
+                is_active=os.environ.get('MOCK_OWNER_INACTIVE') != '1',
+                deleted_at=None,
+            )
+    class UserRepository:
+        def __init__(self, session): self.session = session
+        async def has_admin(self): return os.environ.get('MOCK_NO_ADMIN') != '1'
+        async def get_by_id(self, user_id): return await self.session.get(object, user_id)
+    sys.modules['app.database'].async_session_factory = Session
+    sys.modules['app.modules.users.repository'].UserRepository = UserRepository
+    spec = importlib.util.spec_from_file_location('deployment_workspace', os.environ['MOCK_WORKSPACE_PATH'])
+    workspace = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = workspace
+    spec.loader.exec_module(workspace)
+    sys.modules['app.modules.ai'].workspace = workspace
+    os.environ['PLATFORM_OWNER_USER_IDS'] = os.environ.get('PMPM_PLATFORM_OWNER_USER_IDS', '')
+    exec(compile(script, '<deployment-preflight>', 'exec'), {'__name__': '__main__'})
 if 'psql' in args:
     print('users: 1\nprojects: 1')
 if args and args[0] == 'run' and 'restic/restic:0.18.0' in args:
@@ -65,13 +98,14 @@ class MaintenanceScripts(unittest.TestCase):
         for name in ['backup.sh', 'restore.sh', 'deploy.sh']:
             shutil.copy2(SCRIPTS / name, self.root / name)
             (self.root / name).chmod(0o700)
-        (self.root / '.env').write_text("PMPM_DOMAIN=erp.example.test\nPMPM_IMAGE_TAG=main\nRESTIC_REPOSITORY=s3:https://example.test/bucket\nRESTIC_PASSWORD='synthetic password'\nPOSTGRES_PASSWORD=synthetic\nJWT_SECRET=synthetic\nSMTP_FROM=test@example.test\nBACKUP_STAGING='" + str(self.root / 'staging') + "'\n")
+        (self.root / '.env').write_text("PMPM_DOMAIN=erp.example.test\nPMPM_PLATFORM_OWNER_USER_IDS=11111111-1111-4111-8111-111111111111\nPMPM_IMAGE_TAG=main\nRESTIC_REPOSITORY=s3:https://example.test/bucket\nRESTIC_PASSWORD='synthetic password'\nPOSTGRES_PASSWORD=synthetic\nJWT_SECRET=synthetic\nSMTP_FROM=test@example.test\nBACKUP_STAGING='" + str(self.root / 'staging') + "'\n")
         (self.bin / 'docker').write_text(DOCKER)
         (self.bin / 'curl').write_text('#!/bin/sh\n[ "${MOCK_FAIL_TLS:-0}" != 1 ] || exit 7\nprintf \'%s\\n\' "${MOCK_PUBLIC_HEALTH:-$HEALTHY_JSON}"\n')
         (self.bin / 'sleep').write_text('#!/bin/sh\nexit 0\n')
         for p in self.bin.iterdir(): p.chmod(0o700)
         self.log = self.root / 'docker.jsonl'
-        self.env = {**os.environ, 'PATH': str(self.bin) + ':' + os.environ['PATH'], 'MOCK_DOCKER_LOG': str(self.log), 'HEALTHY_JSON': HEALTHY}
+        self.env = {**os.environ, 'PATH': str(self.bin) + ':' + os.environ['PATH'], 'MOCK_DOCKER_LOG': str(self.log), 'HEALTHY_JSON': HEALTHY,
+                    'MOCK_WORKSPACE_PATH': str(SCRIPTS.parents[1] / 'backend/app/modules/ai/workspace.py')}
         self.env.pop('PMPM_MAINTENANCE_LOCKED', None)
 
     def run_script(self, name, *args, input='', **env):
@@ -159,6 +193,49 @@ class MaintenanceScripts(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('Set PMPM_DOMAIN', result.stderr)
         self.assertEqual(self.commands(), [])
+
+    def test_deploy_requires_owner_ids_before_docker_actions(self):
+        env = self.root / '.env'
+        configured = env.read_text()
+        for value in ['', "' , , '"]:
+            with self.subTest(value=value):
+                env.write_text(configured.replace(
+                    'PMPM_PLATFORM_OWNER_USER_IDS=11111111-1111-4111-8111-111111111111',
+                    'PMPM_PLATFORM_OWNER_USER_IDS=' + value,
+                ))
+                result = self.run_script('deploy.sh')
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Set PMPM_PLATFORM_OWNER_USER_IDS', result.stderr)
+                self.assertEqual(self.commands(), [])
+
+    def test_ownerless_or_malformed_configuration_never_exposes_public_proxy(self):
+        env = self.root / '.env'
+        configured = env.read_text()
+        for owner_ids in [
+            '22222222-2222-4222-8222-222222222222',
+            'not-a-uuid',
+            '11111111-1111-4111-8111-111111111111,not-a-uuid',
+        ]:
+            with self.subTest(owner_ids=owner_ids):
+                env.write_text(configured.replace(
+                    '11111111-1111-4111-8111-111111111111', owner_ids,
+                ))
+                result = self.run_script('deploy.sh')
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('No configured active platform owner', result.stderr)
+                self.assertNotIn(['compose', 'up', '-d', 'caddy'], self.commands())
+
+    def test_owner_must_remain_an_active_administrator_before_public_deploy(self):
+        for state in [
+            {'MOCK_NO_OWNER': '1'},
+            {'MOCK_OWNER_INACTIVE': '1'},
+            {'MOCK_OWNER_ROLE': 'editor'},
+        ]:
+            with self.subTest(state=state):
+                result = self.run_script('deploy.sh', **state)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('No configured active platform owner', result.stderr)
+                self.assertNotIn(['compose', 'up', '-d', 'caddy'], self.commands())
 
     def test_invalid_tag_does_not_modify_env(self):
         before = (self.root / '.env').read_text()

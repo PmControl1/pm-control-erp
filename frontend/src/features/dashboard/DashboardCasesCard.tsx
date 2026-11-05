@@ -86,8 +86,8 @@ interface GalleryShape {
 
 /**
  * How the gallery is drawn at each width: always ONE row, ending on the tile
- * that opens the whole library. Two rows of seventeen cases pushed the videos
- * and everything below them down by a screen, and the founder asked for one
+ * that opens the whole library. Two rows of seventeen cases pushed everything
+ * below them down by a screen, and the founder asked for one
  * row (17.10.2026). The column ladders are unchanged; what changed is that a
  * tile which would start a second row at the current breakpoint is hidden, so
  * every width shows exactly one full row and never a short second one.
@@ -468,6 +468,7 @@ export function DashboardCasesCard() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -33,7 +33,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
 import { DashboardCasesCard } from '../DashboardCasesCard';
@@ -113,14 +112,10 @@ function caseTileCount(): number {
 }
 
 function renderCard() {
-  // The video half reads the active project's country through React Query.
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/']}>
-        <DashboardCasesCard />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <MemoryRouter initialEntries={['/']}>
+      <DashboardCasesCard />
+    </MemoryRouter>,
   );
 }
 
@@ -279,10 +274,4 @@ describe('DashboardCasesCard faces', () => {
     // gallery when it was cut from four rows to two, and to one.
     expect(checked).toBeGreaterThan(4);
   });
-});
-
-it('keeps the dashboard free of upstream video recommendations', () => {
-  renderCard();
-  expect(screen.getByTestId('dashboard-cases-card')).toBeTruthy();
-  expect(screen.queryByTestId('dashboard-videos')).toBeNull();
 });

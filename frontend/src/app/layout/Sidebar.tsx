@@ -1151,7 +1151,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
   const visibleWorkspaceItems = workspaceItems.filter(passesRowGates);
 
-  // The Learn card (cases and packs) is drawn apart from the group loop, at
+  // The Learn card (cases and regional packs) is drawn apart from the group loop, at
   // the very top of the menu, whatever the mode; see `LearnSection`. Its rows
   // pass the same gates as any group's, and hiding it goes through
   // `hiddenGroups`, so it also counts toward the "{N} hidden" chip.
@@ -1417,7 +1417,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
         data-engine="cwicr"
       >
-        {/* Learn: cases and packs, above everything else, Pinned included.
+        {/* Learn: cases and regional packs, above everything else, Pinned included.
             Hidden from its own header into a cap in the top bar, and restored
             from there. */}
         {learnGroup && learnItems.length > 0 && (
@@ -2266,7 +2266,7 @@ function NavGroupSection({
   );
 }
 
-/** The Learn card: Cases and Packs, drawn above every other section.
+/** The Learn card: cases and regional packs, drawn above every other section.
  *
  *  It reads as a card rather than as one more group header, because it is not
  *  one more area of work; it is the way in for somebody still finding their
@@ -2390,10 +2390,7 @@ function LearnSection({
                 'group-focus-within/learnhead:visible group-focus-within/learnhead:translate-y-0 group-focus-within/learnhead:opacity-100',
               )}
             >
-              {t('sidebar.learn.section_hint', {
-                defaultValue:
-                  'Hide this section to move it to the graduation cap in the top bar. Click the cap to bring it back.',
-              })}
+              {t('sidebar.hide_group', { defaultValue: 'Hide {{label}} section', label })}
             </div>
           </>
         )}

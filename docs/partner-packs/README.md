@@ -489,6 +489,7 @@ teach identifiers that were never rule sets at all.
 | `ukraine` | Summary estimate chapters, наказ Мінрегіону №281 (UA) |
 | `poland` | KNR and KNNR catalogue references of a kosztorys (PL) |
 | `italy` | Prezzario regionale voce codes, safety costs on their own line, labour share stated (IT) |
+| `bulgaria` | КСС priced as its количествена сметка was issued, one ДДС line at 20 % on the whole total (BG) |
 
 Modules add more. Anything with a `validators.py` registers its own sets when it
 loads, `formwork` and `carbon_6d` among them, and several of them register

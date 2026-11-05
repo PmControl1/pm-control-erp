@@ -3268,8 +3268,17 @@ class BOQService:
         if "metadata" in fields:
             incoming_meta = fields.pop("metadata")
             existing_meta = boq.metadata_ if isinstance(boq.metadata_, dict) else {}
+            # The tender link determines what an approved КСС is checked
+            # against. Treat changing or clearing it like a bill edit, even
+            # when a caller bypasses the editor's disabled picker. Other
+            # header metadata keeps its existing behavior.
+            from app.modules.boq.kss_tender import tender_bill_id
+
+            merged_meta = {**existing_meta, **incoming_meta} if isinstance(incoming_meta, dict) else incoming_meta
+            if tender_bill_id(existing_meta) != tender_bill_id(merged_meta):
+                await self._ensure_boq_writable(boq_id)
             if isinstance(incoming_meta, dict):
-                fields["metadata_"] = {**existing_meta, **incoming_meta}
+                fields["metadata_"] = merged_meta
             else:
                 fields["metadata_"] = incoming_meta
 
@@ -10680,6 +10689,7 @@ class BOQService:
         """
         import uuid as _uuid
 
+        from app.modules.ai import workspace
         from app.modules.ai.ai_client import resolve_provider_key_model
         from app.modules.ai.repository import AISettingsRepository
 
@@ -10692,7 +10702,7 @@ class BOQService:
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(exc),
+                detail=workspace.public_error(str(exc)),
             ) from exc
 
     async def _call_llm(self, user_id: str, system: str, prompt: str) -> tuple[str, str, int]:

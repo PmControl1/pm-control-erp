@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "tööandja vastutuse võlgnevuse puudumise tõend",
     "insurance": "kindlustustõend",
     "license": "töövõtja tegevusluba"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Eelarves ei ole ДДС rida; КСС lõpeb ridadega \"Общо без ДДС\", \"ДДС 20 %\" ja \"Всичко с ДДС\"",
+      "suggestion": "Lisa viimase juurdehindlusena 20 % ДДС rida. Töövõtja, kes ei ole ЗДДС järgi registreeritud, ДДС-d ei arvesta ja võib selle tähelepanuta jätta"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС-d arvestatakse selles eelarves {count} korda: {names}",
+      "suggestion": "Jätke üks ДДС rida ja lülitage teised välja"
+    },
+    "vat_rate": {
+      "fail": "ДДС rida '{name}' arvestab {rate} %; ehitustöid maksustatakse 20 %-ga (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС rida '{name}' on fikseeritud summa; ДДС on 20 % maksueelsest kogusummast",
+      "suggestion": "Seadke ДДС rida protsendiks 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС rida '{name}' arvestatakse ainult otsestelt kuludelt ja jätab välja {names}; ДДС tuleb arvestada kogu summalt \"Общо без ДДС\"",
+      "after": "{names} tuleb pärast ДДС rida '{name}', seega sellelt ДДС-d ei arvestata ja see jääb summast \"Всичко с ДДС\" välja",
+      "suggestion": "Pange ДДС viimaseks juurdehindluse reaks ja rakendage seda kumulatiivselt kõigele selle kohal"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Количествена сметка '{bill}' rida {ordinal} ({description}) puudub sellest КСС-st",
+      "extra": "Rida {ordinal} ({description}) ei ole количествена сметка '{bill}' osa",
+      "description": "Rida {ordinal}: kirjeldus erineb количествена сметка omast ('{description}', mitte '{tender_description}')",
+      "unit": "Rida {ordinal}: ühik {unit}, mitte количествена сметка järgne {tender_unit}",
+      "quantity": "Rida {ordinal}: kogus {quantity}, mitte количествена сметка järgne {tender_quantity}",
+      "suggestion": "Hinnake количествена сметка nii, nagu see on välja antud: säilitage iga kirjeldus, ühik ja kogus ning ärge lisage ridu. Esitage lahknevused hoopis hankijale",
+      "tender_missing": "See eelarve on seotud количествена сметка-ga, mida projektis enam ei ole",
+      "tender_missing_suggestion": "Valige количествена сметка eelarve päises uuesti või eemaldage seos",
+      "unmatched": "Selle КСС ridu ei saa siduda количествена сметка '{bill}' ridadega: numeratsioon kordub või puudub",
+      "unmatched_suggestion": "Nummerdage read nii, nagu количествена сметка neid nummerdab, ja kontrollige uuesti"
+    },
+    "imported_vat_totals": {
+      "amount": "Exceli lähtefaili tööleht „{sheet}”, rida {row}: summa on {actual}; lähtefaili tööde, ettenägematute kulude reservi ja käibemaksu (ДДС) põhjal on oodatud summa {expected}.",
+      "rate": "Exceli lähtefaili tööleht „{sheet}”, rida {row}: käibemaksu (ДДС) määraks on märgitud {rate}%; ehitustööde kontroll eeldab määra 20%.",
+      "review": "Exceli lähtefaili töölehe „{sheet}” käibemaksusummasid (ДДС) ei saa kontrollida: mitu maksuplokki, oma tööridadeta koondarvestus või lugemisel välja jäetud read vajavad ülevaatamist.",
+      "suggestion": "Kontrollige algset arvutustabelit ja importige parandatud fail uuesti. See kontroll hindab lähtefaili summasid; ERP praeguseid juurdehindlusi kontrollitakse eraldi."
+    }
   }
 }

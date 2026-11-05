@@ -29,7 +29,9 @@ vi.mock('@/shared/lib/api', async () => {
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: { defaultValue?: unknown; label?: string }) =>
-      typeof opts?.defaultValue === 'string' ? opts.defaultValue.replace('{{label}}', opts.label ?? '') : key,
+      typeof opts?.defaultValue === 'string'
+        ? opts.defaultValue.replace(/\{\{label\}\}/g, opts.label ?? '')
+        : key,
     i18n: { language: 'en', changeLanguage: vi.fn() },
   }),
   Trans: ({ children }: { children: ReactNode }) => children,
@@ -140,7 +142,7 @@ describe('the Learn card', () => {
     expect(packs?.getAttribute('aria-current')).toBe('page');
   });
 
-  it('explains on its header that it can be hidden and shown again', () => {
+  it('explains on its header that the Learn section can be hidden', () => {
     renderSidebar();
 
     const hide = screen.getByTestId('sidebar-learn-hide');
@@ -148,7 +150,7 @@ describe('the Learn card', () => {
     expect(hintId).toBeTruthy();
     const hint = document.getElementById(hintId!);
     expect(hint?.getAttribute('role')).toBe('tooltip');
-    expect(hint?.textContent).toMatch(/graduation cap in the top bar/i);
+    expect(hint?.textContent).toBe('Hide Learn section');
     // Shown on hover and keyboard focus, and always where there is no hover.
     expect(hide.className).toContain('group-hover/learnhead:opacity-100');
     expect(hide.className).toContain('group-focus-within/learnhead:opacity-100');

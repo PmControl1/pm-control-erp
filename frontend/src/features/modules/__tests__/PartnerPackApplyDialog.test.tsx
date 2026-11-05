@@ -166,6 +166,7 @@ function activate() {
 }
 
 beforeEach(() => {
+  vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(true);
   authState.userRole = 'admin';
   serverState.demoMode = false;
   i18nMock.inst.language = 'en';
@@ -177,6 +178,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 /* ── Whole-install failures ────────────────────────────────────────────── */
@@ -197,7 +199,8 @@ it('shows a preview tester who to ask without linking to the upstream installer'
 });
 
 describe('a failed install says what failed and why', () => {
-  it('a 403 before the first frame explains the account may not install packs', async () => {
+  it('a 403 before the first frame explains the account may not install packs in release mode', async () => {
+    vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(false);
     // The production report: a read-only account on the public demo.
     serverState.demoMode = true;
     streamMock.fullInstallPackStream.mockRejectedValue(
@@ -564,7 +567,8 @@ describe('the country cost bases are offered before install', () => {
 /* ── Permission ────────────────────────────────────────────────────────── */
 
 describe('who may install', () => {
-  it('a viewer sees why and cannot start the install', () => {
+  it('a viewer sees why and cannot start the install in release mode', () => {
+    vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(false);
     serverState.demoMode = true;
     authState.userRole = 'viewer';
     renderDialog();

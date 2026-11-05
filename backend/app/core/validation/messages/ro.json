@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "certificat de lipsă a restanțelor privind răspunderea angajatorilor",
     "insurance": "certificat de asigurare",
     "license": "licența antreprenorului"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Devizul nu are o linie de ДДС; o КСС se încheie cu \"Общо без ДДС\", \"ДДС 20 %\" și \"Всичко с ДДС\"",
+      "suggestion": "Adăugați o linie de ДДС de 20 % ca ultim adaos. Un antreprenor neînregistrat conform ЗДДС nu percepe ДДС și poate ignora acest lucru"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС este aplicat de {count} ori în acest deviz: {names}",
+      "suggestion": "Păstrați o singură linie de ДДС și dezactivați-le pe celelalte"
+    },
+    "vat_rate": {
+      "fail": "Linia de ДДС '{name}' aplică {rate} %; lucrările de construcții sunt impozitate cu 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Linia de ДДС '{name}' este o sumă fixă; ДДС reprezintă 20 % din totalul fără taxe",
+      "suggestion": "Setați linia de ДДС ca procent de 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Linia de ДДС '{name}' se aplică doar costului direct și omite {names}; ДДС se datorează pentru întregul \"Общо без ДДС\"",
+      "after": "{names} vine după linia de ДДС '{name}', deci nu poartă ДДС și rămâne în afara \"Всичко с ДДС\"",
+      "suggestion": "Puneți ДДС ca ultimă linie de adaos și aplicați-l cumulativ, asupra a tot ce este deasupra"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Linia {ordinal} din количествена сметка '{bill}' ({description}) lipsește din această КСС",
+      "extra": "Linia {ordinal} ({description}) nu se află în количествена сметка '{bill}'",
+      "description": "Linia {ordinal}: descrierea diferă de количествена сметка ('{description}' în loc de '{tender_description}')",
+      "unit": "Linia {ordinal}: unitatea {unit} în loc de {tender_unit} conform количествена сметка",
+      "quantity": "Linia {ordinal}: cantitatea {quantity} în loc de {tender_quantity} conform количествена сметка",
+      "suggestion": "Ofertați количествена сметка așa cum a fost emisă: păstrați fiecare descriere, unitate și cantitate și nu adăugați linii. Semnalați în schimb orice neconcordanță autorității contractante",
+      "tender_missing": "Acest deviz este legat de o количествена сметка care nu mai există în proiect",
+      "tender_missing_suggestion": "Alegeți din nou количествена сметка în antetul devizului sau eliminați legătura",
+      "unmatched": "Liniile acestei КСС nu pot fi asociate cu количествена сметка '{bill}': numerotarea se repetă sau lipsește",
+      "unmatched_suggestion": "Numerotați liniile la fel ca în количествена сметка și validați din nou"
+    },
+    "imported_vat_totals": {
+      "amount": "Foaia Excel sursă \"{sheet}\", rândul {row}: suma este {actual}; pe baza lucrărilor, rezervei pentru cheltuieli neprevăzute și ДДС din sursă, se aștepta {expected}.",
+      "rate": "Foaia Excel sursă \"{sheet}\", rândul {row}: ДДС este indicat la cota de {rate}%; validarea lucrărilor de construcții așteaptă 20%.",
+      "review": "Totalurile ДДС din foaia Excel sursă \"{sheet}\" nu pot fi verificate: mai multe blocuri fiscale, o recapitulare fără lucrări proprii sau rânduri omise la citire necesită revizuire.",
+      "suggestion": "Verificați foaia de calcul originală și importați din nou fișierul corectat. Această verificare auditează sumele din sursă; adaosurile curente din ERP sunt verificate separat."
+    }
   }
 }

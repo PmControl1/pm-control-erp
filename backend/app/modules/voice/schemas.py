@@ -13,7 +13,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from app.modules.ai import workspace
 
 
 class TranscriptionInfo(BaseModel):
@@ -28,6 +30,14 @@ class TranscriptionInfo(BaseModel):
     model: str | None = None
     language: str | None = None
     error: str | None = None
+
+    @field_serializer("model")
+    def _public_model(self, value: str | None) -> str | None:
+        return value if workspace.current() is None else None
+
+    @field_serializer("error")
+    def _public_error(self, value: str | None) -> str | None:
+        return workspace.public_error(value)
 
 
 class VoiceDraftResponse(BaseModel):

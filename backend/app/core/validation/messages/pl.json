@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "zaświadczenie o rozliczeniu odpowiedzialności pracodawców",
     "insurance": "zaświadczenie ubezpieczeniowe",
     "license": "licencja wykonawcy"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "Kosztorys nie ma wiersza ДДС; КСС kończy się wierszami \"Общо без ДДС\", \"ДДС 20 %\" i \"Всичко с ДДС\"",
+      "suggestion": "Dodaj wiersz ДДС 20 % jako ostatni narzut. Wykonawca niezarejestrowany zgodnie z ЗДДС nie nalicza ДДС i może to zignorować"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС jest naliczany w tym kosztorysie {count} razy: {names}",
+      "suggestion": "Pozostaw jeden wiersz ДДС, a pozostałe wyłącz"
+    },
+    "vat_rate": {
+      "fail": "Wiersz ДДС '{name}' nalicza {rate} %; roboty budowlane są opodatkowane stawką 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "Wiersz ДДС '{name}' to kwota stała; ДДС wynosi 20 % sumy przed podatkiem",
+      "suggestion": "Ustaw wiersz ДДС jako procent równy 20"
+    },
+    "vat_on_whole_total": {
+      "base": "Wiersz ДДС '{name}' jest naliczany tylko od kosztów bezpośrednich i pomija {names}; ДДС należy się od całego \"Общо без ДДС\"",
+      "after": "{names} następuje po wierszu ДДС '{name}', więc nie jest objęty ДДС i wypada poza \"Всичко с ДДС\"",
+      "suggestion": "Ustaw ДДС jako ostatni wiersz narzutu i naliczaj go kumulatywnie, od wszystkiego powyżej"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Pozycja {ordinal} z количествена сметка '{bill}' ({description}) nie występuje w tej КСС",
+      "extra": "Pozycji {ordinal} ({description}) nie ma w количествена сметка '{bill}'",
+      "description": "Pozycja {ordinal}: opis różni się od количествена сметка ('{description}' zamiast '{tender_description}')",
+      "unit": "Pozycja {ordinal}: jednostka {unit} zamiast {tender_unit} według количествена сметка",
+      "quantity": "Pozycja {ordinal}: ilość {quantity} zamiast {tender_quantity} według количествена сметка",
+      "suggestion": "Wyceń количествена сметка w wydanej postaci: zachowaj każdy opis, jednostkę i ilość i nie dodawaj pozycji. Rozbieżności zgłoś zamawiającemu",
+      "tender_missing": "Ten kosztorys jest powiązany z количествена сметка, która nie istnieje już w projekcie",
+      "tender_missing_suggestion": "Wybierz ponownie количествена сметка w nagłówku kosztorysu lub usuń powiązanie",
+      "unmatched": "Pozycji tej КСС nie da się dopasować do количествена сметка '{bill}': numeracja się powtarza lub jej brak",
+      "unmatched_suggestion": "Ponumeruj pozycje tak jak w количествена сметка i sprawdź ponownie"
+    },
+    "imported_vat_totals": {
+      "amount": "Źródłowy arkusz Excel \"{sheet}\", wiersz {row}: kwota wynosi {actual}; na podstawie robót, rezerwy na nieprzewidziane wydatki i ДДС oczekiwano {expected}.",
+      "rate": "Źródłowy arkusz Excel \"{sheet}\", wiersz {row}: podano stawkę ДДС {rate}%; walidacja robót budowlanych oczekuje 20%.",
+      "review": "Nie można zweryfikować źródłowych sum ДДС w arkuszu Excel \"{sheet}\": sprawdzenia wymagają liczne bloki podatkowe, zestawienie zbiorcze bez własnych robót lub wiersze pominięte podczas odczytu.",
+      "suggestion": "Sprawdź oryginalny arkusz i ponownie zaimportuj poprawiony plik. Ta kontrola sprawdza kwoty źródłowe; bieżące narzuty w ERP są sprawdzane oddzielnie."
+    }
   }
 }

@@ -36,6 +36,7 @@ Endpoints (auto-mounted at /api/v1/match_elements/ by the module loader):
 
 from __future__ import annotations
 
+import logging
 import uuid
 from pathlib import Path
 
@@ -67,6 +68,7 @@ from app.modules.match_elements.signature_match_service import (
 )
 
 router = APIRouter(tags=["match_elements"])
+logger = logging.getLogger(__name__)
 
 
 # Directory where uploaded /sessions/from-image photos / drawing
@@ -1384,7 +1386,7 @@ def _qdrant_health_to_dict(health: object) -> dict[str, object]:
 
 
 @router.get("/qdrant/health")
-async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
+async def qdrant_health(_current_user_id: CurrentUserId, session: SessionDep) -> dict[str, object]:
     """Probe Qdrant and (if a local binary exists) auto-spawn it.
 
     /match-elements no longer calls this: its readiness card probes the
@@ -1408,8 +1410,10 @@ async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
     """
     from app.config import get_settings
     from app.core.vector import reset_qdrant_client
+    from app.modules.ai import workspace
     from app.modules.match_elements.qdrant_supervisor import ensure_qdrant_running
 
+    can_read_details = workspace.current() is None or await workspace.is_owner_user(session, _current_user_id)
     settings = get_settings()
     # The spawn path prepares directories under QDRANT_HOME, and a permission
     # problem there raises with a message that names the path and the fix.
@@ -1420,11 +1424,20 @@ async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
     try:
         health = ensure_qdrant_running(settings.qdrant_url, spawn_if_installed=True)
     except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        logger.warning("Vector health probe failed: %s", exc)
+        detail = str(exc) if can_read_details else workspace.public_error(str(exc))
+        raise HTTPException(status_code=502, detail=detail) from exc
     if getattr(health, "reachable", False) and getattr(health, "spawn_attempted", False):
         # Spawning just succeeded → invalidate any cached "Qdrant not
         # reachable" state elsewhere in the process.
         reset_qdrant_client()
+    if not can_read_details:
+        reachable = bool(getattr(health, "reachable", False))
+        return {
+            "reachable": reachable,
+            "installed": bool(getattr(health, "installed", False)),
+            "message": "Semantic search is ready." if reachable else "Semantic search is unavailable.",
+        }
     return _qdrant_health_to_dict(health)
 
 
@@ -1432,7 +1445,7 @@ async def qdrant_health(_current_user_id: CurrentUserId) -> dict[str, object]:
     "/qdrant/install",
     dependencies=[Depends(RequirePermission("match_elements.qdrant.install"))],
 )
-async def qdrant_install(_current_user_id: CurrentUserId) -> dict[str, object]:
+async def qdrant_install(_current_user_id: CurrentUserId, session: SessionDep) -> dict[str, object]:
     """Download the native Qdrant binary from GitHub Releases, then start it.
 
     Mirrors the converter-install pattern used by /takeoff and /bim:
@@ -1451,11 +1464,14 @@ async def qdrant_install(_current_user_id: CurrentUserId) -> dict[str, object]:
     """
     from app.config import get_settings
     from app.core.vector import reset_qdrant_client
+    from app.modules.ai import workspace
     from app.modules.match_elements.qdrant_supervisor import (
         ensure_qdrant_running,
         install_qdrant_native,
     )
 
+    if workspace.current() is not None and not await workspace.is_owner_user(session, _current_user_id):
+        raise HTTPException(status_code=403, detail="Only the workspace owner can change search configuration.")
     settings = get_settings()
     try:
         install_qdrant_native(force=False)

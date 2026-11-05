@@ -114,7 +114,9 @@ async def llm_translate(
         logger.debug("AI client import failed: %s", exc)
         return None
 
-    if user_settings is None:
+    from app.modules.ai import workspace
+
+    if user_settings is None and workspace.current() is None:
         # No settings = no key. The cascade will fall through to fallback.
         logger.debug("LLM translate skipped: no user_settings provided")
         return None

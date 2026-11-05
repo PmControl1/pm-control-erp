@@ -1290,5 +1290,43 @@
     "employers_liability_clearance": "employers' liability clearance certificate",
     "insurance": "insurance certificate",
     "license": "contractor licence"
+  },
+  "bulgaria": {
+    "vat_line_present": {
+      "fail": "The bill has no ДДС line; a КСС closes with \"Общо без ДДС\", \"ДДС 20 %\" and \"Всичко с ДДС\"",
+      "suggestion": "Add a ДДС line at 20 % as the last markup. A contractor not registered under the ЗДДС charges no ДДС and can ignore this"
+    },
+    "vat_charged_once": {
+      "fail": "ДДС is charged {count} times on this bill: {names}",
+      "suggestion": "Keep one ДДС line and switch off the others"
+    },
+    "vat_rate": {
+      "fail": "ДДС line '{name}' charges {rate} %; construction works are charged 20 % (ЗДДС чл. 66, ал. 1)",
+      "not_percentage": "ДДС line '{name}' is a fixed amount; ДДС is 20 % of the total before tax",
+      "suggestion": "Set the ДДС line to a percentage of 20"
+    },
+    "vat_on_whole_total": {
+      "base": "ДДС line '{name}' is charged on the direct cost only and leaves out {names}; ДДС is due on the whole \"Общо без ДДС\"",
+      "after": "{names} comes after ДДС line '{name}', so it carries no ДДС and falls outside \"Всичко с ДДС\"",
+      "suggestion": "Make ДДС the last markup line and apply it cumulatively, to everything above it"
+    },
+    "kss_matches_tender_bill": {
+      "missing": "Line {ordinal} of the количествена сметка '{bill}' ({description}) is missing from this КСС",
+      "extra": "Line {ordinal} ({description}) is not in the количествена сметка '{bill}'",
+      "description": "Line {ordinal}: the description differs from the количествена сметка ('{description}' instead of '{tender_description}')",
+      "unit": "Line {ordinal}: unit {unit} instead of {tender_unit} in the количествена сметка",
+      "quantity": "Line {ordinal}: quantity {quantity} instead of {tender_quantity} in the количествена сметка",
+      "suggestion": "Price the количествена сметка as issued: keep every description, unit and quantity and add no lines. Raise any discrepancy with the contracting authority instead",
+      "tender_missing": "This bill is linked to a количествена сметка that no longer exists in the project",
+      "tender_missing_suggestion": "Choose the количествена сметка again in the bill header, or remove the link",
+      "unmatched": "The lines of this КСС cannot be matched to the количествена сметка '{bill}': the numbering repeats or is missing",
+      "unmatched_suggestion": "Number the lines the way the количествена сметка numbers them, then validate again"
+    },
+    "imported_vat_totals": {
+      "amount": "Source Excel sheet \"{sheet}\", row {row}: the amount is {actual}; expected {expected} from the source work, contingency and ДДС.",
+      "rate": "Source Excel sheet \"{sheet}\", row {row}: ДДС is shown at {rate}%; the construction validation expects 20%.",
+      "review": "Cannot verify source Excel ДДС totals on sheet \"{sheet}\": multiple tax blocks, a recap without its own work, or rows omitted during parsing need review.",
+      "suggestion": "Check the original spreadsheet and import the corrected file again. This check audits the source amounts; current ERP markups are checked separately."
+    }
   }
 }

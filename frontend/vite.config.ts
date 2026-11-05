@@ -198,7 +198,7 @@ function internalPreviewPages(): Plugin {
     configureServer(server) {
       if (!enabled) return;
       server.middlewares.use((req, res, next) => {
-        const page = pages.get((req.url ?? '').split('?')[0]);
+        const page = pages.get((req.url ?? '').split('?')[0] ?? '');
         if (!page) return next();
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.end(page);

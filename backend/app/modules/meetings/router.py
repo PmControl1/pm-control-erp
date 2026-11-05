@@ -764,7 +764,9 @@ async def _extract_with_ai(
         )
         ai_settings = result.scalar_one_or_none()
 
-        if not ai_settings:
+        from app.modules.ai import workspace
+
+        if not ai_settings and workspace.current() is None:
             return False
 
         provider, api_key, model_override = resolve_provider_key_model(ai_settings)

@@ -71,7 +71,9 @@ KIMI_MODEL = "kimi-latest"
 OPENROUTER_MODEL = "anthropic/claude-sonnet-4"
 MISTRAL_MODEL = "mistral-large-latest"
 GROQ_MODEL = "llama-3.3-70b-versatile"
-DEEPSEEK_MODEL = "deepseek-chat"
+# DeepSeek retired "deepseek-chat" / "deepseek-reasoner" on 2026-07-24; the
+# current ids are "deepseek-flash" and "deepseek-v4-pro".
+DEEPSEEK_MODEL = "deepseek-flash"
 
 #: The runtimes a user hosts themselves rather than calling over the internet.
 #: Naming the pair once is not tidiness: three separate decisions read it, and
@@ -1069,6 +1071,9 @@ async def call_ai(
         ValueError: If provider is unknown.
         httpx.HTTPStatusError: On API errors.
     """
+    from app.modules.ai.workspace import with_workspace_instructions
+
+    system = with_workspace_instructions(system)
     callers = {
         "anthropic": call_anthropic,
         "openai": call_openai,
@@ -1290,6 +1295,11 @@ async def call_ai_tools(
         msg = f"Provider does not speak the OpenAI tool protocol: {provider}"
         raise ValueError(msg)
 
+    from app.modules.ai.workspace import with_workspace_instructions
+
+    system = with_workspace_instructions(system)
+    system_without_tools = with_workspace_instructions(system_without_tools)
+
     def _make_call(model_id: str | None):
         async def _call() -> tuple[dict[str, Any], int]:
             return await call_openai_compatible_tools(
@@ -1366,7 +1376,14 @@ def _model_override_for(settings: Any, provider: str) -> str | None:
     Overrides live in AISettings.metadata_["model_overrides"][provider] so we
     avoid a DB migration and keep the feature LIGHTWEIGHT. A blank/whitespace
     value means "use the built-in default" (None).
+
+    With workspace AI configured, the owner's model is used for its provider.
     """
+    from app.modules.ai import workspace
+
+    ws = workspace.current()
+    if ws is not None and ws.provider == provider:
+        return ws.model or None
     if not settings:
         return None
     meta = getattr(settings, "metadata_", None) or {}
@@ -1473,6 +1490,16 @@ def resolve_provider_and_key(
     Raises:
         ValueError: If no API key is configured.
     """
+    from app.modules.ai import workspace
+
+    ws = workspace.current()
+    if ws is not None:
+        # The owner's workspace provider serves everyone; personal keys,
+        # self-hosted endpoints and timeouts saved by the user do not apply.
+        use_self_hosted_endpoints(None)
+        _USER_AI_TIMEOUT.set(None)
+        return ws.provider, ws.require_key()
+
     meta = getattr(settings, "metadata_", None) if settings else None
     # Bind before resolving: whichever provider this resolves to, the dispatch
     # that follows in this task must use THESE settings' endpoints, and a
@@ -1636,8 +1663,12 @@ def resolve_provider_key_model(
     the dropdown actually sends Opus/Haiku. ``call_anthropic`` maps that alias
     to the current API id via :func:`resolve_anthropic_model`.
     """
+    from app.modules.ai import workspace
+
     provider, api_key = resolve_provider_and_key(settings, preferred_model)
     model = _model_override_for(settings, provider)
+    if workspace.current() is not None:
+        return provider, api_key, model
     if model is None and provider == "anthropic":
         # No free-text override: honour the UI dropdown choice (alias). Any
         # unknown value passes through resolve_anthropic_model() unchanged.

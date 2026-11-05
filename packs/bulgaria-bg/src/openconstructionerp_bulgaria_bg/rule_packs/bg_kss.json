@@ -10,8 +10,8 @@
     "tender",
     "validation"
   ],
-  "description": "Reference document for the КСС (количествено-стойностна сметка), the priced bill every Bulgarian tender and building contract is quoted on. The designer's количествена сметка lists items, units and quantities; the bidder prices it into a КСС without changing descriptions, units or quantities. Every line carries an all-in единична цена built in an анализ from labour, materials and plant, with the bidder's допълнителни разходи on labour and on plant, доставно-складови разходи on materials and печалба inside the rate. Public tenders ask for those percentages, with the hourly labour rate, as the bidder's ценообразуващи показатели, because they are not separate lines on the bill. Lines are grouped by kind of work (подготвителни, земни, кофражни, армировъчни и бетонови, зидарски, изолационни, покривни, довършителни работи, then installations and external works), and the сметка closes with \"Общо без ДДС\", an allowance for непредвидени разходи where the tender sets one, \"ДДС 20 %\" and \"Всичко с ДДС\". Interim payments are certified on the КСС quantities with an Акт за установяване на извършени работи (образец 19, Наредба № 3 от 31.07.2003 г.); changes of items or quantities within a contract are agreed with a заменителна таблица. What the pack checks is the priced bill: every line has a description, a quantity and a non-zero unit rate, ordinals are unique, totals reconcile and one currency is used.",
-  "review_status": "The pricing convention and section order reflect common Bulgarian practice drawn from public tender documentation and are pending review by a Bulgarian quantity surveyor (инженер-сметчик) before they are relied on for a public submission.",
+  "description": "Reference document for the КСС (количествено-стойностна сметка), the priced bill every Bulgarian tender and building contract is quoted on. The designer's количествена сметка lists items, units and quantities; the bidder prices it into a КСС without changing descriptions, units or quantities. Every line carries an all-in единична цена built in an анализ from labour, materials and plant, with the bidder's допълнителни разходи on labour and on plant, доставно-складови разходи on materials and печалба inside the rate. Public tenders ask for those percentages, with the hourly labour rate, as the bidder's ценообразуващи показатели, because they are not separate lines on the bill. Lines are grouped by kind of work (подготвителни, земни, кофражни, армировъчни и бетонови, зидарски, изолационни, покривни, довършителни работи, then installations and external works), and the сметка closes with \"Общо без ДДС\", an allowance for непредвидени разходи where the tender sets one, \"ДДС 20 %\" and \"Всичко с ДДС\". Interim payments are certified on the КСС quantities with an Акт за установяване на извършени работи (образец 19, Наредба № 3 от 31.07.2003 г.); changes of items or quantities within a contract are agreed with a заменителна таблица. What the pack checks is the priced bill: every line has a description, a quantity and a non-zero unit rate, ordinals are unique, totals reconcile and one currency is used; and, when the bill names the количествена сметка it was priced against (bill header), that it keeps every description, unit and quantity of it and adds no line of its own (bulgaria.kss_matches_tender_bill).",
+  "review_status": "The pricing convention and section order reflect common Bulgarian practice drawn from public tender documentation and are pending review by a Bulgarian construction professional who prepares КСС before they are relied on for a public submission.",
   "severity_overrides": {},
   "enables_rule_ids": [
     "boq_quality.position_has_description",
@@ -19,6 +19,9 @@
     "boq_quality.position_has_unit_rate",
     "boq_quality.no_duplicate_ordinals",
     "boq_quality.total_mismatch",
-    "boq_quality.currency_consistency"
+    "boq_quality.currency_consistency",
+    "bulgaria.kss_matches_tender_bill",
+    "bulgaria.vat_line_present",
+    "bulgaria.vat_on_whole_total"
   ]
 }

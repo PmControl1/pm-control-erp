@@ -296,10 +296,11 @@ async def _resolve_provider(session: AsyncSession) -> tuple[str, str, str | None
     user's chosen model instead of a hardcoded provider default - issue #138.
     """
     try:
+        from app.modules.ai import workspace
         from app.modules.ai.ai_client import resolve_provider_key_model
 
         settings = await _get_ai_settings(session)
-        if settings is None:
+        if settings is None and workspace.current() is None:
             return None
         provider, key, model_override = resolve_provider_key_model(settings)
         return (provider, key, model_override)

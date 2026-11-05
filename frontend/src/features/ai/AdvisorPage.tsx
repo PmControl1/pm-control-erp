@@ -557,11 +557,11 @@ export function AdvisorPage() {
         // making those users see a false "not configured" warning.
         const flag = (key: string) => !!s[`${key}_api_key_set`];
         const configured = PROVIDER_DISPLAY.filter((p) => flag(p.key));
-        setAiConfigured(configured.length > 0);
+        setAiConfigured(typeof s.ai_ready === 'boolean' ? s.ai_ready : configured.length > 0);
         // Derive the active provider from the preferred model first, falling
         // back to the first configured key. AISettingsResponse has no
         // `provider` field, so reading it always yielded '' (pill said "AI").
-        setAiProvider(resolveActiveProvider(s, configured));
+        setAiProvider(s.workspace_managed ? '' : resolveActiveProvider(s, configured));
       })
       .catch(() => setAiConfigured(false));
   }, []);
