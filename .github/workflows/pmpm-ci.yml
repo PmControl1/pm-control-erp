@@ -145,6 +145,15 @@ jobs:
           --timeout=300 --timeout-method=signal
           --splits 6 --group ${{ matrix.shard }}
 
+      - name: Workspace AI HTTP and PostgreSQL tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.shard == 1 }}
+        env:
+          DATABASE_URL: postgresql+asyncpg://oe:oe@localhost:5432/openconstructionerp_test
+          DATABASE_SYNC_URL: postgresql+psycopg2://oe:oe@localhost:5432/openconstructionerp_test
+        run: >-
+          pytest tests/modules/ai/test_workspace_ai.py -q -ra
+          --timeout=300 --timeout-method=signal
+
   backend-result:
     # One check name for branch protection, whatever the shard count.
     name: Backend
@@ -321,3 +330,4 @@ jobs:
             echo ""
             echo "On the server: \`cd /opt/pmpm && ./deploy.sh\`"
           } >> "$GITHUB_STEP_SUMMARY"
+

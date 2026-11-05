@@ -66,12 +66,14 @@ class _QueryCounter:
 
     def __init__(self) -> None:
         self.count = 0
+        self.statements: list[str] = []
 
     def _handler(self, conn, cursor, statement, parameters, context, executemany) -> None:
         stmt_upper = statement.strip().upper()
         if stmt_upper.startswith(("PRAGMA", "SAVEPOINT", "RELEASE")):
             return
         self.count += 1
+        self.statements.append(statement)
 
 
 # ── Seeding helpers ──────────────────────────────────────────────────────────
@@ -236,5 +238,5 @@ async def test_bulk_suppress_audit_fanout_is_bounded(session):
     # + final flush, plus a little headroom - NOT one SELECT per issue.
     assert counter.count <= 6, (
         f"N+1 regression: bulk_suppress of 30 issues issued {counter.count} statements "
-        "(expected <= 6 - the member-row fan-out must be a single batched query)."
+        "(expected <= 6 - the member-row fan-out must be a single batched query).\n" + "\n".join(counter.statements)
     )
