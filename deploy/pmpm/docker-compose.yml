@@ -64,8 +64,9 @@ services:
       # Only the first account can sign itself up (it becomes the admin).
       # After that, the admin creates everyone else's account.
       REGISTRATION_MODE: ${PMPM_REGISTRATION_MODE:-closed}
-      # Accounts that manage Settings > AI > Workspace AI (empty = any admin).
-      PLATFORM_OWNER_EMAILS: ${PMPM_PLATFORM_OWNER_EMAILS:-}
+      # Immutable account UUIDs, configured only by the server operator.
+      # Blank permits private first-admin bootstrap but grants no AI ownership.
+      PLATFORM_OWNER_USER_IDS: ${PMPM_PLATFORM_OWNER_USER_IDS:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       # Email (password resets, invitations). "console" only logs them; set
       # smtp and the SMTP_* lines in .env to really send.

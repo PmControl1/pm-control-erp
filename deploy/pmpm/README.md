@@ -77,6 +77,8 @@ docker login ghcr.io -u PmControl1     # paste the token as the password
 
 Bootstrap the administrator **before Caddy exposes the app publicly**. The
 closed registration mode still allows the first account to become admin.
+Leave `PMPM_PLATFORM_OWNER_USER_IDS` blank for this private step: no account
+can manage Workspace AI until the server operator explicitly configures it.
 Start only the database and app; neither publishes a host port:
 
 ```bash
@@ -92,8 +94,12 @@ request = urllib.request.Request("http://localhost:8080/api/v1/users/auth/regist
 with urllib.request.urlopen(request, timeout=60) as response:
     user = json.load(response)
 assert user["role"] == "admin", "Bootstrap did not create an administrator"
-print("Administrator created. Public HTTPS may now be started.")
+print("Administrator created. Set PMPM_PLATFORM_OWNER_USER_IDS=" + user["id"] + " in .env before public deployment.")
 '
+
+# Paste the printed UUID into PMPM_PLATFORM_OWNER_USER_IDS. The UUID, not the
+# email address or administrator role alone, identifies the platform owner.
+nano .env
 ./deploy.sh
 ```
 
@@ -101,6 +107,48 @@ If registration is rejected, correct the supplied account details and repeat
 the registration command before starting Caddy. Once the administrator exists,
 open `https://<your domain>` and sign in; add the firm's people from the admin
 pages. Confirm a second public registration is refused.
+
+`deploy.sh` recreates the app with the configured UUID list and verifies that
+at least one listed account is an active administrator before starting Caddy.
+Only those accounts can read or change Workspace AI settings; other staff
+administrators can still use the shared AI. Keep at least one active listed
+owner. The allowlist is a server setting, not a setting editable by staff.
+Use comma-separated UUIDs to appoint more than one owner.
+
+### Existing installations and owner recovery
+
+The previous `PMPM_PLATFORM_OWNER_EMAILS` setting no longer grants ownership.
+Before updating, stop the public proxy and find the intended existing owner
+account's UUID privately:
+
+```bash
+docker compose stop caddy
+docker compose exec app python -c '
+import asyncio
+from app.database import async_session_factory
+from app.modules.users.repository import UserRepository
+
+email = input("Existing owner administrator email: ").strip()
+async def lookup():
+    async with async_session_factory() as session:
+        user = await UserRepository(session).get_by_email(email)
+        if user is None or not user.is_active or user.role != "admin":
+            raise SystemExit("Choose an existing active administrator account.")
+        print("PMPM_PLATFORM_OWNER_USER_IDS=" + str(user.id))
+asyncio.run(lookup())
+'
+nano .env          # add the printed UUID; remove PMPM_PLATFORM_OWNER_EMAILS
+./deploy.sh
+```
+
+If no active administrator remains, use the existing server CLI to recover
+the intended existing account before the lookup:
+`docker compose exec app python -m app.cli promote-admin owner@firm.bg`.
+For a wrong or missing UUID list, correct `.env` and run `./deploy.sh` again.
+Changing an account email does not transfer ownership; deleting and recreating
+an account produces a different UUID and requires the operator to update the
+list. A blank or malformed list grants ownership to nobody. The existing
+shared AI continues serving employees even when no owner is configured.
 
 ## 3. Backups (do this before any real project goes in)
 
@@ -173,7 +221,8 @@ docker compose exec app python -m app.cli promote-admin someone@firm.bg
 ## Running the same stack on your PC
 
 With Docker Desktop, set `PMPM_DOMAIN=localhost` in `.env` and run
-the same administrator bootstrap sequence before starting Caddy. Caddy serves
+the same private administrator bootstrap, then set `PMPM_PLATFORM_OWNER_USER_IDS`
+before starting Caddy. Caddy serves
 `https://localhost` with its own local certificate (the browser warns once).
 
 ## Pilot checks on the real server
@@ -187,6 +236,11 @@ compare quantities, units, totals and the retained BGN rates with the workbook.
 Keep the development AI phase limited to synthetic documents; verify the
 chosen production provider and its data-processing terms before enabling AI
 for real documents.
+
+Also confirm the designated owner can save/test Workspace AI, while a staff
+administrator and an ordinary employee can use AI but cannot read or change
+the owner configuration. This is the single-company pilot's owner boundary;
+separate customer isolation remains tracked in issue #28.
 
 ## Licence
 
