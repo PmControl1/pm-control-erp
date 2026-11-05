@@ -29,6 +29,7 @@
  * all a viewer account saw after a 403.
  */
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -240,7 +241,7 @@ function usePublicDemo(): boolean {
 export function PackOwnCopyHint({ askAdmin = true }: { askAdmin?: boolean }) {
   const { t } = useTranslation();
   const publicDemo = usePublicDemo();
-  if (!publicDemo) {
+  if (TEST_BUILD || !publicDemo) {
     return askAdmin ? (
       <span className="mt-1 block" data-testid="pack-ask-admin">
         {t('modules.pp_ask_admin_hint', {
@@ -1243,12 +1244,14 @@ export function PartnerPackApplyDialog({
 
           {plan && (
             <div className="divide-y divide-border-light">
-              <Row
-                icon={<Sparkles size={15} />}
-                label={t('modules.pack_branding', { defaultValue: 'Branding' })}
-              >
-                {plan.branding.powered_by}
-              </Row>
+              {!TEST_BUILD && (
+                <Row
+                  icon={<Sparkles size={15} />}
+                  label={t('modules.pack_branding', { defaultValue: 'Branding' })}
+                >
+                  {plan.branding.powered_by}
+                </Row>
+              )}
 
               <Row
                 icon={<Coins size={15} />}

@@ -33,7 +33,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useI18nReady } from '@/shared/lib/useI18nReady';
 import { isTauri, openAppInBrowser, openLink } from '@/shared/lib/desktop';
 import { SupportUsButton } from './SupportUsButton';
-import { BRAND_NAME, BRAND_SUPPORT_EMAIL, UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
+import { BRAND_NAME, BRAND_SUPPORT_EMAIL, TEST_BUILD, UPSTREAM_PROMPTS_ENABLED } from '@/shared/brand';
 import { SubscribeButton } from './SubscribeButton';
 import { ProjectJourneyButton } from './ProjectJourney';
 import { PresenceAvatarStack } from '@/features/global_presence';
@@ -572,7 +572,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
             right cluster ran off screen. */}
         <div className="hidden 2xl:block"><ModuleBuilderButton /></div>
         <div className="hidden 2xl:block"><SupportUsButton /></div>
-        <div className="hidden 2xl:block"><SubscribeButton /></div>
+        {!TEST_BUILD && <div className="hidden 2xl:block"><SubscribeButton /></div>}
         <BugReportMenu />
         <HelpMenu />
 
@@ -663,7 +663,8 @@ export const MIN_DESCRIPTION_LENGTH = 20;
 
 /** File name for the session error log both menus offer for download. */
 function errorLogFilename(): string {
-  return `openconstructionerp-log-${new Date().toISOString().slice(0, 10)}.json`;
+  const prefix = TEST_BUILD ? 'pmpm' : 'openconstructionerp';
+  return `${prefix}-log-${new Date().toISOString().slice(0, 10)}.json`;
 }
 
 export function BugReportMenu() {
@@ -1120,32 +1121,36 @@ function HelpMenu() {
           </button>
           <div className="my-1 border-t border-border-light" role="separator" />
 
-          {/* External resources. Documentation points at the official docs
-              site so users land on the maintained guides, not the raw repo. */}
-          <a
-            role="menuitem"
-            href="https://openconstructionerp.com/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
-          >
-            <BookOpen size={14} className="text-content-tertiary shrink-0" />
-            <span className="flex-1">{t('nav.docs', { defaultValue: 'Documentation' })}</span>
-            <ExternalLink size={11} className="text-content-quaternary shrink-0" />
-          </a>
-          <a
-            role="menuitem"
-            href="https://github.com/datadrivenconstruction/OpenConstructionERP"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
-          >
-            <Github size={14} className="text-content-tertiary shrink-0" />
-            <span className="flex-1">{t('nav.github', { defaultValue: 'GitHub repository' })}</span>
-            <ExternalLink size={11} className="text-content-quaternary shrink-0" />
-          </a>
+          {!TEST_BUILD && (
+            <>
+              {/* External resources. Documentation points at the official docs
+                  site so users land on the maintained guides, not the raw repo. */}
+              <a
+                role="menuitem"
+                href="https://openconstructionerp.com/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
+              >
+                <BookOpen size={14} className="text-content-tertiary shrink-0" />
+                <span className="flex-1">{t('nav.docs', { defaultValue: 'Documentation' })}</span>
+                <ExternalLink size={11} className="text-content-quaternary shrink-0" />
+              </a>
+              <a
+                role="menuitem"
+                href="https://github.com/datadrivenconstruction/OpenConstructionERP"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
+              >
+                <Github size={14} className="text-content-tertiary shrink-0" />
+                <span className="flex-1">{t('nav.github', { defaultValue: 'GitHub repository' })}</span>
+                <ExternalLink size={11} className="text-content-quaternary shrink-0" />
+              </a>
+            </>
+          )}
 
           {/* Desktop only: open the same app in the user's normal web browser.
               The app window stays open; this just gives people who prefer

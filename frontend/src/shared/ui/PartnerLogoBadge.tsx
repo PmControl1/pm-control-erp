@@ -20,6 +20,7 @@
  * can be hidden but reappears on next launch").
  */
 
+import { TEST_BUILD } from '@/shared/brand';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -59,7 +60,7 @@ export function PartnerLogoBadge({ variant, className = '' }: PartnerLogoBadgePr
     }
   }, [dismissed]);
 
-  if (packQ.isLoading || !packQ.data?.active || dismissed) return null;
+  if (TEST_BUILD || packQ.isLoading || !packQ.data?.active || dismissed) return null;
 
   const m = packQ.data.manifest!;
   // Same computed-key shape as the other pack surfaces (see regionalPack.ts):

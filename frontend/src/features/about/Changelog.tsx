@@ -85,14 +85,14 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-20',
     tag: 'NEW',
     summary:
-      'Choose how the platform looks: five ready styles, or your own accent colour, font, density and corners, plus menu views, icon sets and your own icon for any menu item, saved for you or as the workspace default. Background services come in three ready profiles, packs get their own page with filters, PDF drawings open faster with a new reader, CAD and BIM conversion moves to the new DDC converters for RVT, IFC and DWG on Windows, Linux and macOS, with RVT read from the element table of the converter, and permit and logistics notifications are translated.',
+      'Choose how the platform looks: five ready styles, or your own accent colour, font, density and corners, plus menu views, icon sets and your own icon for any menu item, saved for you or as the workspace default. Background services come in three ready profiles, packs get their own page with filters, PDF drawings open faster with a new reader, CAD and BIM conversion moves to new converters for RVT, IFC and DWG on Windows, Linux and macOS, with RVT read from the element table of the converter, and permit and logistics notifications are translated.',
   },
   {
     version: '18.7.0',
     date: '2026-10-19',
     tag: 'NEW',
     summary:
-      'Cost control per project: planned, awarded, changes, expected final cost, certified and paid on one page, by cost line or by contract, with each forecast saying where its figure comes from. Money on no cost line can be put on one in a step, forecasts can be overruled with a reason, saved monthly with their stage and compared over time, the validation report groups problems by rule and names bill positions by number, tables sit on a solid background, the dashboard shows cases and videos in one row each, and the plan room explains itself and offers to upload drawings when there are none. Requisitions get approver chains and partial ordering, and estimates can be checked against historical benchmarks from finished projects. New country packs for Egypt, Saudi Arabia, Poland and France bring calendars, contract rules, tax and late payment rules, with e-invoicing through the Egyptian ETA, Saudi ZATCA and Polish KSeF. Schedules generated from an estimate carry cost, resources and a confidence score, and historical cost can be restated with a price index.',
+      'Cost control per project: planned, awarded, changes, expected final cost, certified and paid on one page, by cost line or by contract, with each forecast saying where its figure comes from. Money on no cost line can be put on one in a step, forecasts can be overruled with a reason, saved monthly with their stage and compared over time, the validation report groups problems by rule and names bill positions by number, tables sit on a solid background, the dashboard shows guided cases in one row, and the plan room explains itself and offers to upload drawings when there are none. Requisitions get approver chains and partial ordering, and estimates can be checked against historical benchmarks from finished projects. New country packs for Egypt, Saudi Arabia, Poland and France bring calendars, contract rules, tax and late payment rules, with e-invoicing through the Egyptian ETA, Saudi ZATCA and Polish KSeF. Schedules generated from an estimate carry cost, resources and a confidence score, and historical cost can be restated with a price index.',
   },
   {
     version: '18.6.4',
@@ -106,7 +106,7 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-16',
     tag: 'NEW',
     summary:
-      'Requests come in types with their own numbering, deadlines, required fields and approval route, interfaces keep a status history and an approval route, and suppliers announce deliveries with their material certificates through the portal. Requisitions are approved and ordered once, forms print in Arabic, Hebrew, Persian and Urdu, the academy videos are in the platform, and the rebar schedule says what to import.',
+      'Requests come in types with their own numbering, deadlines, required fields and approval route, interfaces keep a status history and an approval route, and suppliers announce deliveries with their material certificates through the portal. Requisitions are approved and ordered once, forms print in Arabic, Hebrew, Persian and Urdu, and the rebar schedule says what to import.',
   },
   {
     version: '18.6.2',
@@ -148,7 +148,7 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-02',
     tag: 'NEW',
     summary:
-      'The 4D schedule saves the assignee, files a new activity inside its section with the next WBS code, and reopens a collapsed section; tasks take their assignee from contacts. Deleted projects stay out of every list and analytics view, and demo data stays in demo projects through restarts and upgrades. Every country pack now validates with its own rules, switches to its own language and imports bills in its own number format, Excel 97-2003 included. Ctrl+click no longer asks you to sign in again, images and maps load with your session, and video covers no longer go blank until a hard reload.',
+      'The 4D schedule saves the assignee, files a new activity inside its section with the next WBS code, and reopens a collapsed section; tasks take their assignee from contacts. Deleted projects stay out of every list and analytics view, and demo data stays in demo projects through restarts and upgrades. Every country pack now validates with its own rules, switches to its own language and imports bills in its own number format, Excel 97-2003 included. Ctrl+click no longer asks you to sign in again, and images and maps load with your session.',
   },
   {
     version: '18.2.0',
@@ -162,7 +162,7 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-09-28',
     tag: 'NEW',
     summary:
-      'Croatia, Romania, Greece and Ukraine join with their own VAT, validation, contract rules and defaults, and a Croatian troškovnik imports in its own language with its total, tax and recap lines left out. The money follows one path: a purchase order, contract, subcontract, invoice and payment each count once in committed, invoiced and paid, Mark Paid records the payment, and every dashboard and the budget table read the same number. Subcontracts are drawn up, signed and billed from their own page and flagged when they look like an unlinked contract, tenders can go out by section and award to the real firm, and a punch item or NCR can be charged back. A new Learn section at the top of the menu holds Video guides and Use cases: 34 OpenConstruction Academy lessons from YouTube, filtered by role, country and stage, with chapters, moments and a coverage map. It folds into a top bar icon when hidden, and the Start here card on the dashboard now shows video guides above the use cases. The bill total matches the grid, a large cost database load ends with what really happened, dates stay on the day they were entered, the session token leaves WebSocket URLs, and in-app updates are off unless switched on.',
+      'Croatia, Romania, Greece and Ukraine join with their own VAT, validation, contract rules and defaults, and a Croatian troškovnik imports in its own language with its total, tax and recap lines left out. The money follows one path: a purchase order, contract, subcontract, invoice and payment each count once in committed, invoiced and paid, Mark Paid records the payment, and every dashboard and the budget table read the same number. Subcontracts are drawn up, signed and billed from their own page and flagged when they look like an unlinked contract, tenders can go out by section and award to the real firm, and a punch item or NCR can be charged back. The Learn section holds guided cases and folds into a top bar icon when hidden. The bill total matches the grid, a large cost database load ends with what really happened, dates stay on the day they were entered, the session token leaves WebSocket URLs, and in-app updates are off unless switched on.',
   },
   {
     version: '18.0.0',
@@ -358,7 +358,7 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-08-30',
     tag: 'NEW',
     summary:
-      'PostgreSQL 16 is checked when the server starts rather than assumed, and a working week stored with a day number that does not exist is repaired on the way in, which moves dates on Saudi Arabian projects. Rates that come out of a cost recipe change, and this is the one to read if you keep a cost database: a component carrying no usable quantity used to contribute nothing, count as priced and leave the item reported as fully priced at a rate of zero, and the stored breakdown now adds up to the rate it explains. Records that could not be removed at all can be removed, across six registers, and where a record is held the product now says what is holding it rather than refusing without a reason. The sign-in screen stops telling people their password is wrong when the service is down, every search result carries a real score instead of zero percent, and an unexpected answer from the projects list no longer leaves the browser holding an empty page. Fifty two controls that were written as though they had a hover state now have one. There is a container image again, a module for reinforcement bending schedules that reads and writes the ABS interchange format, and the running product can open the licence texts it ships without a network. The dashboard no longer sends every site\'s coordinates to a weather service on behalf of someone who never asked for a forecast, and what we tell a commercial licensee has been corrected, which a reader who acted on the old wording should know about. The labour rates screen ships a starter set of build-ups instead of opening on an empty picker, and twenty strings that had been English in every language since the day they were written are translated. Signing in is now something you can take back: a session can be ended on its own rather than only by ending all of them, changing a password ends every session rather than only the browser doing the changing, and the list of your own sessions marks the one you are reading it from. Sign-in on the public demo works again, having been refused by the demo read-only guard once a sign-in started writing a session row. And a case page now names the regional pack whose standards its numbers assume, with the button that switches it on.',
+      'PostgreSQL 16 is checked when the server starts rather than assumed, and a working week stored with a day number that does not exist is repaired on the way in, which moves dates on Saudi Arabian projects. Rates that come out of a cost recipe change, and this is the one to read if you keep a cost database: a component carrying no usable quantity used to contribute nothing, count as priced and leave the item reported as fully priced at a rate of zero, and the stored breakdown now adds up to the rate it explains. Records that could not be removed at all can be removed, across six registers, and where a record is held the product now says what is holding it rather than refusing without a reason. The sign-in screen stops telling people their password is wrong when the service is down, every search result carries a real score instead of zero percent, and an unexpected answer from the projects list no longer leaves the browser holding an empty page. Fifty two controls that were written as though they had a hover state now have one. There is a container image again, a module for reinforcement bending schedules that reads and writes the ABS interchange format. The dashboard no longer sends every site\'s coordinates to a weather service on behalf of someone who never asked for a forecast. The labour rates screen ships a starter set of build-ups instead of opening on an empty picker, and twenty strings that had been English in every language since the day they were written are translated. Signing in is now something you can take back: a session can be ended on its own rather than only by ending all of them, changing a password ends every session rather than only the browser doing the changing, and the list of your own sessions marks the one you are reading it from. Sign-in on the public demo works again, having been refused by the demo read-only guard once a sign-in started writing a session row. And a case page now names the regional pack whose standards its numbers assume, with the button that switches it on.',
   },
   {
     version: '16.2.0',
@@ -379,7 +379,7 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-08-26',
     tag: 'MILESTONE',
     summary:
-      'Amounts now round to the decimals their own currency really uses, so nothing loses a digit or gains one it cannot settle. The full licence text ships with every build, and Thai, Devanagari and Korean print correctly in document text, with plain table cells still to come. Bengali and Urdu documents still print boxes, for want of a font rather than a fix.',
+      'Amounts now round to the decimals their own currency really uses, so nothing loses a digit or gains one it cannot settle. Thai, Devanagari and Korean print correctly in document text, with plain table cells still to come. Bengali and Urdu documents still print boxes, for want of a font rather than a fix.',
   },
   {
     version: '15.9.1',
@@ -743,7 +743,7 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-07-14',
     tag: 'FIX',
     summary:
-      'The Windows desktop app now stops its background service before installing or uninstalling, so a reinstall no longer fails because the old backend process was still running and locking the file. That service is also renamed to openconstructionerp-server so the app carries one name, and your data and settings are untouched.',
+      'The Windows desktop app now stops its background service before installing or uninstalling, so a reinstall no longer fails because the old backend process was still running and locking the file. Your data and settings are untouched.',
   },
   {
     version: '11.7.0',
@@ -875,7 +875,7 @@ const CHANGELOG: ChangelogEntry[] = [
   // v4.x: stable major
   { version: '4.1.0', date: '2026-05-21', tag: 'NEW',       summary: 'Rollup wave: better BIM diagnostics, first critical-path schedule slice, an assembly library, an installable app, and a fully translated marketing site.' },
   { version: '4.0.1', date: '2026-05-20', tag: 'FIX',       summary: 'BIM view-cube orbit fix, marketing forms moved to a new provider, and denser module cards.' },
-  { version: '4.0.0', date: '2026-05-20', tag: 'MILESTONE', summary: 'Stable 4.0: production-ready, 103 modules, and a passed legal and licensing audit.' },
+  { version: '4.0.0', date: '2026-05-20', tag: 'MILESTONE', summary: 'The stable 4.0 release includes 103 modules.' },
 
   // v3.x: pro-grade waves, BOQ and BIM rebuild, element matching
   { version: '3.12.1', date: '2026-05-20', tag: 'FIX', summary: 'BIM upload safety checks, a catalogue picker for element matching, and a business-intelligence starter pack.' },

@@ -17,11 +17,12 @@
 //
 // Run:  npx vitest run src/features/cases/casesCardNavigation.test.tsx
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import React from "react";
 
+import * as brand from "@/shared/brand";
 import { PLAYBOOKS } from "./playbooks";
 import { CasesPage } from "./CasesPage";
 import { FEATURED_ARTICLE_COVER, FEATURED_ARTICLE_URL } from "./FeaturedArticle";
@@ -173,11 +174,17 @@ function renderAndFindCard(): { card: HTMLElement; title: HTMLElement } {
 }
 
 beforeEach(() => {
+  vi.spyOn(brand, "TEST_BUILD", "get").mockReturnValue(true);
   localStorage.clear();
   navigateSpy.mockClear();
 });
 
-describe("featured article", () => {
+afterEach(() => vi.restoreAllMocks());
+
+describe("featured article in release mode", () => {
+  beforeEach(() => {
+    vi.spyOn(brand, "TEST_BUILD", "get").mockReturnValue(false);
+  });
   it("opens the Cases page, linking out to the article in a new tab", () => {
     render(
       <MemoryRouter initialEntries={["/cases"]}>
@@ -204,6 +211,13 @@ describe("featured article", () => {
     fireEvent.error(cover);
     expect(link.querySelector("img")).toBeNull();
   });
+});
+
+it("keeps the internal Cases page usable without the upstream article", () => {
+  const { card } = renderAndFindCard();
+  expect(screen.queryByTestId("cases-featured-article")).not.toBeInTheDocument();
+  fireEvent.click(card);
+  expect(navigateSpy).toHaveBeenCalledWith(`/cases/${target.id}`);
 });
 
 describe("catalogue card - opening a case", () => {

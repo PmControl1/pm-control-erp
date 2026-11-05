@@ -37,7 +37,7 @@ import { loginFailureKindFromResponse } from './loginError';
 import { AuthBackground } from './AuthBackground';
 import { SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
-import { BRAND_NAME } from '@/shared/brand';
+import { BRAND_NAME, TEST_BUILD } from '@/shared/brand';
 
 interface ModuleTile {
   icon: LucideIcon;
@@ -569,7 +569,7 @@ export function LoginPageNext() {
           </div>
 
           {/* Copyright — left-bottom, sits below the hero content. */}
-          <div className="relative mt-auto pt-10 text-[11px] text-content-tertiary/80 dark:text-white/40">
+          {!TEST_BUILD && <div className="relative mt-auto pt-10 text-[11px] text-content-tertiary/80 dark:text-white/40">
             © 2026{' '}
             <a
               href="https://www.linkedin.com/in/boikoartem/"
@@ -581,7 +581,7 @@ export function LoginPageNext() {
             </a>{' '}
             · PM Project Management
             · <a href="mailto:info@datadrivenconstruction.io" className="hover:text-content-secondary transition-colors">info@datadrivenconstruction.io</a>
-          </div>
+          </div>}
         </div>
 
         {/* ── RIGHT: clean white form pane ─────────────────────────────── */}
@@ -749,7 +749,7 @@ export function LoginPageNext() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-[13px] font-semibold text-content-primary dark:text-white">{acct.name}</div>
-                          <div className="text-[11px] text-content-tertiary truncate">{acct.email} · {acct.role}</div>
+                          <div className="text-[11px] text-content-tertiary truncate">{!TEST_BUILD && `${acct.email} · `}{acct.role}</div>
                         </div>
                         <ArrowUpRight size={15} className="text-content-quaternary group-hover:text-oe-blue transition-colors shrink-0" />
                       </button>

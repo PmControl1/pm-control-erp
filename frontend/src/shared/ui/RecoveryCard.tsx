@@ -21,6 +21,7 @@ import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, LogIn, Lock, RefreshCw } from 'lucide-react';
+import { BRAND_SUPPORT_EMAIL, TEST_BUILD } from '@/shared/brand';
 import { EmptyState } from './EmptyState';
 import { Button } from './Button';
 import { getErrorMessage } from '@/shared/lib/api';
@@ -71,6 +72,7 @@ export function RecoveryCard({ error, onRetry, redirectTo }: RecoveryCardProps) 
   }
 
   if (status === 403) {
+    const contact = TEST_BUILD ? BRAND_SUPPORT_EMAIL : 'info@datadrivenconstruction.io';
     return (
       <EmptyState
         icon={<Lock size={28} strokeWidth={1.5} />}
@@ -79,14 +81,14 @@ export function RecoveryCard({ error, onRetry, redirectTo }: RecoveryCardProps) 
           defaultValue:
             'Your role is missing the permission needed to view this. Ask a project administrator to grant you access.',
         })}
-        action={
+        action={contact && (
           <a
-            href="mailto:info@datadrivenconstruction.io?subject=Access%20request"
+            href={`mailto:${contact}?subject=Access%20request`}
             className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface-primary px-4 text-sm font-medium text-content-primary hover:bg-surface-secondary transition-colors"
           >
             {t('recovery.request_access', { defaultValue: 'Request access' })}
           </a>
-        }
+        )}
       />
     );
   }

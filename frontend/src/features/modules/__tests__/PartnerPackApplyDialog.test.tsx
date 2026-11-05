@@ -12,6 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, within } from '@testing-library/react';
 
+import * as brand from '@/shared/brand';
 import type { ApplyPreview } from '../partnerPacks';
 import type { StreamInstallEvent } from '@/features/onboarding/partnerPacksApi';
 
@@ -165,6 +166,7 @@ function activate() {
 }
 
 beforeEach(() => {
+  vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(true);
   authState.userRole = 'admin';
   serverState.demoMode = false;
   i18nMock.inst.language = 'en';
@@ -176,12 +178,29 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 /* ── Whole-install failures ────────────────────────────────────────────── */
 
+it('shows a preview tester who to ask without linking to the upstream installer', () => {
+  const mode = vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(true);
+  try {
+    authState.userRole = 'viewer';
+    serverState.demoMode = true;
+    renderDialog();
+
+    expect(screen.getByText('Ask your administrator to install it.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Download and install guide' })).toBeNull();
+    expect(screen.queryByText('Germany pack')).toBeNull();
+  } finally {
+    mode.mockRestore();
+  }
+});
+
 describe('a failed install says what failed and why', () => {
-  it('a 403 before the first frame explains the account may not install packs', async () => {
+  it('a 403 before the first frame explains the account may not install packs in release mode', async () => {
+    vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(false);
     // The production report: a read-only account on the public demo.
     serverState.demoMode = true;
     streamMock.fullInstallPackStream.mockRejectedValue(
@@ -548,7 +567,8 @@ describe('the country cost bases are offered before install', () => {
 /* ── Permission ────────────────────────────────────────────────────────── */
 
 describe('who may install', () => {
-  it('a viewer sees why and cannot start the install', () => {
+  it('a viewer sees why and cannot start the install in release mode', () => {
+    vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(false);
     serverState.demoMode = true;
     authState.userRole = 'viewer';
     renderDialog();

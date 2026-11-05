@@ -10,6 +10,9 @@
 /** Product name shown in the UI, page titles, emails and exports. */
 export const BRAND_NAME = 'PM Project Management';
 
+/** PM test builds are the default. Release builds explicitly restore the software notices. */
+export const TEST_BUILD = import.meta.env.VITE_PMPM_INTERNAL_TEST !== 'false';
+
 /** Short form for tight spaces (PWA prompts, narrow headers). */
 export const BRAND_SHORT_NAME = 'PM Project Management';
 
@@ -17,7 +20,7 @@ export const BRAND_SHORT_NAME = 'PM Project Management';
 export const BRAND_LOGO_URL = '/brand/pmpm-logo.svg';
 
 /** Where the in-app bug and support menus send email. Empty hides those entries. */
-export const BRAND_SUPPORT_EMAIL = '';
+export const BRAND_SUPPORT_EMAIL: string = '';
 
 /**
  * Public URL of THIS modified version's source code. AGPL-3.0 §13 requires

@@ -17,9 +17,11 @@
 //   * redirectTo overrides the location.pathname capture for the
 //     sign-in next= param.
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
+import * as brand from '@/shared/brand';
 
 import { RecoveryCard } from './RecoveryCard';
 
@@ -36,9 +38,13 @@ function renderCard(
   );
 }
 
-describe('RecoveryCard - 401 (signed out)', () => {
-  afterEach(() => vi.restoreAllMocks());
+beforeEach(() => {
+  vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(true);
+});
 
+afterEach(() => vi.restoreAllMocks());
+
+describe('RecoveryCard - 401 (signed out)', () => {
   it('renders the "Sign in again" CTA on a 401 ApiError-shaped error', () => {
     renderCard({ error: { status: 401 } });
     expect(screen.getByText(/Your session has expired/i)).toBeInTheDocument();
@@ -73,12 +79,27 @@ describe('RecoveryCard - 401 (signed out)', () => {
 });
 
 describe('RecoveryCard - 403 (no access)', () => {
-  it('renders the "Request access" mailto CTA on a 403', () => {
+  it('renders the upstream "Request access" mailto CTA in release mode', () => {
+    vi.spyOn(brand, 'TEST_BUILD', 'get').mockReturnValue(false);
     renderCard({ error: { status: 403 } });
     expect(screen.getByText(/don’t have access here/i)).toBeInTheDocument();
     const mailto = screen.getByRole('link', { name: /Request access/i });
     expect(mailto.getAttribute('href')).toBe(
       'mailto:info@datadrivenconstruction.io?subject=Access%20request',
+    );
+  });
+
+  it('directs internal testers to their administrator without an upstream contact', () => {
+    renderCard({ error: { status: 403 } });
+    expect(screen.getByText(/Ask a project administrator to grant you access/i)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Request access/i })).not.toBeInTheDocument();
+  });
+
+  it('uses the configured PM support address when internal support is available', () => {
+    vi.spyOn(brand, 'BRAND_SUPPORT_EMAIL', 'get').mockReturnValue('support@example.test');
+    renderCard({ error: { status: 403 } });
+    expect(screen.getByRole('link', { name: /Request access/i })).toHaveAttribute(
+      'href', 'mailto:support@example.test?subject=Access%20request',
     );
   });
 

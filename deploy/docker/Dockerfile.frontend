@@ -32,6 +32,7 @@ COPY frontend/ .
 # frontend/package.json build script, which beats NODE_OPTIONS; the value
 # here only mirrors it. The type check alone peaks at about 9.2 GB, so the
 # Docker host needs about 14 GB of memory to build this stage.
+ARG VITE_PMPM_INTERNAL_TEST=true
 RUN NODE_OPTIONS=--max-old-space-size=12288 npm run build
 
 FROM nginx:alpine

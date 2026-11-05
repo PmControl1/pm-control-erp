@@ -16,6 +16,7 @@
  *   POST /api/v1/costs/catalogues-v3/{region}/install — download + restore
  */
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -387,12 +388,12 @@ export function CataloguesPanelCard({ preferredRegion }: Props) {
                     'Public demo - cost databases are read-only here',
                   )}
                 </div>
-                <div className="mt-0.5">
+                {!TEST_BUILD && <div className="mt-0.5">
                   {t(
                     'catalogues.demo_notice_body',
                     'You can browse the cost databases the full product ships, but installing them is disabled on the demo (each is 400+ MB and it runs on a small shared box). To load any region, or your own cost data, download and run PM Project Management on your own PC or server: pip install openconstructionerp.',
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           )}

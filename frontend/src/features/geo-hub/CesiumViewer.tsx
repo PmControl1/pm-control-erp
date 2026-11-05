@@ -19,6 +19,7 @@
  *   absent so a freshly-anchored project doesn't error out.
  */
 
+import { TEST_BUILD } from '@/shared/brand';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe2, Download, AlertTriangle, RefreshCw, Locate } from 'lucide-react';
@@ -2089,8 +2090,8 @@ export function CesiumViewer({
             'backdrop-blur-sm hover:text-white',
             'marker:hidden [&::-webkit-details-marker]:hidden',
           ].join(' ')}
-          title={t('geo_hub.licenses_title', {
-            defaultValue: 'Open-data stack: click to view licenses',
+          title={t(TEST_BUILD ? 'geo_hub.source_details' : 'geo_hub.licenses_title', {
+            defaultValue: 'View map data and component credits',
           })}
         >
           <span aria-hidden>ⓘ</span>
@@ -2108,8 +2109,8 @@ export function CesiumViewer({
           ].join(' ')}
         >
           <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-300/90">
-            {t('geo_hub.licenses_heading', {
-              defaultValue: 'Open Data & Open Source',
+            {t(TEST_BUILD ? 'geo_hub.source_credits' : 'geo_hub.licenses_heading', {
+              defaultValue: 'Map data and components',
             })}
           </div>
           <ul className="space-y-1">

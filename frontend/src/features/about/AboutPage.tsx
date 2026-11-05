@@ -15,6 +15,7 @@ import {
   BRAND_NAME,
   BRAND_SOURCE_URL,
   BRAND_SUPPORT_EMAIL,
+  TEST_BUILD,
   UPSTREAM_AUTHOR,
   UPSTREAM_NAME,
   UPSTREAM_SOURCE_URL,
@@ -25,6 +26,44 @@ import { ThirdPartyLicenses } from './ThirdPartyLicenses';
 const AGPL_URL = 'https://www.gnu.org/licenses/agpl-3.0.html';
 
 export function AboutPage() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <Breadcrumb items={[{ label: t('nav.about', { defaultValue: 'About' }) }]} />
+      <PageHeader srTitle={t('nav.about', { defaultValue: 'About' })} />
+
+      <Card>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+          <Logo size="xl" />
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold text-content-primary tracking-tight">{BRAND_NAME}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-content-tertiary">
+              <span className="font-mono">v{APP_VERSION}</span>
+              {!TEST_BUILD && (
+                <>
+                  <span>&middot;</span>
+                  <Badge variant="blue" size="sm">AGPL-3.0</Badge>
+                </>
+              )}
+            </div>
+            {BRAND_SUPPORT_EMAIL && (
+              <p className="mt-2 text-sm text-content-secondary">
+                {t('about.support_contact', { defaultValue: 'Support' })}:{' '}
+                <a className="text-oe-blue hover:underline" href={`mailto:${BRAND_SUPPORT_EMAIL}`}>
+                  {BRAND_SUPPORT_EMAIL}
+                </a>
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+      <ReleaseDetails />
+    </div>
+  );
+}
+
+function ReleaseDetails() {
   const { t } = useTranslation();
   const { hash, key } = useLocation();
   const [changelogExpanded, setChangelogExpanded] = useState(false);
@@ -42,33 +81,8 @@ export function AboutPage() {
   }, [hash, key]);
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <Breadcrumb items={[{ label: t('nav.about', { defaultValue: 'About' }) }]} />
-      <PageHeader srTitle={t('nav.about', { defaultValue: 'About' })} />
-
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-          <Logo size="xl" />
-          <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-content-primary tracking-tight">{BRAND_NAME}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-content-tertiary">
-              <span className="font-mono">v{APP_VERSION}</span>
-              <span>&middot;</span>
-              <Badge variant="blue" size="sm">AGPL-3.0</Badge>
-            </div>
-            {BRAND_SUPPORT_EMAIL && (
-              <p className="mt-2 text-sm text-content-secondary">
-                {t('about.support_contact', { defaultValue: 'Support' })}:{' '}
-                <a className="text-oe-blue hover:underline" href={`mailto:${BRAND_SUPPORT_EMAIL}`}>
-                  {BRAND_SUPPORT_EMAIL}
-                </a>
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      <Card>
+    <>
+      {!TEST_BUILD && <Card>
         <h3 className="text-base font-semibold text-content-primary mb-3">
           {t('about.licence_title', { defaultValue: 'Licence and credits' })}
         </h3>
@@ -125,14 +139,14 @@ export function AboutPage() {
             )}
           </p>
         </div>
-      </Card>
+      </Card>}
 
-      <Card>
+      {!TEST_BUILD && <Card>
         <h3 className="text-base font-semibold text-content-primary mb-3">
           {t('about.third_party_title', { defaultValue: 'Third-party software' })}
         </h3>
         <ThirdPartyLicenses />
-      </Card>
+      </Card>}
 
       <Card>
         <div className="p-2" data-changelog-anchor>
@@ -150,6 +164,6 @@ export function AboutPage() {
           </div>
         </div>
       </Card>
-    </div>
+    </>
   );
 }

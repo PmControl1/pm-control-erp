@@ -38,6 +38,7 @@
  * for a new link" message.
  */
 
+import { BRAND_LOGO_URL, TEST_BUILD } from '@/shared/brand';
 import {
   useEffect,
   useMemo,
@@ -1856,7 +1857,7 @@ function ShellWrapper({
               className="w-8 h-8 rounded-md bg-oe-blue text-white grid place-items-center text-sm font-bold"
               aria-hidden
             >
-              OE
+              {TEST_BUILD ? <img src={BRAND_LOGO_URL} alt="" className="h-8 w-8 rounded-md" /> : 'OE'}
             </div>
             <span className="text-sm font-medium text-content-primary">
               {t('buyer_portal.brand', {
@@ -1901,7 +1902,7 @@ function ShellWrapper({
 
       {children}
 
-      <footer className="w-full border-t border-border-light mt-10">
+      {!TEST_BUILD && <footer className="w-full border-t border-border-light mt-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 text-2xs text-content-tertiary flex items-center justify-between gap-3 flex-wrap">
           <span>
             {t('buyer_portal.footer.contact', {
@@ -1923,7 +1924,7 @@ function ShellWrapper({
             AGPL-3.0
           </a>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }

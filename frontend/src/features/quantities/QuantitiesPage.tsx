@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { TEST_BUILD } from '@/shared/brand';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -631,9 +632,9 @@ function InstallProgressPanel({
           <span className="flex items-center gap-1">
             <HardDrive size={10} /> {t('quantities.module_label', { defaultValue: 'Module' })}
           </span>
-          <span className="flex items-center gap-1">
+          {!TEST_BUILD && <span className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t('quantities.open_source', { defaultValue: 'Open Source' })}
-          </span>
+          </span>}
           <span className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400" /> {t('quantities.free_label', { defaultValue: 'Free' })}
           </span>
@@ -1094,11 +1095,11 @@ export function QuantitiesPage() {
                   {installedCount}/{totalCount} {t('quantities.installed_label', { defaultValue: 'installed' })}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-content-quaternary">
+              {!TEST_BUILD && <p className="mt-0.5 text-xs text-content-quaternary">
                 {t('quantities.converters_author', {
                   defaultValue: 'DDC Community · Open Source · Free',
                 })}
-              </p>
+              </p>}
             </div>
           </div>
           <p className="mt-3 text-sm text-content-secondary leading-relaxed">
@@ -1191,7 +1192,7 @@ export function QuantitiesPage() {
               defaultValue: 'Modules are managed automatically by the platform',
             })}
           </span>
-          <a
+          {!TEST_BUILD && <a
             href={GITHUB_RELEASES_URL}
             target="_blank"
             rel="noopener noreferrer"
@@ -1201,7 +1202,7 @@ export function QuantitiesPage() {
             {t('quantities.source_code', {
               defaultValue: 'Source code',
             })}
-          </a>
+          </a>}
         </div>
       </div>
 

@@ -1,0 +1,11 @@
+# Build a local preview using the same application service and volumes.
+services:
+  app:
+    image: pmpm-internal-test:local
+    pull_policy: never
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.unified
+      target: unified
+      args:
+        VITE_PMPM_INTERNAL_TEST: "true"

@@ -11,6 +11,7 @@
 // the running instance, so a self-hoster can verify the posture rather than
 // take a marketing claim on trust. No secret is shown - AI is name + presence.
 
+import { TEST_BUILD } from '@/shared/brand';
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -236,33 +237,37 @@ export function DataSecurityPanel() {
 
       <SectionCard
         icon={<Lock className="h-5 w-5" aria-hidden />}
-        title={t('dataSecurity.access_title', { defaultValue: 'Access and source' })}
+        title={TEST_BUILD ? t('users.access', { defaultValue: 'Access' }) : t('dataSecurity.access_title', { defaultValue: 'Access and source' })}
       >
         <Fact
           icon={<Globe className="h-4 w-4" />}
           label={t('dataSecurity.registration', { defaultValue: 'Self-registration' })}
           value={humanizeToken(data.registration_mode)}
         />
-        <Fact
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          label={t('dataSecurity.license', { defaultValue: 'License' })}
-          value={data.source.license}
-          good
-        />
-        <Fact
-          icon={<ExternalLink className="h-4 w-4" />}
-          label={t('dataSecurity.source', { defaultValue: 'Source code' })}
-          value={
-            <a
-              href={data.source.repository}
-              target="_blank"
-              rel="noreferrer"
-              className="text-oe-blue hover:underline"
-            >
-              {t('dataSecurity.source_link', { defaultValue: 'Open on GitHub' })}
-            </a>
-          }
-        />
+        {!TEST_BUILD && (
+          <>
+            <Fact
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              label={t('dataSecurity.license', { defaultValue: 'License' })}
+              value={data.source.license}
+              good
+            />
+            <Fact
+              icon={<ExternalLink className="h-4 w-4" />}
+              label={t('dataSecurity.source', { defaultValue: 'Source code' })}
+              value={
+                <a
+                  href={data.source.repository}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-oe-blue hover:underline"
+                >
+                  {t('dataSecurity.source_link', { defaultValue: 'Open on GitHub' })}
+                </a>
+              }
+            />
+          </>
+        )}
       </SectionCard>
     </div>
   );

@@ -225,6 +225,31 @@ the same private administrator bootstrap, then set `PMPM_PLATFORM_OWNER_USER_IDS
 before starting Caddy. Caddy serves
 `https://localhost` with its own local certificate (the browser warns once).
 
+### Building the test UI on an existing installation
+
+The internal UI is the default for this testing branch. To build the app locally,
+run the following from PowerShell in `deploy\pmpm` of the full source checkout.
+
+```powershell
+docker compose -f docker-compose.yml -f compose.internal-test.yml up -d --build --no-deps --wait --wait-timeout 600 app
+```
+
+This builds a local image for the test UI and replaces the app container in
+your running test stack. Sign in at the same address with your existing
+account. If you normally specify another local Compose override, include its
+`-f` argument before `-f compose.internal-test.yml` so its settings still apply.
+
+To return to the image configured for this installation, run your usual
+Compose command without the internal-test override.
+
+```powershell
+docker compose up -d --no-deps --wait --wait-timeout 600 app
+```
+
+For the later customer release, pass `--build-arg VITE_PMPM_INTERNAL_TEST=false`
+when building the Docker image, or set `VITE_PMPM_INTERNAL_TEST=false` before
+running the frontend build directly. This restores the software notices.
+
 ## Pilot checks on the real server
 
 CI tests the production image against PostgreSQL and verifies the bundled UI.

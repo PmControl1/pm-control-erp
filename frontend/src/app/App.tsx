@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { TEST_BUILD } from '@/shared/brand';
 import { Suspense, lazy, useState, useCallback, useEffect, useLayoutEffect, useContext, createContext } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation, useMatch, useParams } from 'react-router-dom';
 import { AppLayout } from './layout';
@@ -1038,10 +1039,10 @@ initErrorLogger();
 // unmodified, the meta tags and console message are direct evidence of
 // the origin. Removing them is not a functional break, but does prove
 // the distribution was tampered with.
-if (typeof document !== 'undefined') {
+if (!TEST_BUILD && typeof document !== 'undefined') {
   ddcInjectMeta();
 }
-if (typeof window !== 'undefined' && typeof console !== 'undefined') {
+if (!TEST_BUILD && typeof window !== 'undefined' && typeof console !== 'undefined') {
   try {
     // eslint-disable-next-line no-console
     console.info(
@@ -1808,11 +1809,10 @@ export default function App() {
           standalone-mode detection).  Safe to mount unauthenticated:
           on login screen the user may also want to install the app. */}
       <PWAInstallPrompt />
-      {/* DDC-CWICR-OE */}
-      <span aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+      {!TEST_BUILD && <span aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
         {'\u200B\u200C\u200D\u200B\u200C\u200D\u200B'}
         DataDrivenConstruction·CWICR·OpenConstructionERP·2026
-      </span>
+      </span>}
     </Suspense>
   );
 }

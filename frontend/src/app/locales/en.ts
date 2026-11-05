@@ -3,6 +3,18 @@
 
 const resource = {
   "translation": {
+    "settings.hosted_model_range": "Hosted Llama, Qwen and other models",
+    "settings.inference_service": "Fast inference for standard and fine-tuned models",
+    "settings.converter_versions": "Installed and available versions",
+    "settings.converter_updates": "Compare installed converter packages with the latest available versions.",
+    "settings.converter_docs": "Converter documentation",
+    "settings.converter_formats": "Installation and usage for Revit® (RVT), IFC and DWG.",
+    "settings.open_converter_docs": "Open documentation",
+    "match_elements.embedder_loaded_caption_local": "{{model}} · {{precision}} · ~{{size}} MB · {{n}}+ languages",
+    "match_elements.embedder_required_body_local": "BGE-M3 runs on your own machine and supports multiple languages. You can install it with the command below.",
+    "match_elements.embedder_required_frozen_local": "This desktop build has a fixed set of packages. Use a server installation or a desktop build that includes the BGE-M3 model.",
+    "geo_hub.source_credits": "Map data and components",
+    "geo_hub.source_details": "View map data and component credits",
     "bid_management.scope_cost_line": "Cost line {{line}}, from the bill",
     "changeorders.cost_line": "Cost line",
     "changeorders.cost_line_inherit": "Take it from the bill position or the contract",
@@ -45788,6 +45800,7 @@ const resource = {
     "videos.more_moments": "{{more}} more moments",
     "cases.featured_article.eyebrow": "Featured article",
     "cases.featured_article.label": "Featured article: {{title}}. Read the article, opens in a new tab",
+    "sidebar.learn.section_hint": "Hide this section to move it to the graduation cap in the top bar. Click the cap to bring it back.",
     "sidebar.learn.hint_topbar": "Tutorial videos and guided cases to learn the platform. Hide this section and it folds into the graduation cap in the top bar; one click there brings it back.",
     "sidebar.learn.hidden_toast_body_topbar": "They are now behind the graduation cap in the top bar. One click there brings them back.",
     "videos.used_in_cases": "Used in these cases",

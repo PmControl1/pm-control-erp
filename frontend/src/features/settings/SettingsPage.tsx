@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { TEST_BUILD } from '@/shared/brand';
 import { ConverterReleaseNotice } from '@/shared/ui/ConverterReleaseNotice';
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
@@ -189,8 +190,8 @@ const AI_PROVIDERS: ProviderInfo[] = [
   {
     id: 'together',
     name: 'Together AI',
-    description: 'settings.ai_desc_together',
-    descriptionDefault: 'Open-source model hosting - Llama, Qwen, and more',
+    description: TEST_BUILD ? 'settings.hosted_model_range' : 'settings.ai_desc_together',
+    descriptionDefault: 'Hosted Llama, Qwen and other models',
     keyPrefix: '',
     docsUrl: 'https://api.together.ai/settings/api-keys',
     region: 'global',
@@ -198,8 +199,8 @@ const AI_PROVIDERS: ProviderInfo[] = [
   {
     id: 'fireworks',
     name: 'Fireworks AI',
-    description: 'settings.ai_desc_fireworks',
-    descriptionDefault: 'Fast inference platform for open-source and fine-tuned models',
+    description: TEST_BUILD ? 'settings.inference_service' : 'settings.ai_desc_fireworks',
+    descriptionDefault: 'Fast inference for standard and fine-tuned models',
     keyPrefix: '',
     docsUrl: 'https://fireworks.ai/account/api-keys',
     region: 'global',
@@ -1448,13 +1449,19 @@ const TABS: readonly TabDef[] = [
   DEFAULT_TAB,
   { id: 'dashboard',    labelKey: 'settings.tab_dashboard',    defaultLabel: 'Dashboard',    icon: LayoutGrid, descKey: 'settings.tab_dashboard_desc',  descDefault: 'Reorder, show or hide dashboard sections' },
   { id: 'account',      labelKey: 'settings.tab_account',      defaultLabel: 'Account',      icon: User,     descKey: 'settings.tab_account_desc',      descDefault: 'Password and sign out' },
-  { id: 'team',         labelKey: 'settings.tab_team',         defaultLabel: 'Team & Plan',  icon: Users,    descKey: 'settings.tab_team_desc',         descDefault: 'Members, roles, and license' },
+  {
+    id: 'team', icon: Users,
+    labelKey: TEST_BUILD ? 'settings.team_title' : 'settings.tab_team',
+    defaultLabel: TEST_BUILD ? 'Team & workspace' : 'Team & Plan',
+    descKey: TEST_BUILD ? 'settings.members_subtitle' : 'settings.tab_team_desc',
+    descDefault: TEST_BUILD ? 'People with access to this workspace and their role' : 'Members, roles, and license',
+  },
   // Company & documents - logos and the letterhead printed on exported
   // documents. Visible to everyone; the panel is read-only below admin.
   { id: 'company',      labelKey: 'settings.tab_company',      defaultLabel: 'Company & documents', icon: Building2, descKey: 'settings.tab_company_desc', descDefault: 'Logos, letterhead, and how printed documents look' },
   { id: 'regional',     labelKey: 'settings.tab_regional',     defaultLabel: 'Regional',     icon: Globe,    descKey: 'settings.tab_regional_desc',     descDefault: 'Language, timezone, and formats' },
   { id: 'einvoice',     labelKey: 'settings.tab_einvoice',     defaultLabel: 'E-invoice',    icon: ReceiptText, descKey: 'settings.tab_einvoice_desc',  descDefault: 'Seller identity and bank account for electronic invoices' },
-  { id: 'converters',   labelKey: 'settings.tab_converters',   defaultLabel: 'Converters',  icon: Layers,   descKey: 'settings.tab_converters_desc',   descDefault: 'DDC converters - installed versions and GitHub sources' },
+  { id: 'converters',   labelKey: 'settings.tab_converters',   defaultLabel: 'Converters',  icon: Layers,   descKey: TEST_BUILD ? 'settings.converter_versions' : 'settings.tab_converters_desc',   descDefault: 'Installed and available versions' },
   { id: 'ai',           labelKey: 'settings.tab_ai',           defaultLabel: 'AI',           icon: Sparkles, descKey: 'settings.tab_ai_desc',           descDefault: 'AI provider and semantic search' },
   { id: 'security',     labelKey: 'settings.tab_security',     defaultLabel: 'Data & Security', icon: ShieldCheck, descKey: 'settings.tab_security_desc', descDefault: 'Where your data lives and what leaves this instance' },
   { id: 'integrations', labelKey: 'settings.tab_integrations', defaultLabel: 'Integrations', icon: Plug,     descKey: 'settings.tab_integrations_desc', descDefault: 'Slack, Teams, Telegram, webhooks' },
@@ -2410,9 +2417,9 @@ function ConverterStatusPanel() {
       <Card>
       <CardHeader
         title={t('settings.converters_title', { defaultValue: 'Release packages' })}
-        subtitle={t('settings.converters_subtitle', {
+        subtitle={t(TEST_BUILD ? 'settings.converter_updates' : 'settings.converters_subtitle', {
           defaultValue:
-            'DDC converter release: the installed package and the latest one on GitHub.',
+            'Compare installed converter packages with the latest available versions.',
         })}
         action={
           <button
@@ -2431,14 +2438,14 @@ function ConverterStatusPanel() {
         <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-border-light bg-surface-secondary/40 px-3.5 py-2.5">
           <div className="min-w-0">
             <p className="text-xs font-semibold text-content-primary">
-              {t('settings.converters_source_title', {
-                defaultValue: 'Source repository',
+              {t(TEST_BUILD ? 'settings.converter_docs' : 'settings.converters_source_title', {
+                defaultValue: 'Converter documentation',
               })}
             </p>
             <p className="text-2xs text-content-tertiary">
-              {t('settings.converters_source_desc', {
+              {t(TEST_BUILD ? 'settings.converter_formats' : 'settings.converters_source_desc', {
                 defaultValue:
-                  'Converters for Revit® (RVT), IFC and DWG, published by DataDrivenConstruction.',
+                  'Installation and usage for Revit® (RVT), IFC and DWG.',
               })}
             </p>
           </div>
@@ -2449,7 +2456,7 @@ function ConverterStatusPanel() {
             className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-oe-blue/30 bg-oe-blue/[0.04] px-2.5 py-1.5 text-xs font-medium text-oe-blue hover:bg-oe-blue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue"
           >
             <ExternalLink size={12} />
-            {t('settings.converters_open_repo', { defaultValue: 'GitHub repo' })}
+            {t(TEST_BUILD ? 'settings.open_converter_docs' : 'settings.converters_open_repo', { defaultValue: 'Open documentation' })}
           </a>
         </div>
 
