@@ -16,7 +16,6 @@ import { Button, Input, InfoHint } from '@/shared/ui';
 import { useToastStore } from '@/stores/useToastStore';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
 import { useWidgetSettingsStore } from '@/stores/useWidgetSettingsStore';
-import { usePreferencesStore } from '@/stores/usePreferencesStore';
 import { AddressAutocomplete } from '@/features/geo-hub/AddressAutocomplete';
 import type { AddressAutocompleteSelection } from '@/features/geo-hub/AddressAutocomplete';
 import {
@@ -31,7 +30,7 @@ import {
 import { ProjectWorksField } from './ProjectWorksField';
 import { ProjectClassificationFields } from './ProjectClassificationFields';
 import { useTelemetry } from '@/shared/lib/telemetry';
-import { lookupCountryDefault } from './currencyGroups';
+import { BULGARIAN_PROJECT_DEFAULTS } from '@/shared/lib/marketProfile';
 import { regionOptionLabel, type RegionOption } from './regionLabel';
 import { onlyChangedFields } from '@/shared/lib/apiHelpers';
 import { fmtFixed } from '@/shared/lib/formatters';
@@ -67,172 +66,13 @@ export interface OptionGroup {
   options: RegionOption[];
 }
 
-const REGION_GROUPS: OptionGroup[] = [
-  {
-    group: 'Europe',
-    options: [
-      { value: 'DACH', label: 'DACH (Germany, Austria, Switzerland)' },
-      { value: 'UK', label: 'United Kingdom', iso: 'GB' },
-      { value: 'Ireland', label: 'Ireland', iso: 'IE' },
-      { value: 'Nordics', label: 'Nordics (Sweden, Norway, Denmark, Finland)' },
-      { value: 'France', label: 'France', iso: 'FR' },
-      { value: 'Spain', label: 'Spain', iso: 'ES' },
-      { value: 'Italy', label: 'Italy', iso: 'IT' },
-      { value: 'Netherlands', label: 'Netherlands', iso: 'NL' },
-      { value: 'Poland', label: 'Poland', iso: 'PL' },
-      { value: 'Czech', label: 'Czech Republic', iso: 'CZ' },
-      { value: 'Croatia', label: 'Croatia', iso: 'HR' },
-      { value: 'Bulgaria', label: 'Bulgaria', iso: 'BG' },
-      { value: 'HU', label: 'Hungary', iso: 'HU' },
-      { value: 'UA', label: 'Ukraine', iso: 'UA' },
-      { value: 'Turkey', label: 'Turkey', iso: 'TR' },
-      { value: 'Russia', label: 'Russia', iso: 'RU' },
-    ],
-  },
-  {
-    group: 'Americas',
-    options: [
-      { value: 'US', label: 'United States', iso: 'US' },
-      { value: 'Canada', label: 'Canada', iso: 'CA' },
-      { value: 'Brazil', label: 'Brazil', iso: 'BR' },
-      { value: 'Mexico', label: 'Mexico', iso: 'MX' },
-      { value: 'LatinAmerica', label: 'Latin America (Other)' },
-    ],
-  },
-  {
-    group: 'Asia & Middle East',
-    options: [
-      { value: 'China', label: 'China', iso: 'CN' },
-      { value: 'Japan', label: 'Japan', iso: 'JP' },
-      { value: 'Korea', label: 'South Korea', iso: 'KR' },
-      { value: 'India', label: 'India', iso: 'IN' },
-      { value: 'SoutheastAsia', label: 'Southeast Asia' },
-      { value: 'MiddleEast', label: 'Middle East (General)' },
-      { value: 'GulfStates', label: 'Gulf States (UAE, Saudi Arabia, Qatar)' },
-    ],
-  },
-  {
-    group: 'Africa',
-    options: [
-      { value: 'NorthAfrica', label: 'North Africa' },
-      { value: 'SouthAfrica', label: 'South Africa', iso: 'ZA' },
-      { value: 'EastAfrica', label: 'East Africa' },
-      { value: 'WestAfrica', label: 'West Africa' },
-    ],
-  },
-  {
-    group: 'Oceania',
-    options: [
-      { value: 'Australia', label: 'Australia', iso: 'AU' },
-      { value: 'NewZealand', label: 'New Zealand', iso: 'NZ' },
-    ],
-  },
-  {
-    group: 'Other',
-    options: [
-      { value: 'INTL', label: 'International / Multi-region' },
-      { value: '__custom__', label: 'Custom...' },
-    ],
-  },
-];
+const REGION_GROUPS: OptionGroup[] = [{
+  group: 'Europe',
+  options: [{ value: 'BG', label: 'Bulgaria', iso: 'BG' }],
+}];
 
-// Project region → backend REGION_PACK key (scoring is a strict dict
-// lookup with no aliasing, so we must hand it an exact pack key or ''
-// — an unknown region simply contributes 0 to the region axis, which
-// is a graceful no-op, not an error).
-const REGION_TO_PACK: Record<string, string> = {
-  DACH: 'dach',
-  UK: 'uk',
-  US: 'us',
-  Canada: 'us',
-  Russia: 'russia_cis',
-  Brazil: 'latam',
-  Mexico: 'latam',
-  LatinAmerica: 'latam',
-  MiddleEast: 'mena',
-  GulfStates: 'mena',
-  NorthAfrica: 'mena',
-  China: 'asia_pacific',
-  Japan: 'asia_pacific',
-  Korea: 'asia_pacific',
-  SoutheastAsia: 'asia_pacific',
-  Australia: 'asia_pacific',
-  NewZealand: 'asia_pacific',
-  India: 'india',
-};
-
-// ── Classification Standards ──────────────────────────────────────────────
-
-// Every value below must be one ``resolve_standard`` accepts, which is
-// KNOWN_CLASSIFICATION_STANDARDS on the backend and not the longer
-// CLASSIFICATION_STANDARD_LABELS. The two sets are not the same and the
-// difference is deliberate: a standard has a label so that a CostItem encoded
-// against it can be named, and it is in the known set only if the product
-// renders a section path for it. An option carrying a labelled-but-not-known
-// value writes a project standard that resolve_standard drops on the floor,
-// falling through to the region and then to DIN 276, with no error and no log
-// the user will ever see.
-//
-// UniFormat, Uniclass and OmniClass sat here doing exactly that. So did the
-// short 'gbt' for China, which the backend spells 'gb50500'. They are removed
-// rather than added to the known set because "we don't render it yet" is the
-// true statement about them, and a picker is not the place to promise
-// otherwise.
-//
-// This comment used to add that "the label maps on the reading screens still
-// name all three, which is the right asymmetry". Measured 2026-09-07: that
-// half is false. The only reader of CLASSIFICATION_STANDARD_LABELS is the
-// section-path renderer at match_elements/service.py:3450, and it indexes the
-// map by a standard drawn from classification_order(), whose members are
-// KNOWN_CLASSIFICATION_STANDARDS. A label outside the known set is therefore
-// reachable by no reader at all, so the three names buy nothing today and no
-// stored code is named by them. Removing the options was still right; the
-// asymmetry it was justified with does not exist.
-const STANDARD_GROUPS: OptionGroup[] = [
-  {
-    group: 'Common Standards',
-    options: [
-      { value: 'din276', label: 'DIN 276 (Germany / DACH)' },
-      { value: 'nrm', label: 'NRM 1/2 (United Kingdom)' },
-      { value: 'masterformat', label: 'MasterFormat (US / Canada)' },
-      { value: 'gb50500', label: 'GB/T (China)' },
-      { value: 'tetelrend', label: 'Tételrend (Hungary)' },
-    ],
-  },
-  {
-    // The rest of what the backend resolves. These were reachable server-side
-    // and unreachable from here, so an estimator in Russia, Spain, France,
-    // Italy, Brazil, Japan, Korea or Turkey could not name their own
-    // standard on a project. The list is hand-written because the picker needs
-    // a country beside the name and the registry has no opinion about wording.
-    // Because it is hand-written, the country beside the name can drift from
-    // the country the registry maps, and did: VOCI read "(Austria)" here while
-    // COUNTRY_TO_STANDARD has only ever resolved it for IT. Austria resolves to
-    // din276, which this list already offers under "Germany / DACH", so an
-    // Austrian was being handed the Italian standard under their own country's
-    // name while their real entry sat two rows up. Checked once across all
-    // thirteen country-bearing options: VOCI was the only one whose country
-    // disagreed with the registry.
-    group: 'National Standards',
-    options: [
-      { value: 'gesn', label: 'GESN / FER (Russia, CIS)' },
-      { value: 'bc3', label: 'BC3 (Spain)' },
-      { value: 'dpgf', label: 'DPGF (France, Senegal, Ivory Coast, Cameroon)' },
-      { value: 'untec', label: 'UNTEC' },
-      { value: 'voci', label: 'VOCI (Italy)' },
-      { value: 'sinapi', label: 'SINAPI (Brazil)' },
-      { value: 'sekisan', label: 'Sekisan (Japan)' },
-      { value: 'kbim', label: 'KBIM (South Korea)' },
-      { value: 'birimfiyat', label: 'Birim Fiyat (Turkey)' },
-      { value: 'nlsfb', label: 'NL/SfB (Netherlands)' },
-      { value: 'knr', label: 'KNR / KNNR (Poland)' },
-    ],
-  },
-  {
-    group: 'Other',
-    options: [{ value: '__custom__', label: 'Custom...' }],
-  },
-];
+// Existing classification values are displayed without offering foreign standards.
+const STANDARD_GROUPS: OptionGroup[] = [];
 
 // ── Currencies (all major construction market currencies) ─────────────────
 
@@ -375,31 +215,6 @@ const INITIAL_AXES: PresetAxes =
 
 const STEP_COUNT = 5;
 
-// Set of currency codes the picker actually offers (the "__custom__"
-// sentinel is excluded). Used to decide whether a saved preference can
-// be pre-selected in the dropdown as a real option.
-const CURRENCY_CODES = new Set(
-  CURRENCY_GROUPS.flatMap((g) => g.options.map((o) => o.value)).filter(
-    (v) => v !== '__custom__',
-  ),
-);
-
-/**
- * Resolve the currency to pre-select for a brand-new project. We seed it
- * from the user's saved Regional preference so a new project is created
- * with a real currency instead of a blank one (a blank project currency
- * is what made every total fall back to EUR for non-euro users). The
- * value must be a valid ISO-4217 code that the picker offers, otherwise
- * we return '' and the user picks one explicitly. Edit mode never calls
- * this - it prefills from the existing project, so already-set
- * currencies are untouched.
- */
-function preferredNewProjectCurrency(pref: string | undefined): string {
-  const code = (pref ?? '').trim().toUpperCase();
-  if (/^[A-Z]{3}$/.test(code) && CURRENCY_CODES.has(code)) return code;
-  return '';
-}
-
 // Create flow the user picked on the intro screen. 'choose' = the
 // landing screen that offers the two paths; 'wizard' = the 5-step
 // guided setup; 'classic' = the old single-window form (essentials
@@ -444,16 +259,16 @@ export type ProjectCoreForm = Pick<
  */
 export function projectCoreForm(
   project: Project | undefined,
-  defaultCurrency: string,
+  _defaultCurrency: string,
 ): ProjectCoreForm {
   if (!project) {
     return {
       name: '',
       description: '',
-      region: '',
+      region: BULGARIAN_PROJECT_DEFAULTS.region,
       classification_standard: '',
-      currency: defaultCurrency,
-      locale: 'en',
+      currency: BULGARIAN_PROJECT_DEFAULTS.currency,
+      locale: BULGARIAN_PROJECT_DEFAULTS.locale,
     };
   }
   return {
@@ -478,12 +293,7 @@ export function CreateProjectModal({
   const { track } = useTelemetry();
   const isEdit = !!editProjectId;
 
-  // User's saved Regional currency preference, normalised to a code the
-  // picker offers (or '' if not usable). New projects are seeded with
-  // this so they are created with a real currency rather than a blank
-  // one that renders as EUR everywhere.
-  const prefCurrency = usePreferencesStore((s) => s.currency);
-  const defaultCurrency = preferredNewProjectCurrency(prefCurrency);
+  const defaultCurrency = BULGARIAN_PROJECT_DEFAULTS.currency;
 
   // Which create flow we're in. Always starts on the chooser so the
   // user is offered the wizard vs. the old single-window form.
@@ -528,7 +338,7 @@ export function CreateProjectModal({
   // Address — assembled into the JSON `address` object on submit.
   const [addressStreet, setAddressStreet] = useState('');
   const [addressCity, setAddressCity] = useState('');
-  const [addressCountry, setAddressCountry] = useState('');
+  const [addressCountry, setAddressCountry] = useState('Bulgaria');
   const [addressPostal, setAddressPostal] = useState('');
   // Free-text query for the Nominatim autocomplete row that sits above
   // the 4 structured inputs. Selecting a result fills the parts below.
@@ -543,11 +353,17 @@ export function CreateProjectModal({
   const [addressLat, setAddressLat] = useState<number | null>(null);
   const [addressLon, setAddressLon] = useState<number | null>(null);
   // ISO 3166-1 alpha-2 resolved from geocoder or manual country input.
-  const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [countryCode, setCountryCode] = useState<string | null>(BULGARIAN_PROJECT_DEFAULTS.country_code);
   // OC-11: precision of the geocoded location.
   const [locationPrecision, setLocationPrecision] = useState<string | null>(null);
 
   function applyAutocompleteSelection(sel: AddressAutocompleteSelection) {
+    if (!isEdit && sel.country_code && sel.country_code.toUpperCase() !== 'BG') {
+      addToast({ type: 'error', title: t('projects.bulgaria.address_required', {
+        defaultValue: 'Choose a site address in Bulgaria.',
+      }) });
+      return;
+    }
     const parts = sel.address_parts ?? {};
     // Nominatim returns ``road`` for street name and ``house_number``
     // separately — we concatenate for the single-line "street" field.
@@ -562,18 +378,6 @@ export function CreateProjectModal({
     if (parts.postcode) setAddressPostal(parts.postcode);
     // Resolve ISO country code from geocoder — Nominatim returns lowercase.
     if (sel.country_code) setCountryCode(sel.country_code.toUpperCase());
-    // A new project in a known country takes that country's region and
-    // currency, unless the user already chose them. The currency counts as
-    // unchosen while it is still the preference the form opened with, which
-    // is how a Croatian project stopped opening on DACH defaults.
-    const countryDefault = isEdit ? null : lookupCountryDefault(sel.country_code);
-    if (countryDefault) {
-      setForm((prev) => ({
-        ...prev,
-        region: prev.region ? prev.region : countryDefault.region,
-        currency: prev.currency && prev.currency !== defaultCurrency ? prev.currency : countryDefault.currency,
-      }));
-    }
     // OC-11: derive location precision from Nominatim addresstype.
     if (sel.addresstype) {
       const at = sel.addresstype.toLowerCase();
@@ -681,7 +485,12 @@ export function CreateProjectModal({
       setFocusMode(true);
       setAddressStreet('');
       setAddressCity('');
-      setAddressCountry('');
+      setAddressCountry('Bulgaria');
+      setCountryCode(BULGARIAN_PROJECT_DEFAULTS.country_code);
+      setAddressLat(null);
+      setAddressLon(null);
+      setLocationPrecision(null);
+      setAddressSearchQuery('');
       setAddressPostal('');
       setProjectCode('');
       setProjectType('');
@@ -741,6 +550,8 @@ export function CreateProjectModal({
     if (!open || !isEdit || !editProject) return;
     if (prefilledFor === editProject.id) return;
     setForm(projectCoreForm(editProject, defaultCurrency));
+    setCountryCode(editProject.country_code ?? null);
+    setAddressCountry(editProject.address?.country ?? '');
     if (editProfile) {
       setPreset(editProfile.profile.preset || 'custom');
       setActivity(editProfile.profile.activity ?? []);
@@ -805,11 +616,11 @@ export function CreateProjectModal({
     step > 1 ||
     trimmedName.length > 0 ||
     !!form.description ||
-    !!form.region ||
-    !!form.currency ||
+    form.region !== BULGARIAN_PROJECT_DEFAULTS.region ||
+    form.currency !== BULGARIAN_PROJECT_DEFAULTS.currency ||
     !!form.classification_standard ||
     addressStreet !== '' || addressCity !== '' ||
-    addressCountry !== '' || addressPostal !== '';
+    addressCountry !== 'Bulgaria' || addressPostal !== '';
 
   // Move focus into the step body when the step changes so keyboard /
   // screen-reader users land on the new content (step 1 keeps the
@@ -872,7 +683,7 @@ export function CreateProjectModal({
     phases,
     role,
     size,
-    region: REGION_TO_PACK[form.region ?? ''] ?? '',
+    region: isEdit ? (editProfile?.profile.region ?? '') : '',
     language: form.locale || 'en',
     extensions_enabled: [],
     focus_mode_enabled: focusMode,
@@ -1473,7 +1284,7 @@ export function CreateProjectModal({
                         {t('projects.create.grp_localization_title', { defaultValue: 'Classification & localization' })}
                       </p>
                       <p className="text-[11px] text-content-tertiary">
-                        {t('projects.create.grp_localization_sub', { defaultValue: 'Region, standard, currency and language. Optional - editable later.' })}
+                        {t('projects.bulgaria.defaults', { defaultValue: 'Bulgaria and EUR are set automatically. Choose the document language below.' })}
                       </p>
                     </div>
                   </div>
@@ -1485,6 +1296,7 @@ export function CreateProjectModal({
                       optionalText={t('projects.create.optional_badge', { defaultValue: 'Optional' })}
                       value={form.region ?? ''}
                       groups={REGION_GROUPS}
+                      disabled
                       placeholder={t('projects.select_region', { defaultValue: '-- Select region --' })}
                       onChange={(v) => set('region', v)}
                     />
@@ -1497,6 +1309,7 @@ export function CreateProjectModal({
                       />
                     )}
                   </div>
+                  {isEdit && (
                   <div>
                     <GroupedSelectField
                       label={t('projects.classification_standard', { defaultValue: 'Classification Standard' })}
@@ -1504,6 +1317,7 @@ export function CreateProjectModal({
                       optionalText={t('projects.create.optional_badge', { defaultValue: 'Optional' })}
                       value={form.classification_standard ?? ''}
                       groups={STANDARD_GROUPS}
+                      disabled
                       placeholder={t('projects.select_standard', { defaultValue: '-- Select standard --' })}
                       onChange={(v) => set('classification_standard', v)}
                     />
@@ -1516,6 +1330,7 @@ export function CreateProjectModal({
                       />
                     )}
                   </div>
+                  )}
                   <div>
                     <GroupedSelectField
                       label={t('projects.currency', { defaultValue: 'Currency' })}
@@ -1523,6 +1338,7 @@ export function CreateProjectModal({
                       optionalText={t('projects.create.optional_badge', { defaultValue: 'Optional' })}
                       value={form.currency ?? ''}
                       groups={CURRENCY_GROUPS}
+                      disabled={!isEdit}
                       placeholder={t('projects.select_currency', { defaultValue: '-- Select currency --' })}
                       onChange={(v) => set('currency', v)}
                     />
@@ -1689,7 +1505,7 @@ export function CreateProjectModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input type="text" value={addressStreet} onChange={(e) => setAddressStreet(e.target.value)} aria-label={t('projects.address_street', { defaultValue: 'Street & number' })} placeholder={t('projects.address_street', { defaultValue: 'Street & number' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
                     <input type="text" value={addressCity} onChange={(e) => setAddressCity(e.target.value)} aria-label={t('projects.address_city', { defaultValue: 'City' })} placeholder={t('projects.address_city', { defaultValue: 'City' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
-                    <input type="text" value={addressCountry} onChange={(e) => setAddressCountry(e.target.value)} aria-label={t('projects.address_country', { defaultValue: 'Country' })} placeholder={t('projects.address_country', { defaultValue: 'Country' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
+                    <input type="text" value={addressCountry} readOnly aria-label={t('projects.address_country', { defaultValue: 'Country' })} placeholder={t('projects.address_country', { defaultValue: 'Country' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
                     <input type="text" value={addressPostal} onChange={(e) => setAddressPostal(e.target.value)} aria-label={t('projects.address_postal', { defaultValue: 'Postal code' })} placeholder={t('projects.address_postal', { defaultValue: 'Postal code' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
                   </div>
                   <div className="flex items-center gap-4 pt-1 border-t border-border-light/60 mt-1">
@@ -1885,13 +1701,14 @@ export function CreateProjectModal({
           {/* Step 2 — Region & currency */}
           {mode === 'wizard' && step === 2 && (
             <div className="space-y-4">
-              <InfoHint text={t('projects.create_hint', { defaultValue: 'Region determines available cost databases and VAT rates. Classification standard defines the cost-structure schema for your BOQ. Currency sets all pricing in the BOQ.' })} />
+              <InfoHint text={t('projects.bulgaria.defaults', { defaultValue: 'Bulgaria and EUR are set automatically. Choose the document language below.' })} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <GroupedSelectField
                     label={t('projects.region', { defaultValue: 'Region' })}
                     value={form.region ?? ''}
                     groups={REGION_GROUPS}
+                      disabled
                     placeholder={t('projects.select_region', { defaultValue: '-- Select region --' })}
                     onChange={(v) => set('region', v)}
                   />
@@ -1904,11 +1721,13 @@ export function CreateProjectModal({
                     />
                   )}
                 </div>
+                {isEdit && (
                 <div>
                   <GroupedSelectField
                     label={t('projects.classification_standard', { defaultValue: 'Classification Standard' })}
                     value={form.classification_standard ?? ''}
                     groups={STANDARD_GROUPS}
+                      disabled
                     placeholder={t('projects.select_standard', { defaultValue: '-- Select standard --' })}
                     onChange={(v) => set('classification_standard', v)}
                   />
@@ -1921,6 +1740,7 @@ export function CreateProjectModal({
                     />
                   )}
                 </div>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1928,6 +1748,7 @@ export function CreateProjectModal({
                     label={t('projects.currency', { defaultValue: 'Currency' })}
                     value={form.currency ?? ''}
                     groups={CURRENCY_GROUPS}
+                      disabled={!isEdit}
                     placeholder={t('projects.select_currency', { defaultValue: '-- Select currency --' })}
                     onChange={(v) => set('currency', v)}
                   />
@@ -2157,7 +1978,7 @@ export function CreateProjectModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input type="text" value={addressStreet} onChange={(e) => setAddressStreet(e.target.value)} placeholder={t('projects.address_street', { defaultValue: 'Street & number' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
                   <input type="text" value={addressCity} onChange={(e) => setAddressCity(e.target.value)} placeholder={t('projects.address_city', { defaultValue: 'City' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
-                  <input type="text" value={addressCountry} onChange={(e) => setAddressCountry(e.target.value)} placeholder={t('projects.address_country', { defaultValue: 'Country' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
+                  <input type="text" value={addressCountry} readOnly placeholder={t('projects.address_country', { defaultValue: 'Country' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
                   <input type="text" value={addressPostal} onChange={(e) => setAddressPostal(e.target.value)} placeholder={t('projects.address_postal', { defaultValue: 'Postal code' })} className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent" />
                 </div>
                 <div className="flex items-center gap-4 pt-1 border-t border-border-light/60 mt-2">
@@ -2529,11 +2350,12 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 // ── Grouped Select (with <optgroup>) ──────────────────────────────────────
 
 function GroupedSelectField({
-  label, value, groups, placeholder, onChange, optional, optionalText,
+  label, value, groups, placeholder, onChange, optional, optionalText, disabled,
 }: {
   label: string;
   value: string;
   groups: OptionGroup[];
+  disabled?: boolean;
   placeholder?: string;
   onChange: (v: string) => void;
   optional?: boolean;
@@ -2552,6 +2374,8 @@ function GroupedSelectField({
       </label>
       <select
         value={value}
+        disabled={disabled}
+        aria-label={label}
         onChange={(e) => onChange(e.target.value)}
         className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary transition-all duration-fast ease-oe focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent hover:border-content-tertiary cursor-pointer appearance-none"
       >
@@ -2559,6 +2383,9 @@ function GroupedSelectField({
           <option value="" disabled>
             {placeholder}
           </option>
+        )}
+        {value && !groups.some((g) => g.options.some((o) => o.value === value)) && (
+          <option value={value}>{value}</option>
         )}
         {groups.map((g) => (
           <optgroup key={g.group} label={t(`projects.group_${g.group.toLowerCase().replace(/[^a-z0-9]/g, '_')}`, { defaultValue: g.group })}>
@@ -2598,9 +2425,13 @@ function SelectField({
       </label>
       <select
         value={value}
+        aria-label={label}
         onChange={(e) => onChange(e.target.value)}
         className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 text-sm text-content-primary transition-all duration-fast ease-oe focus:outline-none focus:ring-2 focus:ring-oe-blue focus:border-transparent hover:border-content-tertiary cursor-pointer appearance-none"
       >
+        {value && !options.some((option) => option.value === value) && (
+          <option value={value}>{value}</option>
+        )}
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}

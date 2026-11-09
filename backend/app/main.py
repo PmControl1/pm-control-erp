@@ -4072,11 +4072,12 @@ def create_app() -> FastAPI:
         """Return the list of available demo project templates."""
         from app.core.demo_projects import DEMO_CATALOG
         from app.core.demo_seed import seed_demo_enabled
+        from app.core.market_profile import MARKET_DEMO_IDS
 
         # PM Project Management: offer no demo projects while demo data is off.
         if not seed_demo_enabled():
             return []
-        return DEMO_CATALOG
+        return [entry for entry in DEMO_CATALOG if entry.get("demo_id") in MARKET_DEMO_IDS]
 
     @app.post("/api/demo/install/{demo_id}", tags=["System"])
     async def install_demo(
@@ -4092,6 +4093,7 @@ def create_app() -> FastAPI:
         """
         from app.core.demo_projects import DEMO_TEMPLATES, install_demo_project
         from app.core.demo_seed import seed_demo_enabled
+        from app.core.market_profile import MARKET_DEMO_IDS
         from app.database import async_session_factory
 
         if not seed_demo_enabled():
@@ -4099,10 +4101,10 @@ def create_app() -> FastAPI:
 
             raise HTTPException(status_code=404, detail="Demo projects are turned off on this installation.")
 
-        if demo_id not in DEMO_TEMPLATES:
+        if demo_id not in MARKET_DEMO_IDS or demo_id not in DEMO_TEMPLATES:
             from fastapi import HTTPException
 
-            valid = ", ".join(sorted(DEMO_TEMPLATES.keys()))
+            valid = ", ".join(sorted(MARKET_DEMO_IDS))
             raise HTTPException(
                 status_code=404,
                 detail=f"Unknown demo_id '{demo_id}'. Valid options: {valid}",

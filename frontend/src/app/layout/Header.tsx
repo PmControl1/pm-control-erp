@@ -6,7 +6,7 @@ import { useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search, ChevronDown, ChevronRight, LogOut, User, Settings, Menu, MessageSquarePlus, FolderOpen, CheckCircle2, XCircle, Bug, BookOpen, Loader2, Upload, HelpCircle, GraduationCap, Mail, ExternalLink, Github, Sun, Moon, Monitor, Globe } from 'lucide-react';
 import clsx from 'clsx';
-import { SUPPORTED_LANGUAGES, getLanguageByCode, changeLanguage } from '../i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES, getLanguageByCode, changeLanguage } from '../i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useUploadQueueStore } from '@/stores/useUploadQueueStore';

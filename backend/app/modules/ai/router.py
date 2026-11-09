@@ -33,6 +33,7 @@ from app.core.file_signature import (
     require as require_signature,
 )
 from app.core.i18n import get_locale
+from app.core.market_profile import MARKET_COST_REGION, MARKET_LOCALE
 from app.core.validation.messages import translate
 from app.dependencies import (
     CurrentUserId,
@@ -940,8 +941,8 @@ async def advisor_chat(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message is required")
 
     project_id = body.get("project_id")
-    region = body.get("region", "")
-    locale = body.get("locale", "en")
+    region = body.get("region") or MARKET_COST_REGION
+    locale = body.get("locale") or MARKET_LOCALE
     history: list[dict] = body.get("history", []) or []
 
     # R7 audit: when project_id is supplied (used to fetch project
@@ -981,7 +982,13 @@ async def advisor_chat(
         keywords = [w for w in message.split() if len(w) > 2]
         if keywords:
             conditions = [CostItem.description.ilike(f"%{kw}%") for kw in keywords[:5]]
-            stmt = select(CostItem).where(CostItem.is_active.is_(True), or_(*conditions)).limit(8)
+            # The SQL fallback must use the same market as vector search;
+            # old imported foreign prices must not leak into Bulgarian advice.
+            stmt = (
+                select(CostItem)
+                .where(CostItem.is_active.is_(True), CostItem.region == region, or_(*conditions))
+                .limit(8)
+            )
             result = await session.execute(stmt)
             items = result.scalars().all()
             for item in items:

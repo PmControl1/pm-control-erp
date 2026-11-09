@@ -94,60 +94,21 @@ describe('the country a browser names', () => {
   });
 });
 
-describe('the setup wizard defaults', () => {
-  function wizardFor(tag: string) {
-    browser(tag);
-    const ui = UI_LANGUAGE[tag]!;
-    const country = detectCountryForLanguage(ui);
-    return { offer: resolveCountryOffer(detectCountry(), []), data: suggestDataSetup(country, ui) };
-  }
+describe('the Bulgarian setup wizard defaults', () => {
+  it.each(['en-CA', 'fr-CA', 'en-US', 'de-DE', 'pt-BR', 'en-NZ', 'de-AT', 'is-IS'])(
+    'keeps Bulgarian setup for browser %s', (tag) => {
+      browser(tag);
+      expect(suggestDataSetup(detectCountry(), UI_LANGUAGE[tag] ?? 'en')).toEqual({
+        region: 'BG_SOFIA', packId: 'bg',
+      });
+    },
+  );
 
-  it('offers Canada, its preset and the Toronto base, to an en-CA browser', () => {
-    const { offer, data } = wizardFor('en-CA');
-    expect(offer?.kind === 'preset' && offer.preset.id).toBe('ca');
-    expect(data).toEqual({ region: 'ENG_TORONTO', packId: 'ca' });
-  });
-
-  it('offers Canada to a fr-CA browser too', () => {
-    const { offer, data } = wizardFor('fr-CA');
-    expect(offer?.kind === 'preset' && offer.preset.id).toBe('ca');
-    expect(data).toEqual({ region: 'ENG_TORONTO', packId: 'ca' });
-  });
-
-  it('offers the United States to en-US', () => {
-    expect(wizardFor('en-US').data).toEqual({ region: 'USA_USD', packId: 'us' });
-  });
-
-  it('offers Germany to de-DE', () => {
-    expect(wizardFor('de-DE').data).toEqual({ region: 'DE_BERLIN', packId: 'de' });
-  });
-
-  it('offers Brazil to pt-BR', () => {
-    const { data } = wizardFor('pt-BR');
-    expect(data.packId).toBe('br');
-  });
-
-  it('offers New Zealand its own preset and base', () => {
-    expect(wizardFor('en-NZ').data).toEqual({ region: 'NZ_AUCKLAND', packId: 'nz' });
-  });
-
-  it('offers de-AT no Austrian preset, because there is none, and falls back to the language', () => {
-    const { offer, data } = wizardFor('de-AT');
-    expect(offer).toBeNull();
-    // Austria has no preset and no base of its own; the German-language
-    // suggestion is what a German reader was offered before.
-    expect(data).toEqual({ region: 'DE_BERLIN', packId: 'de' });
-  });
-
-  it('gives a region with no data of its own the language suggestion and no country offer', () => {
-    const { offer, data } = wizardFor('is-IS');
-    expect(offer).toBeNull();
-    expect(data).toEqual(suggestDataSetup(null, 'en'));
-  });
-
-  it('files Britain under its preset id, not its ISO code', () => {
-    expect(suggestDataSetup('gb', 'en').packId).toBe('uk');
-    expect(suggestDataSetup('gb', 'en').region).toBe('UK_GBP');
+  it('offers the Bulgarian preset without a browser country', () => {
+    expect(suggestDataSetup(null, 'en')).toEqual({ region: 'BG_SOFIA', packId: 'bg' });
+    expect(resolveCountryOffer('bg', [])).toEqual({
+      kind: 'preset', preset: expect.objectContaining({ id: 'bg', locale: 'bg' }),
+    });
   });
 });
 

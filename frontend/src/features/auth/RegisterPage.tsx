@@ -9,7 +9,7 @@ import {
   Building2, Briefcase, Search,
 } from 'lucide-react';
 import { Button, Input, LogoWithText, CountryFlag } from '@/shared/ui';
-import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES, getLanguageByCode } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { readRememberChoice, useAuthStore } from '@/stores/useAuthStore';
 import { TEST_BUILD } from '@/shared/brand';

@@ -28,7 +28,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@/app/i18n', () => ({
-  SUPPORTED_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
+  MARKET_UI_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
 }));
 
 // The marketing background animates on a setInterval and has no bearing on

@@ -7,7 +7,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.core.market_profile import MARKET_COST_REGION, MARKET_DEMO_IDS
 
 
 class ProvisionRequest(BaseModel):
@@ -20,12 +22,28 @@ class ProvisionRequest(BaseModel):
 
     region: str | None = Field(
         default=None,
-        description="Regional cost base id to import, e.g. 'TR_TRY'. None to skip.",
+        description="Bulgarian cost base id (BG_SOFIA). None to skip the optional download.",
     )
     demo_ids: list[str] = Field(
         default_factory=list,
         description="Sample project ids to install.",
     )
+
+    @field_validator("region")
+    @classmethod
+    def _bulgarian_cost_base(cls, value: str | None) -> str | None:
+        region = (value or "").strip().upper()
+        if region and region != MARKET_COST_REGION:
+            raise ValueError("Only the Bulgarian cost base (BG_SOFIA) is available in this product.")
+        return region or None
+
+    @field_validator("demo_ids")
+    @classmethod
+    def _bulgarian_samples(cls, value: list[str]) -> list[str]:
+        ids = [item.strip() for item in value if item.strip()]
+        if any(item not in MARKET_DEMO_IDS for item in ids):
+            raise ValueError("Only Bulgarian sample projects are available in this product.")
+        return ids
 
 
 class JobState(BaseModel):
@@ -67,6 +85,8 @@ class ProvisionResponse(BaseModel):
     """The jobs kicked off (or reused) by a provision call."""
 
     jobs: list[JobState] = Field(default_factory=list)
+    skipped_demo_ids: list[str] = Field(default_factory=list)
+    demo_skip_reason: str | None = None
 
 
 class StatusRequest(BaseModel):

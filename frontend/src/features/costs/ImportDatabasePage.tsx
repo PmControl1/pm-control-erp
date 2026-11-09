@@ -46,8 +46,6 @@ import {
   type CataloguesPayloadCatalogue,
 } from '@/features/match-elements/catalogues-payload';
 import { fetchCostCatalogs, type CostCatalog } from './api';
-import { ResourcePriceSheetPanel } from './ResourcePriceSheetPanel';
-import { RegionalPriceListImport } from './RegionalPriceListImport';
 import { MatchIndexSection } from './MatchIndexSection';
 import { BaseCatalogBrowser } from './BaseCatalogBrowser';
 import { BaseCatalogError } from './BaseCatalogError';
@@ -362,47 +360,7 @@ interface CWICRDatabase {
 }
 
 const CWICR_DATABASES: CWICRDatabase[] = [
-  { id: 'USA_USD', name: 'United States', city: 'New York', lang: 'English', currency: 'USD', flagId: 'us', parquetName: 'USA_USD' },
-  { id: 'UK_GBP', name: 'United Kingdom', city: 'London', lang: 'English', currency: 'GBP', flagId: 'gb', parquetName: 'UK_GBP' },
-  { id: 'DE_BERLIN', name: 'Germany / DACH', city: 'Berlin', lang: 'Deutsch', currency: 'EUR', flagId: 'de', parquetName: 'DE_BERLIN' },
-  { id: 'ENG_TORONTO', name: 'Canada / International', city: 'Toronto', lang: 'English', currency: 'CAD', flagId: 'ca', parquetName: 'ENG_TORONTO' },
-  { id: 'FR_PARIS', name: 'France', city: 'Paris', lang: 'Francais', currency: 'EUR', flagId: 'fr', parquetName: 'FR_PARIS' },
-  { id: 'SP_BARCELONA', name: 'Spain / Latin America', city: 'Barcelona', lang: 'Espanol', currency: 'EUR', flagId: 'es', parquetName: 'SP_BARCELONA' },
-  { id: 'PT_SAOPAULO', name: 'Brazil / Portugal', city: 'Sao Paulo', lang: 'Portugues', currency: 'BRL', flagId: 'br', parquetName: 'PT_SAOPAULO' },
-  { id: 'RU_STPETERSBURG', name: 'Russia / CIS', city: 'St. Petersburg', lang: 'Russian', currency: 'RUB', flagId: 'ru', parquetName: 'RU_STPETERSBURG' },
-  { id: 'AR_DUBAI', name: 'Middle East / Gulf', city: 'Dubai', lang: 'Arabic', currency: 'AED', flagId: 'ae', parquetName: 'AR_DUBAI' },
-  { id: 'ZH_SHANGHAI', name: 'China', city: 'Shanghai', lang: 'Chinese', currency: 'CNY', flagId: 'cn', parquetName: 'ZH_SHANGHAI' },
-  { id: 'HI_MUMBAI', name: 'India / South Asia', city: 'Mumbai', lang: 'Hindi', currency: 'INR', flagId: 'in', parquetName: 'HI_MUMBAI' },
-  // Added 2026-04-28 — DDC CWICR repo grew from 11 to 30 country folders.
-  { id: 'AU_SYDNEY', name: 'Australia', city: 'Sydney', lang: 'English', currency: 'AUD', flagId: 'au', parquetName: 'AU_SYDNEY' },
-  { id: 'NZ_AUCKLAND', name: 'New Zealand', city: 'Auckland', lang: 'English', currency: 'NZD', flagId: 'nz', parquetName: 'NZ_AUCKLAND' },
-  { id: 'IT_ROME', name: 'Italy', city: 'Rome', lang: 'Italiano', currency: 'EUR', flagId: 'it', parquetName: 'IT_ROME' },
-  { id: 'NL_AMSTERDAM', name: 'Netherlands', city: 'Amsterdam', lang: 'Nederlands', currency: 'EUR', flagId: 'nl', parquetName: 'NL_AMSTERDAM' },
-  { id: 'PL_WARSAW', name: 'Poland', city: 'Warsaw', lang: 'Polski', currency: 'PLN', flagId: 'pl', parquetName: 'PL_WARSAW' },
-  { id: 'CS_PRAGUE', name: 'Czech Republic', city: 'Prague', lang: 'Cestina', currency: 'CZK', flagId: 'cz', parquetName: 'CS_PRAGUE' },
-  { id: 'HR_ZAGREB', name: 'Croatia', city: 'Zagreb', lang: 'Hrvatski', currency: 'EUR', flagId: 'hr', parquetName: 'HR_ZAGREB' },
   { id: 'BG_SOFIA', name: 'Bulgaria', city: 'Sofia', lang: 'Balgarski', currency: 'BGN', flagId: 'bg', parquetName: 'BG_SOFIA' },
-  { id: 'RO_BUCHAREST', name: 'Romania', city: 'Bucharest', lang: 'Romana', currency: 'RON', flagId: 'ro', parquetName: 'RO_BUCHAREST' },
-  { id: 'SV_STOCKHOLM', name: 'Sweden', city: 'Stockholm', lang: 'Svenska', currency: 'SEK', flagId: 'se', parquetName: 'SV_STOCKHOLM' },
-  { id: 'TR_ISTANBUL', name: 'Türkiye', city: 'Istanbul', lang: 'Türkçe', currency: 'TRY', flagId: 'tr', parquetName: 'TR_ISTANBUL' },
-  { id: 'JA_TOKYO', name: 'Japan', city: 'Tokyo', lang: 'Nihongo', currency: 'JPY', flagId: 'jp', parquetName: 'JA_TOKYO' },
-  { id: 'KO_SEOUL', name: 'South Korea', city: 'Seoul', lang: 'Hangugeo', currency: 'KRW', flagId: 'kr', parquetName: 'KO_SEOUL' },
-  { id: 'TH_BANGKOK', name: 'Thailand', city: 'Bangkok', lang: 'Thai', currency: 'THB', flagId: 'th', parquetName: 'TH_BANGKOK' },
-  { id: 'VI_HANOI', name: 'Vietnam', city: 'Hanoi', lang: 'Tieng Viet', currency: 'VND', flagId: 'vn', parquetName: 'VI_HANOI' },
-  { id: 'ID_JAKARTA', name: 'Indonesia', city: 'Jakarta', lang: 'Bahasa Indonesia', currency: 'IDR', flagId: 'id', parquetName: 'ID_JAKARTA' },
-  { id: 'MX_MEXICOCITY', name: 'Mexico', city: 'Mexico City', lang: 'Espanol', currency: 'MXN', flagId: 'mx', parquetName: 'MX_MEXICOCITY' },
-  { id: 'ZA_JOHANNESBURG', name: 'South Africa', city: 'Johannesburg', lang: 'English', currency: 'ZAR', flagId: 'za', parquetName: 'ZA_JOHANNESBURG' },
-  { id: 'NG_LAGOS', name: 'Nigeria', city: 'Lagos', lang: 'English', currency: 'NGN', flagId: 'ng', parquetName: 'NG_LAGOS' },
-  // Authentic national / regional official bases - loaded from the local
-  // WORLD_COST_BASES parquet (official government sources), not GitHub snapshots.
-  { id: 'ZH_CHINA', name: 'China (Dinge)', city: 'National', lang: 'Chinese', currency: 'CNY', flagId: 'cn', parquetName: 'ZH_CHINA' },
-  { id: 'TR_NATIONAL', name: 'Türkiye (Birim Fiyat)', city: 'National', lang: 'Türkçe', currency: 'TRY', flagId: 'tr', parquetName: 'TR' },
-  { id: 'BR_NATIONAL', name: 'Brazil (SINAPI)', city: 'National', lang: 'Portugues', currency: 'BRL', flagId: 'br', parquetName: 'BR' },
-  { id: 'ES_ANDALUCIA', name: 'Spain (BCCA)', city: 'Andalucia', lang: 'Espanol', currency: 'EUR', flagId: 'es', parquetName: 'ES_ANDALUCIA' },
-  { id: 'IT_TOSCANA', name: 'Italy (Toscana)', city: 'Toscana', lang: 'Italiano', currency: 'EUR', flagId: 'it', parquetName: 'IT_TOSCANA' },
-  { id: 'VN_NATIONAL', name: 'Vietnam (Dinh Muc)', city: 'National', lang: 'Tieng Viet', currency: 'VND', flagId: 'vn', parquetName: 'VN' },
-  { id: 'ID_NATIONAL', name: 'Indonesia (AHSP)', city: 'National', lang: 'Bahasa Indonesia', currency: 'IDR', flagId: 'id', parquetName: 'ID' },
-  { id: 'GR_NATIONAL', name: 'Greece (GGDE)', city: 'National', lang: 'Ellinika', currency: 'EUR', flagId: 'gr', parquetName: 'GR' },
 ];
 
 /** Mini flag component — uses bundled inline SVGs */
@@ -2998,11 +2956,8 @@ export function ImportDatabasePage() {
                 {t('costs_import.cwicr_title', { defaultValue: 'CWICR Construction Cost Database' })}
               </h3>
               <p className="text-xs text-content-tertiary">
-                {t('costs_import.cwicr_stats', {
-                  defaultValue: '{{items}} items per region · {{fields}} fields · {{databases}} databases · by Data Driven Construction',
-                  items: (55719).toLocaleString(i18n.language),
-                  fields: 85,
-                  databases: 48,
+                {t('costs_import.bg_catalogue_source', {
+                  defaultValue: 'Sofia reference catalogue · by Data Driven Construction',
                 })}
               </p>
             </div>
@@ -3010,9 +2965,9 @@ export function ImportDatabasePage() {
         </div>
         <div className="px-6 pb-5">
           <p className="text-xs text-content-secondary mb-4">
-            {t('costs_import.cwicr_desc', {
+            {t('costs_import.bg_catalogue_desc', {
               defaultValue:
-                'Select your region to load the professional pricing database. One click gives instant access to 55,000+ construction cost items with labor, materials and equipment rates. USA and UK databases are downloaded from GitHub if not available locally.',
+                'Load the Bulgarian Sofia reference catalogue, or upload your own КСС and supplier prices below. Source rates keep their original currency.',
             })}
           </p>
           <CWICRDatabaseGrid onLoadDatabase={handleFile} />
@@ -3024,13 +2979,6 @@ export function ImportDatabasePage() {
 
       {/* Loaded Databases section */}
       <LoadedDatabasesSection />
-
-      {/* Resource prices - price the coefficient bases (Vietnam Dinh Muc,
-          Indonesia AHSP) so their zero-rate work items become estimable. */}
-      <ResourcePriceSheetPanel />
-
-      {/* Regional price lists (prezzari regionali) from the file the region publishes. */}
-      <RegionalPriceListImport />
 
       {/* An imported price list becomes searchable by CAD-BIM Match once indexed. */}
       <MatchIndexSection />

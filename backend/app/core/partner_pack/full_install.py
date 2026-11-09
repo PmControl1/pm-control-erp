@@ -675,10 +675,6 @@ def _demo_install_list(slug: str, demo_count: int, country_fill: bool = True) ->
 
 async def _step_demos(slug: str, demo_count: int) -> StepResult:
     """Step 5 - install the pack's country demos (idempotent, fail-soft)."""
-    from app.core.demo_projects import DEMO_TEMPLATES, install_demo_project
-    from app.core.partner_pack.discovery import get_pack_by_slug
-    from app.database import async_session_factory
-
     # Zero is the activation dialog's unticked "install the sample project".
     # The pinned-list rule below used to lift it back up to every pinned demo,
     # so a pack that pins its demos installed them after the user said no.
@@ -688,6 +684,23 @@ async def _step_demos(slug: str, demo_count: int) -> StepResult:
             status="skipped",
             detail={"reason": "demo projects not requested", "reason_code": "not_requested", "installed": []},
         )
+
+    from app.core.demo_seed import seed_demo_enabled
+
+    if not seed_demo_enabled():
+        return StepResult(
+            step="demos",
+            status="skipped",
+            detail={
+                "reason": "demo projects are turned off on this installation",
+                "reason_code": "demo_disabled",
+                "installed": [],
+            },
+        )
+
+    from app.core.demo_projects import DEMO_TEMPLATES, install_demo_project
+    from app.core.partner_pack.discovery import get_pack_by_slug
+    from app.database import async_session_factory
 
     # A pack that explicitly pins its own demo_template_ids should install ALL
     # of them, even when the caller's demo_count default sits below that count.
@@ -1146,8 +1159,7 @@ async def full_install_stream(
             },
         )
 
-    # ``ok`` means "everything we attempted succeeded". Unlike the batch
-    # ``full_install`` (which hard-requires a demo), the in-app activate dialog
+    # ``ok`` means "everything we attempted succeeded". The in-app activate dialog
     # lets the admin opt out of demos and load packs that ship no cost data, so
     # a step that was intentionally skipped must not flip the whole run to
     # "partial". ``ok`` is therefore: apply succeeded AND no step ERRORED. A
@@ -1183,8 +1195,8 @@ async def full_install(
     """Run the five-step one-click install for ``req.slug`` (DESIGN §5).
 
     Each step is fully fail-soft; the call always returns the §5 response.
-    ``ok`` is true iff apply_pack succeeded, at least one demo installed, and the
-    cost step did not error.
+    ``ok`` is true when apply and costs succeeded, and optional demos were
+    installed or deliberately skipped by the user or deployment settings.
     """
     slug = req.slug
     steps: list[StepResult] = []
@@ -1227,7 +1239,9 @@ async def full_install(
     steps.append(demos_step)
 
     apply_ok = apply_result.status == "ok"
-    demos_ok = demos_step.status == "ok" and bool(demos_step.detail.get("installed"))
+    demos_ok = (demos_step.status == "ok" and bool(demos_step.detail.get("installed"))) or (
+        demos_step.status == "skipped" and demos_step.detail.get("reason_code") in {"not_requested", "demo_disabled"}
+    )
     # A cost base the pack asked for and did not get leaves a workspace with no
     # prices. That is not success, even with the demos in: the stream path
     # already reads it that way and the batch path now agrees.

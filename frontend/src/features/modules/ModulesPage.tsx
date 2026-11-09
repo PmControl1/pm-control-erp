@@ -716,17 +716,7 @@ function DataPackagesTab() {
   }, [modules]);
 
   const CATALOG_ID_TO_REGION: Record<string, string> = {
-    'catalog-ar-dubai': 'AR_DUBAI',
-    'catalog-de-berlin': 'DE_BERLIN',
-    'catalog-en-toronto': 'ENG_TORONTO',
-    'catalog-sp-barcelona': 'SP_BARCELONA',
-    'catalog-fr-paris': 'FR_PARIS',
-    'catalog-hi-mumbai': 'HI_MUMBAI',
-    'catalog-pt-saopaulo': 'PT_SAOPAULO',
-    'catalog-ru-stpetersburg': 'RU_STPETERSBURG',
-    'catalog-uk-gbp': 'UK_GBP',
-    'catalog-usa-usd': 'USA_USD',
-    'catalog-zh-shanghai': 'ZH_SHANGHAI',
+    'catalog-bg-sofia': 'BG_SOFIA',
   };
 
   async function handleInstallClick(mod: MarketplaceModule): Promise<void> {

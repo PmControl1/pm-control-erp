@@ -3,6 +3,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { useTranslation as useI18nTranslation } from 'react-i18next';
+import { MARKET_UI_LANGUAGE_CODES } from '@/shared/lib/marketProfile';
 
 export const SUPPORTED_LANGUAGES = [
   // Plain English names no region, and the two entries under it are how a
@@ -96,6 +97,12 @@ export const SUPPORTED_LANGUAGES = [
   // below.
   { code: 'uz', name: 'Oʻzbekcha', english: 'Uzbek', flag: '🇺🇿', country: 'uz' },
 ];
+
+/** The Bulgarian product offers one local language and an English fallback.
+ * The complete registry remains available to shared locale/format readers. */
+export const MARKET_UI_LANGUAGES = MARKET_UI_LANGUAGE_CODES.map(
+  (code) => SUPPORTED_LANGUAGES.find((language) => language.code === code)!,
+);
 
 export function getLanguageByCode(code: string): (typeof SUPPORTED_LANGUAGES)[number] {
   return SUPPORTED_LANGUAGES.find((l) => l.code === code) ?? SUPPORTED_LANGUAGES[0]!;
@@ -297,10 +304,9 @@ const loadedLocales = new Set<string>(['en']);
 
 // Keep unfinished Mongolian source available to translation tests without
 // shipping a chunk for a language the runtime deliberately does not offer.
-const localeLoaders = import.meta.glob<{ default: { translation: Record<string, string> } }>([
-  './locales/*.ts',
-  '!./locales/mn.ts',
-]);
+const localeLoaders = import.meta.env.PROD
+  ? import.meta.glob<{ default: { translation: Record<string, string> } }>(['./locales/bg.ts', './locales/en.ts'])
+  : import.meta.glob<{ default: { translation: Record<string, string> } }>(['./locales/*.ts', '!./locales/mn.ts']);
 
 /**
  * Load and register exactly one locale chunk. Never throws.
@@ -450,62 +456,24 @@ export function applyModuleTranslations(
   }
 }
 
-/**
- * Resolve the initial UI language.
- *
- * Priority chain (first match wins):
- *   1. ``?lang=`` URL query param (validated against ``SUPPORTED_LANGUAGES``).
- *      If valid we also persist it to ``localStorage`` so the choice survives
- *      a refresh after the param is dropped from the URL.
- *   2. ``localStorage`` (``i18nextLng`` key) — last user choice.
- *   3. ``navigator.language`` — best-effort browser default.
- *   4. ``'en'`` — final fallback.
- *
- * SSR-safe: every ``window`` / ``localStorage`` / ``navigator`` access is
- * guarded so the function returns ``'en'`` when called outside a browser.
- */
+/** Start in Bulgarian unless this browser explicitly chose Bulgarian or English. */
 export function resolveInitialLanguage(): string {
-  const supported = SUPPORTED_LANGUAGES.map((l) => l.code);
   const isValid = (code: string | null | undefined): code is string =>
-    !!code && supported.includes(code);
+    !!code && MARKET_UI_LANGUAGE_CODES.includes(code);
+  if (typeof window === 'undefined') return 'bg';
 
-  if (typeof window === 'undefined') return 'en';
-
-  // 1. URL ?lang= param wins — useful for shareable localised links.
+  // A deliberate supported choice wins; a browser's foreign locale does not
+  // change the market or the first-run language of the Bulgarian product.
   try {
-    const urlLang = new URLSearchParams(window.location.search).get('lang');
-    if (isValid(urlLang)) {
-      try {
-        window.localStorage.setItem('i18nextLng', urlLang);
-      } catch {
-        // localStorage unavailable (private browsing) — non-fatal.
-      }
-      return urlLang;
+    const requested = new URLSearchParams(window.location.search).get('lang');
+    if (isValid(requested)) {
+      try { window.localStorage.setItem('i18nextLng', requested); } catch { /* unavailable */ }
+      return requested;
     }
-  } catch {
-    // URL parsing failure — fall through to next source.
-  }
-
-  // 2. Stored preference from a previous session.
-  try {
     const stored = window.localStorage.getItem('i18nextLng');
     if (isValid(stored)) return stored;
-  } catch {
-    // localStorage unavailable — fall through.
-  }
-
-  // 3. Browser locale. Asks for the full code BEFORE stripping the region,
-  //    because for five of the languages we ship the region is the whole
-  //    point: pt-BR and pt are different files and plain "pt" is European
-  //    Portuguese. Stripping first meant every Brazilian first run opened in
-  //    Portugal's Portuguese and every Mexican one in Spain's Spanish, with
-  //    the regional file sitting right there unused. "de-CH" still resolves
-  //    to "de", because we ship no de-CH.
-  const browserMatch = matchSupportedLanguage(navigator.language);
-  if (browserMatch) return browserMatch;
-
-  // 4. Final fallback.
-  return 'en';
+  } catch { /* private browsing can deny localStorage */ }
+  return 'bg';
 }
 
 /**
@@ -540,8 +508,10 @@ export function applyDocumentDirection(code: string): void {
 export const languageChosenHere: boolean = (() => {
   if (typeof window === 'undefined') return false;
   try {
-    if (new URLSearchParams(window.location.search).get('lang')) return true;
-    return window.localStorage.getItem('i18nextLng') !== null;
+    const requested = new URLSearchParams(window.location.search).get('lang');
+    if (requested && MARKET_UI_LANGUAGE_CODES.includes(requested)) return true;
+    const stored = window.localStorage.getItem('i18nextLng');
+    return !!stored && MARKET_UI_LANGUAGE_CODES.includes(stored);
   } catch {
     return false;
   }

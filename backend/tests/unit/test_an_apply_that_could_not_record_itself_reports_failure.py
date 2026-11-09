@@ -2,10 +2,10 @@
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 """Applying a pack that could not be recorded must not come back as applied.
 
-``pack_state.json`` is the whole of "a pack is applied". ``get_active_pack``
-reads that file and nothing else remembers the decision, so a write that does
-not land means the pack is not active: no co-branding, no default locale, no
-inherited rule sets, no scoped workspace.
+``pack_state.json`` records an explicit pack application. ``get_selected_pack``
+reads that decision; the product's Bulgarian runtime baseline remains active
+even when no application has been recorded. A write that does not land must
+still fail instead of reporting an explicit application that never happened.
 
 The write was logged and swallowed, and ``apply_pack`` returned
 ``{"applied": True, ...}`` regardless. Measured on this tree before the fix, an
@@ -89,23 +89,25 @@ async def test_apply_does_not_report_a_pack_it_could_not_record(
     from app.core.partner_pack.apply import apply_pack
     from app.core.partner_pack.discovery import get_pack_by_slug
 
-    if get_pack_by_slug("hungary-hu") is None:
-        pytest.skip("hungary-hu is not discoverable in this layout")
+    assert get_pack_by_slug("bulgaria-bg") is not None
 
     monkeypatch.setenv("OE_CLI_DATA_DIR", str(tmp_path))
+    monkeypatch.delenv("OE_PACK", raising=False)
+    monkeypatch.delenv("OE_PARTNER_PACK", raising=False)
 
     def no_space(self: Path, *args: object, **kwargs: object) -> int:
         raise OSError(28, "No space left on device")
 
     monkeypatch.setattr(Path, "write_text", no_space)
     with pytest.raises(PackStateWriteError):
-        await apply_pack("hungary-hu", install_demo=False, actor="test")
+        await apply_pack("bulgaria-bg", install_demo=False, actor="test")
 
     monkeypatch.undo()
     monkeypatch.setenv("OE_CLI_DATA_DIR", str(tmp_path))
     assert load_applied_state() is None
 
-    from app.core.partner_pack.discovery import get_active_pack, reset_cache
+    from app.core.partner_pack.discovery import get_active_pack, get_selected_pack, reset_cache
 
     reset_cache()
-    assert get_active_pack() is None
+    assert get_selected_pack() is None
+    assert get_active_pack().slug == "bulgaria-bg"

@@ -72,7 +72,7 @@ import {
 } from 'lucide-react';
 
 import { BetaBanner, ModuleGuideButton } from '@/shared/ui';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 
 import { buyerPortalGuide } from './buyerPortalGuide';

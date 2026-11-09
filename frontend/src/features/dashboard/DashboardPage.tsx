@@ -14,7 +14,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useHasPermission } from '@/shared/lib/permissionGates';
 import { useMeOnboardingQueryKey } from '@/app/layout/meOnboardingQuery';
 import { fmtList, fmtFixed } from '@/shared/lib/formatters';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { uploadDocument, fetchDocuments, type DocumentItem } from '@/features/documents/api';
 import { CostDatabaseInvite } from '@/features/costs/CostDatabaseInvite';
 import {

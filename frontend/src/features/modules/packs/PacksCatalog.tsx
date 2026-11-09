@@ -29,14 +29,12 @@ import {
 } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { PackEmblem } from '@/shared/ui/PackEmblem';
-import { detectCountry } from '@/app/i18n';
 import { fmtDate, fmtList } from '@/shared/lib/formatters';
 import { packNameSlug, packSummary } from '@/shared/lib/regionalPack';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { PartnerPackApplyDialog } from '../PartnerPackApplyDialog';
 import { PartnerPackDeactivateDialog } from '../PartnerPackDeactivateDialog';
-import { canInstallPacks, useAppliedPack, useInstalledPackList, type AppliedInfo } from '../partnerPacks';
+import { useAppliedPack, useInstalledPackList, type AppliedInfo } from '../partnerPacks';
 import {
   buildPackEntries,
   filterPackEntries,
@@ -56,7 +54,8 @@ import {
   type PackGroup,
 } from './packCatalog';
 import { PackCard } from './PackCard';
-import { InstallPackPanel, ViewerPackNotice } from './InstallPackPanel';
+import { InstallPackPanel } from './InstallPackPanel';
+import { bulgarianCountryPacks } from '@/features/onboarding/bulgarianMarket';
 import {
   PACK_TYPE_META,
   useBandLabels,
@@ -76,8 +75,8 @@ export function usePackCatalogData() {
   const list = useInstalledPackList();
   const applied = useAppliedPack();
   const names = useDisplayNames();
-  const homeCountry = useMemo(() => detectCountry(), []);
-  const packs = useMemo(() => list.data?.installed ?? [], [list.data]);
+  const homeCountry = 'bg';
+  const packs = useMemo(() => bulgarianCountryPacks(list.data?.installed ?? []), [list.data]);
   const activeSlug = list.data?.active_slug ?? null;
   const activeSource: AppliedInfo['source'] = applied.data?.applied ? applied.data.source ?? null : null;
 
@@ -351,7 +350,8 @@ export function PacksCatalog({ embedded = false, spotlight: withSpotlight = embe
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const addToast = useToastStore((s) => s.addToast);
-  const canInstall = canInstallPacks(useAuthStore((s) => s.userRole));
+  // Bulgaria is supplied automatically; market switching and uploads are not product settings.
+  const canInstall = false;
   const { list, applied, entries, activeSlug, activeSource, names } = usePackCatalogData();
   const bandLabels = useBandLabels();
   const sortLabels = useSortLabels();
@@ -529,7 +529,6 @@ export function PacksCatalog({ embedded = false, spotlight: withSpotlight = embe
           <InstallPackPanel onChanged={() => void list.refetch()} />
         </div>
       )}
-      <ViewerPackNotice />
 
       {spotlight && (
         <ActivePackSpotlight

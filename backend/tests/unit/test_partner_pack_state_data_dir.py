@@ -19,7 +19,7 @@ from unittest.mock import patch
 import pytest
 
 from app.core.partner_pack import discovery
-from app.core.partner_pack.discovery import get_active_pack, reset_cache
+from app.core.partner_pack.discovery import get_selected_pack, reset_cache
 from app.core.partner_pack.manifest import PartnerPackManifest
 from app.core.partner_pack.state import (
     STATE_FILENAME,
@@ -104,11 +104,11 @@ class TestCustomDataDirIsolated:
         # custom-dir instance must stay vanilla.
         stale_manifest = PartnerPackManifest(slug="stale-pack", partner_name="Stale")
         with patch.object(discovery, "get_pack_by_slug", return_value=stale_manifest):
-            assert get_active_pack() is None
+            assert get_selected_pack() is None
 
 
 class TestActivePackCacheKeyedPerPath:
-    """get_active_pack memoizes per resolved state dir, not one global slot."""
+    """The generic selected-pack reader caches by data dir, not one global slot."""
 
     def test_two_data_dirs_get_independent_answers(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         dir_a = tmp_path / "data-a"
@@ -121,20 +121,20 @@ class TestActivePackCacheKeyedPerPath:
         }
         with patch.object(discovery, "get_pack_by_slug", side_effect=manifests.get):
             monkeypatch.setenv("OE_CLI_DATA_DIR", str(dir_a))
-            active_a = get_active_pack()
+            active_a = get_selected_pack()
             assert active_a is not None
             assert active_a.slug == "pack-aaa"
 
             # Switch the active dir WITHOUT clearing caches: a single global
             # memo would keep returning pack-aaa here.
             monkeypatch.setenv("OE_CLI_DATA_DIR", str(dir_b))
-            active_b = get_active_pack()
+            active_b = get_selected_pack()
             assert active_b is not None
             assert active_b.slug == "pack-bbb"
 
             # Both entries coexist in the cache - flipping back is consistent.
             monkeypatch.setenv("OE_CLI_DATA_DIR", str(dir_a))
-            again = get_active_pack()
+            again = get_selected_pack()
             assert again is not None
             assert again.slug == "pack-aaa"
 
@@ -144,11 +144,11 @@ class TestActivePackCacheKeyedPerPath:
         manifest = PartnerPackManifest(slug="pack-aaa", partner_name="Pack A")
         monkeypatch.setenv("OE_CLI_DATA_DIR", str(dir_a))
         with patch.object(discovery, "get_pack_by_slug", return_value=manifest):
-            active = get_active_pack()
+            active = get_selected_pack()
             assert active is not None
             assert active.slug == "pack-aaa"
 
         # Un-apply: file removed + reset_cache -> the cached entry must not survive.
         (dir_a / STATE_FILENAME).unlink()
         reset_cache()
-        assert get_active_pack() is None
+        assert get_selected_pack() is None

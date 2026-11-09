@@ -97,13 +97,13 @@ describe('EInvoiceSettings', () => {
     renderPanel();
 
     await screen.findByText('settings.einvoice.incomplete');
-    // Asserted as the one joined string rather than field by field, because
-    // each of these labels also appears on its own input and a loose match
-    // would find the form rather than the warning.
-    await screen.findByText(
-      'settings.einvoice.field.seller_name, settings.einvoice.field.seller_country_code, ' +
-        'settings.einvoice.field.seller_vat_id',
-    );
+    // All missing fields stay in the warning regardless of list punctuation
+    // in the active interface language.
+    const warning = screen.getByRole('status');
+    for (const field of ['seller_name', 'seller_country_code', 'seller_vat_id']) {
+      expect(warning).toHaveTextContent(`settings.einvoice.field.${field}`);
+    }
+    expect(screen.getByLabelText('settings.einvoice.field.seller_country_code')).toHaveValue('BG');
     expect(screen.queryByText('settings.einvoice.ready')).toBeNull();
   });
 

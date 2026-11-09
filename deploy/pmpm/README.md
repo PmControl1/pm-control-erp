@@ -14,6 +14,27 @@ builds anything: GitHub Actions builds the image on every merge to `main`
 | `restore.sh` | List backups, test-restore one safely, or restore for real. |
 | `systemd/` | Runs `backup.sh` every night. |
 
+## Bulgarian product defaults
+
+New projects use Bulgaria (`BG`), EUR and Bulgarian automatically. Bulgarian
+and English are offered in the interface, and the stock cost catalogue is
+Sofia (`BG_SOFIA`). The Bulgarian baseline also applies on a clean install;
+an old foreign pack selection cannot replace it.
+
+Existing projects, uploaded files and saved cost rows are preserved. Shared
+country metadata, importers and currency mappings remain available to read
+legacy data and international supplier documents. Sofia source prices retain
+their BGN provenance and use the fixed 1.95583 conversion into EUR. Applying
+the Bulgarian ДДС template remains an explicit estimator action.
+
+PDF and Excel documents use Bulgarian headings for Bulgarian-language
+projects. CSV and the Excel interchange metadata keep stable column names
+for imports and integrations.
+
+Unused foreign catalogue CSV/XLSX files are no longer shipped in the source
+tree or unified image. Sofia downloads on demand; its market label does not
+make the source catalogue a verified Bulgarian price book.
+
 ## 1. The server
 
 - **Size:** start with 4 vCPU, 8 GB RAM and 80 GB+ disk on Ubuntu 24.04;

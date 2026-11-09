@@ -62,22 +62,11 @@ def _router_at(package_root: Path) -> Path:
     return package_root / "app" / "modules" / "catalog" / "router.py"
 
 
-def test_the_repository_catalogue_directory_is_readable_at_all() -> None:
-    """Guard the instrument before the comparisons that lean on it.
-
-    Several assertions below are "this directory was accepted" and "that one was
-    not", and a shape check that never accepts anything would satisfy half of
-    them while measuring nothing. Prove the real tree passes first.
-    """
-    repo_root = Path(__file__).resolve().parents[3]
-    real = repo_root / "data" / "catalog" / "regions"
-    csvs = sorted(real.glob("DDC_CWICR_*_Catalog.csv")) if real.is_dir() else []
-    print(f"\n{len(csvs)} catalogue CSV(s) under {real}")
-    assert _is_local_catalog_dir(real), (
-        f"{real} is not recognised as a catalogue directory. Either the repository stopped carrying "
-        f"the generated catalogues or the shape check no longer matches their file names, and every "
-        f"other assertion in this file would then be comparing empty against empty."
-    )
+def test_a_bulgarian_catalogue_directory_is_readable(tmp_path: Path) -> None:
+    """An operator's Sofia catalogue works without bundled foreign datasets."""
+    catalog_dir = tmp_path / "data" / "catalog" / "regions"
+    _plant_catalog(catalog_dir, region="BG_SOFIA")
+    assert _is_local_catalog_dir(catalog_dir)
 
 
 def test_the_catalogue_dir_resolves_in_an_installed_layout(tmp_path: Path) -> None:

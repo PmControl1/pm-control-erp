@@ -7,7 +7,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
+
+from app.core.market_profile import (
+    MARKET_COUNTRY,
+    MARKET_CURRENCY,
+    MARKET_LOCALE,
+    MARKET_REGION,
+    bulgarian_project_defaults,
+)
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _CURRENCY_CODE_RE = re.compile(r"^[A-Z]{3}$")
@@ -487,6 +495,24 @@ class ProjectCreate(BaseModel):
     def _validate_contingency(cls, v: str | None) -> str | None:
         # A-PROJ-03: contingency is a 0–100 percentage.
         return _validate_percentage(v, "contingency_pct")
+
+
+class BulgariaProjectCreate(ProjectCreate):
+    """Public new-project request for the Bulgarian product.
+
+    ``ProjectCreate`` stays reusable by internal import and legacy workflows;
+    updating an existing project never applies these new-project defaults.
+    """
+
+    region: str = Field(default=MARKET_REGION, max_length=100, description="Bulgarian market (BG).")
+    currency: str = Field(default=MARKET_CURRENCY, max_length=10, description="Project currency (EUR).")
+    locale: str = Field(default=MARKET_LOCALE, max_length=10, description="Document/interface locale.")
+    country_code: str | None = Field(default=MARKET_COUNTRY, max_length=2, description="Project country (BG).")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_bulgarian_market(cls, value: Any) -> Any:
+        return bulgarian_project_defaults(value)
 
 
 class ProjectUpdate(BaseModel):

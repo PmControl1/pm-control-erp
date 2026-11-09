@@ -19,7 +19,7 @@
 //
 // Run:  npx vitest run src/features/onboarding/__tests__/countryPackVariant.test.tsx --maxWorkers=1
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -155,39 +155,15 @@ async function renderPicker(packs: unknown[]) {
       </MemoryRouter>
     </QueryClientProvider>,
   );
-  await screen.findAllByRole('button', { pressed: false });
+  await screen.findByText('Bulgaria');
 }
 
-describe('the ready-made grid for a Turkish first run', () => {
-  it.each(ORDERS)('opens on the plain pack and marks the variant: %s', async (_label, packs) => {
+describe('the Bulgarian product excludes foreign variants', () => {
+  it.each(ORDERS)('does not offer foreign country or variant tiles: %s', async (_label, packs) => {
     browser('tr-TR');
     await renderPicker(packs);
-
-    const pressed = screen.queryAllByRole('button', { pressed: true });
-    expect(pressed).toHaveLength(1);
-    expect(pressed[0]?.textContent).toMatch(/Turkey Construction Pack/);
-    expect(pressed[0]?.textContent).not.toMatch(/Specialised variant/);
-
-    // Exactly one tile carries the badge, and it is the variant's.
-    expect(screen.getByTestId('pack-variant-turkey-tr-mep').textContent).toBe('Specialised variant');
-    expect(screen.queryByTestId('pack-variant-turkey-tr')).toBeNull();
-
-    // The plain pack is neither a variant nor a pack that switches modules
-    // off, so the notes block has nothing true to say and is not drawn.
-    expect(screen.queryByTestId('pack-one-click-notes')).toBeNull();
-  });
-
-  it('says what the variant is and what one-click setup will not do, once it is chosen', async () => {
-    browser('tr-TR');
-    await renderPicker([...OTHERS, PLAIN, VARIANT]);
-
-    fireEvent.click(screen.getByTestId('pack-variant-turkey-tr-mep').closest('button')!);
-
-    const notes = screen.getByTestId('pack-one-click-notes').textContent ?? '';
-    expect(notes).toMatch(/Turkey MEP Contractor Pack is built on Turkey Construction Pack/);
-    expect(notes).toMatch(/If you are not sure, choose Turkey Construction Pack/);
-    // The count is the pack's own, not a number written into the sentence.
-    expect(notes).toContain(`(${HIDDEN.length} in total)`);
-    expect(notes).toMatch(/One-click setup leaves all of them on/);
+    expect(screen.queryByText('Turkey Construction Pack')).toBeNull();
+    expect(screen.queryByTestId('pack-variant-turkey-tr-mep')).toBeNull();
+    expect(screen.queryByText('Australia Construction Pack')).toBeNull();
   });
 });

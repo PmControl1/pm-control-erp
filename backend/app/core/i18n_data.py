@@ -149,6 +149,14 @@ REGION_GROUPS: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 
 COUNTRY_DEFAULTS: dict[str, dict[str, str]] = {
+    "BG": {
+        "currency": "EUR",
+        "measurement": "metric",
+        "paper": "A4",
+        "date_format": "DD.MM.YYYY",
+        "number_format": "1 234,56",
+        "locale": "bg",
+    },
     # DACH ----------------------------------------------------------------
     "DE": {
         "currency": "EUR",

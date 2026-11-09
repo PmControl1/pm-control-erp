@@ -33,6 +33,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { getErrorMessage } from '@/shared/lib/api';
 import { fetchProjectList } from '@/shared/lib/projectList';
 import { getCountry } from '@/shared/lib/countries';
+import { BULGARIAN_PROJECT_DEFAULTS } from '@/shared/lib/marketProfile';
 import {
   deleteHouseTypeCatalogue,
   fetchHouseTypes,
@@ -56,31 +57,13 @@ function listProjectsLite(): Promise<ProjectStub[]> {
   );
 }
 
-/** Short country list used only by the top-of-page filter (not the
- *  modal - the modal uses the full searchable picker). */
-const FILTER_COUNTRY_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: '', label: 'All / global' },
-  { value: 'DE', label: 'Deutschland (DE)' },
-  { value: 'US', label: 'United States (US)' },
-  { value: 'GB', label: 'United Kingdom (GB)' },
-  { value: 'RU', label: 'Россия (RU)' },
-  { value: 'TR', label: 'Türkiye (TR)' },
-  { value: 'FR', label: 'France (FR)' },
-  { value: 'ES', label: 'España (ES)' },
-  { value: 'IT', label: 'Italia (IT)' },
-  { value: 'PL', label: 'Polska (PL)' },
-  { value: 'JP', label: '日本 (JP)' },
-  { value: 'CN', label: '中国 (CN)' },
-  { value: 'SA', label: 'السعودية (SA)' },
-];
-
 export function HouseTypeSettingsPage() {
   const { t } = useTranslation();
   const dq = useDisplayQuantity();
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
 
-  const [filterCountry, setFilterCountry] = useState('');
+  const [filterCountry, setFilterCountry] = useState<string>(BULGARIAN_PROJECT_DEFAULTS.country_code);
   const [filterProject, setFilterProject] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<HouseTypeCatalogueEntry | null>(null);
@@ -178,11 +161,12 @@ export function HouseTypeSettingsPage() {
               onChange={(e) => setFilterCountry(e.target.value)}
               className={inputCls}
             >
-              {FILTER_COUNTRY_OPTIONS.map((c) => (
-                <option key={c.value || '_all_'} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
+              <option value={BULGARIAN_PROJECT_DEFAULTS.country_code}>България / Bulgaria</option>
+              <option value="">
+                {t('property_dev.house_type.all_countries', {
+                  defaultValue: 'All countries (including existing entries)',
+                })}
+              </option>
             </select>
           </div>
           <div>

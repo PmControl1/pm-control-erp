@@ -69,17 +69,19 @@ export interface EInvoiceSettingsPayload extends FormState {
   iban_countries?: string[];
 }
 
-const EMPTY: FormState = ALL_FIELDS.reduce((acc, f) => ({ ...acc, [f]: '' }), {} as FormState);
+const EMPTY: FormState = {
+  ...ALL_FIELDS.reduce((acc, f) => ({ ...acc, [f]: '' }), {} as FormState),
+  seller_country_code: 'BG',
+};
 
 // Notation, not prose. These are the shapes the standard itself prescribes, so
 // they read the same in every language and stay out of the locale files.
 const EXAMPLES: Partial<Record<FieldName, string>> = {
-  seller_vat_id: 'DE123456789',
-  seller_country_code: 'DE',
-  seller_contact_phone: '+49 30 1234560',
-  seller_electronic_address_scheme: '0204',
-  payee_iban: 'DE02 1203 0000 0000 2020 51',
-  payee_bic: 'COBADEFFXXX',
+  seller_vat_id: 'BG123456789',
+  seller_country_code: 'BG',
+  seller_contact_phone: '+359 32 123456',
+  payee_iban: 'BG80 BNBG 9661 1020 3456 78',
+  payee_bic: 'BNBGBGSD',
   payment_means_code: '30',
 };
 
@@ -124,7 +126,7 @@ export function EInvoiceSettings() {
   const [seededFrom, setSeededFrom] = useState<EInvoiceSettingsPayload | null>(null);
   if (data && data !== seededFrom) {
     setSeededFrom(data);
-    setForm(ALL_FIELDS.reduce((acc, f) => ({ ...acc, [f]: data[f] ?? '' }), {} as FormState));
+    setForm(ALL_FIELDS.reduce((acc, f) => ({ ...acc, [f]: data[f] || (f === 'seller_country_code' ? 'BG' : '') }), {} as FormState));
   }
 
   const save = useMutation({

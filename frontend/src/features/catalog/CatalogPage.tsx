@@ -148,53 +148,10 @@ interface CWICRRegionInfo {
   currency: string;
 }
 
-// The 30 CWICR metro catalogs DDC publishes (one per locale) plus the
-// authentic national / regional bases we generate locally. Keep this list in
-// sync with REGION_MAP in backend/app/modules/catalog/router.py (same region
-// ids).
+// The Bulgarian product offers the Sofia reference catalogue. Its source
+// rates are BGN; project-currency conversion is performed by the costing tools.
 const CWICR_REGIONS: CWICRRegionInfo[] = [
-  { id: 'USA_USD', name: 'United States', flagId: 'us', currency: 'USD' },
-  { id: 'UK_GBP', name: 'United Kingdom', flagId: 'gb', currency: 'GBP' },
-  { id: 'DE_BERLIN', name: 'Germany / DACH', flagId: 'de', currency: 'EUR' },
-  { id: 'ENG_TORONTO', name: 'Canada', flagId: 'ca', currency: 'CAD' },
-  { id: 'FR_PARIS', name: 'France', flagId: 'fr', currency: 'EUR' },
-  { id: 'SP_BARCELONA', name: 'Spain', flagId: 'es', currency: 'EUR' },
-  { id: 'IT_ROME', name: 'Italy', flagId: 'it', currency: 'EUR' },
-  { id: 'NL_AMSTERDAM', name: 'Netherlands', flagId: 'nl', currency: 'EUR' },
-  { id: 'PT_SAOPAULO', name: 'Brazil', flagId: 'br', currency: 'BRL' },
-  { id: 'MX_MEXICOCITY', name: 'Mexico', flagId: 'mx', currency: 'MXN' },
-  { id: 'RU_STPETERSBURG', name: 'Russia / CIS', flagId: 'ru', currency: 'RUB' },
-  { id: 'PL_WARSAW', name: 'Poland', flagId: 'pl', currency: 'PLN' },
-  { id: 'CS_PRAGUE', name: 'Czech Republic', flagId: 'cz', currency: 'CZK' },
-  { id: 'RO_BUCHAREST', name: 'Romania', flagId: 'ro', currency: 'RON' },
   { id: 'BG_SOFIA', name: 'Bulgaria', flagId: 'bg', currency: 'BGN' },
-  { id: 'HR_ZAGREB', name: 'Croatia', flagId: 'hr', currency: 'EUR' },
-  { id: 'SV_STOCKHOLM', name: 'Sweden', flagId: 'se', currency: 'SEK' },
-  { id: 'TR_ISTANBUL', name: 'Türkiye', flagId: 'tr', currency: 'TRY' },
-  { id: 'AR_DUBAI', name: 'Middle East', flagId: 'ae', currency: 'AED' },
-  { id: 'ZA_JOHANNESBURG', name: 'South Africa', flagId: 'za', currency: 'ZAR' },
-  { id: 'NG_LAGOS', name: 'Nigeria', flagId: 'ng', currency: 'NGN' },
-  { id: 'ZH_SHANGHAI', name: 'China', flagId: 'cn', currency: 'CNY' },
-  { id: 'JA_TOKYO', name: 'Japan', flagId: 'jp', currency: 'JPY' },
-  { id: 'KO_SEOUL', name: 'South Korea', flagId: 'kr', currency: 'KRW' },
-  { id: 'HI_MUMBAI', name: 'India', flagId: 'in', currency: 'INR' },
-  { id: 'TH_BANGKOK', name: 'Thailand', flagId: 'th', currency: 'THB' },
-  { id: 'VI_HANOI', name: 'Vietnam', flagId: 'vn', currency: 'VND' },
-  { id: 'ID_JAKARTA', name: 'Indonesia', flagId: 'id', currency: 'IDR' },
-  { id: 'AU_SYDNEY', name: 'Australia', flagId: 'au', currency: 'AUD' },
-  { id: 'NZ_AUCKLAND', name: 'New Zealand', flagId: 'nz', currency: 'NZD' },
-  // Authentic national / regional bases (official government sources). The
-  // four priced, coded bases have a browsable resource catalog; the two
-  // coefficient bases (Vietnam, Indonesia) are served by the resource
-  // price-sheet feature and appear here for base recognition.
-  { id: 'ZH_CHINA', name: 'China (Dinge)', flagId: 'cn', currency: 'CNY' },
-  { id: 'TR_NATIONAL', name: 'Türkiye (Birim Fiyat)', flagId: 'tr', currency: 'TRY' },
-  { id: 'BR_NATIONAL', name: 'Brazil (SINAPI)', flagId: 'br', currency: 'BRL' },
-  { id: 'ES_ANDALUCIA', name: 'Spain (BCCA)', flagId: 'es', currency: 'EUR' },
-  { id: 'IT_TOSCANA', name: 'Italy (Toscana)', flagId: 'it', currency: 'EUR' },
-  { id: 'GR_NATIONAL', name: 'Greece (GGDE)', flagId: 'gr', currency: 'EUR' },
-  { id: 'VN_NATIONAL', name: 'Vietnam (Dinh Muc)', flagId: 'vn', currency: 'VND' },
-  { id: 'ID_NATIONAL', name: 'Indonesia (AHSP)', flagId: 'id', currency: 'IDR' },
 ];
 
 /* ── API helpers ───────────────────────────────────────────────────────── */
@@ -2341,20 +2298,6 @@ export function CatalogPage() {
 
 /* ── Price Adjust Modal ──────────────────────────────────────────────── */
 
-// Published construction cost indices (German, UK, US national indices plus Eurostat) - stable data, kept outside component
-const PRICE_INDICES: Record<string, { label: string; rates: Record<string, number> }> = {
-  DE: { label: 'Germany', rates: { '2020': 3.2, '2021': 5.1, '2022': 14.6, '2023': 7.8, '2024': 4.2, '2025': 3.5, '2026': 3.0 } },
-  AT: { label: 'Austria', rates: { '2020': 2.8, '2021': 4.9, '2022': 12.3, '2023': 6.5, '2024': 3.8, '2025': 3.2, '2026': 2.8 } },
-  CH: { label: 'Switzerland', rates: { '2020': 1.5, '2021': 2.8, '2022': 6.2, '2023': 3.4, '2024': 2.5, '2025': 2.0, '2026': 1.8 } },
-  UK: { label: 'UK', rates: { '2020': 2.0, '2021': 8.5, '2022': 10.2, '2023': 4.8, '2024': 3.5, '2025': 3.0, '2026': 2.8 } },
-  US: { label: 'USA', rates: { '2020': 1.2, '2021': 6.3, '2022': 11.5, '2023': 3.2, '2024': 2.8, '2025': 2.5, '2026': 2.3 } },
-  FR: { label: 'France', rates: { '2020': 2.3, '2021': 5.5, '2022': 9.8, '2023': 5.6, '2024': 3.6, '2025': 2.8, '2026': 2.5 } },
-  EU: { label: 'EU Average', rates: { '2020': 2.5, '2021': 5.8, '2022': 11.0, '2023': 6.0, '2024': 3.5, '2025': 3.0, '2026': 2.5 } },
-  AE: { label: 'UAE / Gulf', rates: { '2020': 1.8, '2021': 3.5, '2022': 7.2, '2023': 4.0, '2024': 3.0, '2025': 2.5, '2026': 2.2 } },
-  RU: { label: 'Russia', rates: { '2020': 4.5, '2021': 8.2, '2022': 18.5, '2023': 9.0, '2024': 6.0, '2025': 5.0, '2026': 4.5 } },
-  IN: { label: 'India', rates: { '2020': 3.0, '2021': 5.0, '2022': 8.5, '2023': 5.5, '2024': 4.5, '2025': 4.0, '2026': 3.5 } },
-};
-
 function PriceAdjustModal({
   stats,
   regionStats,
@@ -2371,31 +2314,12 @@ function PriceAdjustModal({
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
 
-  const [factor, setFactor] = useState(1.05);
+  const [factor, setFactor] = useState(1);
   const [filterType, setFilterType] = useState(currentFilters.resourceType);
   const [filterCategory, setFilterCategory] = useState(currentFilters.category);
   const [filterRegion, setFilterRegion] = useState(currentFilters.region);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-
-  const [useIndex, setUseIndex] = useState(false);
-  const [indexRegion, setIndexRegion] = useState('DE');
-  const [baseYear, setBaseYear] = useState(2024);
-  const [targetYear, setTargetYear] = useState(2026);
-
-  // Auto-compute factor from published index
-  useEffect(() => {
-    if (!useIndex || baseYear >= targetYear) return;
-    const indexData = PRICE_INDICES[indexRegion];
-    if (!indexData) return;
-    let f = 1;
-    for (let y = baseYear; y < targetYear; y++) {
-      const rate = indexData.rates[String(y)] ?? indexData.rates[String(Math.min(y, 2026))] ?? 3.0;
-      f *= 1 + rate / 100;
-    }
-    setFactor(Math.round(f * 10000) / 10000);
-    setConfirmed(false);
-  }, [useIndex, indexRegion, baseYear, targetYear]);
 
   const percentage = fmtFixed((factor - 1) * 100, 1);
   const isIncrease = factor > 1;
@@ -2487,77 +2411,10 @@ function PriceAdjustModal({
 
         {/* Body */}
         <div className="px-6 py-5 space-y-5">
-          {/* Mode toggle: Manual vs Published Index */}
-          <div className="flex rounded-lg border border-border overflow-hidden">
-            <button
-              onClick={() => setUseIndex(false)}
-              className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${!useIndex ? 'bg-oe-blue text-white' : 'bg-surface-primary text-content-secondary hover:bg-surface-secondary'}`}
-            >
-              {t('catalog.manual_factor', { defaultValue: 'Manual Factor' })}
-            </button>
-            <button
-              onClick={() => setUseIndex(true)}
-              className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${useIndex ? 'bg-oe-blue text-white' : 'bg-surface-primary text-content-secondary hover:bg-surface-secondary'}`}
-            >
-              {t('catalog.from_inflation_index', { defaultValue: 'From Inflation Index' })}
-            </button>
-          </div>
-
-          {/* Published Index selector */}
-          {useIndex && (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-amber-700 dark:text-amber-300">
-                <TrendingUp size={14} />
-                {t('catalog.inflation_index', { defaultValue: 'Published Construction Cost Indices' })}
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-2xs text-content-tertiary mb-1 block">{t('catalog.index_country', { defaultValue: 'Country / Source' })}</label>
-                  <select value={indexRegion} onChange={(e) => setIndexRegion(e.target.value)} className="h-8 w-full rounded-md border border-border bg-surface-primary px-2 text-xs focus:outline-none focus:ring-2 focus:ring-oe-blue/30">
-                    {Object.entries(PRICE_INDICES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-2xs text-content-tertiary mb-1 block">{t('catalog.from_year', { defaultValue: 'From year' })}</label>
-                  <select value={baseYear} onChange={(e) => setBaseYear(Number(e.target.value))} className="h-8 w-full rounded-md border border-border bg-surface-primary px-2 text-xs focus:outline-none focus:ring-2 focus:ring-oe-blue/30">
-                    {[2020,2021,2022,2023,2024,2025,2026].map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-2xs text-content-tertiary mb-1 block">{t('catalog.to_year', { defaultValue: 'To year' })}</label>
-                  <select value={targetYear} onChange={(e) => setTargetYear(Number(e.target.value))} className="h-8 w-full rounded-md border border-border bg-surface-primary px-2 text-xs focus:outline-none focus:ring-2 focus:ring-oe-blue/30">
-                    {[2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030].map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-              </div>
-              {baseYear < targetYear && (
-                <div className="flex flex-wrap gap-1.5">
-                  {(() => {
-                    const idx = PRICE_INDICES[indexRegion];
-                    const items = [];
-                    for (let y = baseYear; y < targetYear; y++) {
-                      const rate = idx?.rates[String(y)] ?? idx?.rates[String(Math.min(y, 2026))] ?? 3.0;
-                      items.push(<span key={y} className="inline-flex items-center gap-1 rounded bg-surface-secondary px-2 py-0.5 text-2xs"><span className="text-content-tertiary">{y}</span><span className="font-medium text-amber-600">+{fmtPercent(rate)}</span></span>);
-                    }
-                    return items;
-                  })()}
-                  <span className="inline-flex items-center gap-1 rounded bg-amber-100 dark:bg-amber-900/20 px-2 py-0.5 text-2xs font-bold text-amber-700 dark:text-amber-300">
-                    = ×{fmtFixed(factor, 4)} (+{percentage}%)
-                  </span>
-                </div>
-              )}
-              <p className="text-2xs text-content-quaternary">
-                {t('catalog.index_sources', { defaultValue: 'Sources: a UK construction cost index, Eurostat (EU) and national construction cost indices. Representative averages.' })}
-              </p>
-            </div>
-          )}
-
-          {/* Factor input (manual or auto-filled from index) */}
+          {/* Project-specific price factor */}
           <div>
             <label className="text-xs font-medium text-content-secondary mb-2 block">
-              {useIndex
-                ? t('catalog.computed_factor', { defaultValue: 'Computed Factor (from index above)' })
-                : t('catalog.price_factor', { defaultValue: 'Price Factor' })}
+              {t('catalog.price_factor', { defaultValue: 'Price Factor' })}
             </label>
             <div className="flex items-center gap-4">
               <input

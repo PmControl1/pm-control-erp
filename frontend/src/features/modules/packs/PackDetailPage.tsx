@@ -37,11 +37,10 @@ import { PackEmblem } from '@/shared/ui/PackEmblem';
 import { CountryFlag } from '@/shared/ui/CountryFlag';
 import { fmtList, fmtNumber } from '@/shared/lib/formatters';
 import { packNameSlug } from '@/shared/lib/regionalPack';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { PartnerPackApplyDialog } from '../PartnerPackApplyDialog';
 import { PartnerPackDeactivateDialog } from '../PartnerPackDeactivateDialog';
-import { canInstallPacks, useApplyPreview } from '../partnerPacks';
+import { useApplyPreview } from '../partnerPacks';
 import { presetModuleName } from '../companyProfiles';
 import { asStringArray } from './packCatalog';
 import { usePackCatalogData } from './PacksCatalog';
@@ -123,7 +122,8 @@ export function PackDetailPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const addToast = useToastStore((s) => s.addToast);
-  const canInstall = canInstallPacks(useAuthStore((s) => s.userRole));
+  // The Bulgarian country configuration is automatic, including for administrators.
+  const canInstall = false;
   const { list, entries, activeSlug, activeSource, names } = usePackCatalogData();
   const bandLabels = useBandLabels();
   const entry = useMemo(() => entries.find((e) => e.slug === slug) ?? null, [entries, slug]);

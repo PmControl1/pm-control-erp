@@ -27,7 +27,7 @@ import {
 } from '@/shared/ui/WideModal';
 import { useToastStore } from '@/stores/useToastStore';
 import { ApiError } from '@/shared/lib/api';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 
 import {
@@ -83,7 +83,7 @@ function buyerToForm(buyer: Buyer): FormState {
     full_name: buyer.full_name ?? '',
     email: buyer.email ?? '',
     phone: buyer.phone ?? '',
-    language: buyer.language || 'en',
+    language: buyer.language || 'bg',
     jurisdiction: (buyer as Buyer & { jurisdiction?: string }).jurisdiction ?? '',
     plot_id: buyer.plot_id ?? '',
     status: buyer.status,
@@ -358,6 +358,9 @@ export function EditBuyerModal({
             onChange={(e) => setForm({ ...form, language: e.target.value })}
             data-testid="edit-buyer-language"
           >
+            {form.language && !SUPPORTED_LANGUAGES.some((lang) => lang.code === form.language) && (
+              <option value={form.language}>{form.language}</option>
+            )}
             {sortLanguagesByName(SUPPORTED_LANGUAGES).map((lang) => (
               <option key={lang.code} value={lang.code}>
                 {lang.name}

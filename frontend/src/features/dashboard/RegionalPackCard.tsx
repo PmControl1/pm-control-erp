@@ -211,7 +211,7 @@ export function RegionalPackCard() {
           onClick={() => navigate(PACKS_ROUTE)}
           className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-oe-blue px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-oe-blue/90"
         >
-          {t('dashboard.regional_pack_choose', { defaultValue: 'Install a country pack' })}
+          {t('dashboard.bulgarian_setup_details', { defaultValue: 'Bulgarian configuration' })}
           <ArrowRight size={13} className="rtl:rotate-180" aria-hidden="true" />
         </button>
       </div>
@@ -305,8 +305,8 @@ export function RegionalPackCard() {
           onClick={() => navigate(PACKS_ROUTE)}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-md text-xs font-semibold text-oe-blue transition-colors hover:text-oe-blue-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue/40"
         >
-          {t('dashboard.regional_pack_manage', {
-            defaultValue: 'Change or add a country pack',
+          {t('dashboard.bulgarian_setup_details', {
+            defaultValue: 'Bulgarian configuration',
           })}
           <ArrowRight size={13} className="rtl:rotate-180" aria-hidden="true" />
         </button>

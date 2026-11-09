@@ -29,8 +29,8 @@ The questions, by the defect class that produced them:
 * C3, formats: the country has an exchange row, and the importer reads the
   numbers the market writes (decimal comma or decimal dot, the separators
   between thousands, a currency sign in front) as the number they are.
-* C4, install: every entry point resolves to a pack, and a pack switched on
-  through the environment variable the READMEs document reports as applied.
+* C4, install: every entry point resolves to a pack, and a legacy environment
+  selection stays readable without changing the Bulgarian product baseline.
 * C5, market: every declared cost region loads, loads a base of the pack's own
   country and currency, and a country with a published base declares one.
 * C6, classification: the classification a pack names is one the platform
@@ -626,18 +626,31 @@ def test_a_csv_saved_by_excel_in_the_markets_code_page_keeps_its_letters(languag
 
 
 @pytest.mark.parametrize("variable", ["OE_PACK", "OE_PARTNER_PACK"])
-def test_a_pack_switched_on_by_the_environment_reports_as_applied(
+def test_a_legacy_environment_selection_cannot_replace_the_bulgarian_baseline(
     variable: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Seven READMEs say ``OE_PACK=<slug>``; the Modules page asked only about the old name."""
-    from app.core.partner_pack import apply
+    """Both documented aliases remain readable by generic pack-state tooling."""
+    from app.core.partner_pack import apply, discovery, state
 
     monkeypatch.delenv("OE_PACK", raising=False)
     monkeypatch.delenv("OE_PARTNER_PACK", raising=False)
     monkeypatch.setenv(variable, "germany-de")
     monkeypatch.setattr(apply, "load_applied_state", lambda: None)
-    info = apply.get_applied_info()
-    assert info["applied"] is True and info["slug"] == "germany-de"
+    monkeypatch.setattr(state, "get_applied_slug", lambda _directory: None)
+    bulgaria = discovery.get_pack_by_slug("bulgaria-bg")
+    assert bulgaria is not None
+    foreign = PartnerPackManifest(slug="germany-de", partner_name="Legacy Germany", metadata={"country": "DE"})
+    packs = {bulgaria.slug: bulgaria, foreign.slug: foreign}
+    monkeypatch.setattr(discovery, "get_pack_by_slug", packs.get)
+    discovery.reset_cache()
+    try:
+        assert discovery.get_selected_pack() is foreign
+        assert discovery.get_active_pack() is bulgaria
+        info = apply.get_applied_info()
+        assert info["applied"] is True and info["slug"] == "bulgaria-bg"
+        assert info["source"] == "product-default"
+    finally:
+        discovery.reset_cache()
 
 
 # ── C5: cost bases ───────────────────────────────────────────────────────────

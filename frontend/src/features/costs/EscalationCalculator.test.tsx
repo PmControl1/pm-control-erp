@@ -1,115 +1,102 @@
-// @ts-nocheck
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EscalationCalculator } from './EscalationCalculator';
 
+const annualRateInput = () => screen.getByRole('spinbutton', { name: /Manual rate/ });
+const applyButton = () => screen.getByRole('button', { name: 'Apply' });
+
+function enterRate(rate: string) {
+  fireEvent.change(annualRateInput(), { target: { value: rate } });
+}
+
 describe('EscalationCalculator', () => {
-  it('should render with default values', () => {
-    render(<EscalationCalculator />);
-    // Regex matchers tolerate identity-marker ZWJ/ZWNJ trailing the visible text.
+  it('opens with no assumed country index or annual rate', () => {
+    const apply = vi.fn<(amount: number, factor: number) => void>();
+    render(<EscalationCalculator onApply={apply} />);
     expect(screen.getByText(/Cost Escalation Calculator/)).toBeInTheDocument();
-    expect(screen.getByText(/Region/)).toBeInTheDocument();
-    expect(screen.getByText(/Base year/)).toBeInTheDocument();
-    expect(screen.getByText(/Target year/)).toBeInTheDocument();
+    expect(screen.queryByText('Germany')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('combobox')).toHaveLength(2);
+    expect(annualRateInput()).toHaveValue(null);
+    expect(applyButton()).toBeDisabled();
+    fireEvent.click(applyButton());
+    expect(apply).not.toHaveBeenCalled();
   });
 
-  it('should show year-by-year breakdown when base < target', () => {
-    render(<EscalationCalculator />);
-    // Default: base 2023, target 2026 — 3 years of breakdown
-    const breakdownChips = screen.getAllByText(/\+[\d.]+%/);
-    expect(breakdownChips.length).toBeGreaterThan(0);
+  it('compounds the entered annual rate and applies the calculated amount', () => {
+    const apply = vi.fn<(amount: number, factor: number) => void>();
+    render(<EscalationCalculator baseAmount={50000} onApply={apply} />);
+    enterRate('10');
+    fireEvent.click(applyButton());
+    expect(apply).toHaveBeenCalledOnce();
+    const [amount, factor] = apply.mock.calls[0]!;
+    expect(factor).toBeCloseTo(1.331, 10);
+    expect(amount).toBe(66550);
+    expect(screen.getAllByText('+10.0%')).toHaveLength(3);
   });
 
-  it('should compute escalation factor > 1 for forward escalation', () => {
-    render(<EscalationCalculator />);
-    // Factor should be shown and > 1
-    const factorEl = screen.getByText(/\d+\.\d+x/);
-    expect(factorEl).toBeInTheDocument();
-    const factorMatch = factorEl.textContent?.match(/([\d.]+)x/);
-    expect(factorMatch).toBeTruthy();
-    const factor = parseFloat(factorMatch![1]);
-    expect(factor).toBeGreaterThan(1);
+  it('accepts an explicitly entered zero rate without inventing escalation', () => {
+    const apply = vi.fn<(amount: number, factor: number) => void>();
+    render(<EscalationCalculator baseAmount={1234.56} onApply={apply} />);
+    enterRate('0');
+    expect(applyButton()).toBeEnabled();
+    fireEvent.click(applyButton());
+    expect(apply).toHaveBeenCalledWith(1234.56, 1);
   });
 
-  it('should show factor of 1 when base = target year', () => {
-    render(<EscalationCalculator />);
-    // Set both years to 2023
-    const selects = screen.getAllByRole('combobox');
-    // baseYear select and targetYear select — they're the 2nd and 3rd selects
-    const baseYearSelect = selects[1];
-    const targetYearSelect = selects[2];
+  it('supports a project-agreed negative rate', () => {
+    const apply = vi.fn<(amount: number, factor: number) => void>();
+    render(<EscalationCalculator baseAmount={1000} onApply={apply} />);
+    enterRate('-10');
+    fireEvent.click(applyButton());
+    expect(apply).toHaveBeenCalledOnce();
+    const [amount, factor] = apply.mock.calls[0]!;
+    expect(amount).toBe(729);
+    expect(factor).toBeCloseTo(0.729, 10);
+    expect(screen.queryByText(/\+-/)).not.toBeInTheDocument();
+  });
 
-    fireEvent.change(baseYearSelect, { target: { value: '2025' } });
-    fireEvent.change(targetYearSelect, { target: { value: '2025' } });
+  it('requires a new rate after the input is cleared', () => {
+    render(<EscalationCalculator onApply={vi.fn()} />);
+    enterRate('5');
+    expect(applyButton()).toBeEnabled();
+    enterRate('');
+    expect(applyButton()).toBeDisabled();
+  });
 
+  it('refuses rates below minus 100 percent', () => {
+    render(<EscalationCalculator onApply={vi.fn()} />);
+    enterRate('-101');
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('does not apply escalation when the years are equal or reversed', () => {
+    render(<EscalationCalculator onApply={vi.fn()} />);
+    enterRate('5');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Base year' }), { target: { value: '2026' } });
+    expect(applyButton()).toBeDisabled();
     expect(screen.getByText(/1\.0000x/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Base year' }), { target: { value: '2027' } });
+    expect(applyButton()).toBeDisabled();
   });
 
-  it('should update when region changes', () => {
+  it('preserves a zero base amount and rejects negative or blank amounts', () => {
+    const apply = vi.fn<(amount: number, factor: number) => void>();
+    render(<EscalationCalculator baseAmount={0} onApply={apply} />);
+    const amountInput = screen.getByRole('spinbutton', { name: 'Base amount' });
+    expect(amountInput).toHaveValue(0);
+    enterRate('5');
+    fireEvent.click(applyButton());
+    expect(apply).toHaveBeenCalledOnce();
+    const [amount] = apply.mock.calls[0]!;
+    expect(amount).toBe(0);
+    fireEvent.change(amountInput, { target: { value: '-100' } });
+    expect(applyButton()).toBeDisabled();
+    fireEvent.change(amountInput, { target: { value: '' } });
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('explains that a Bulgarian index has not been preloaded', () => {
     render(<EscalationCalculator />);
-    const regionSelect = screen.getAllByRole('combobox')[0];
-
-    // Switch to UK
-    fireEvent.change(regionSelect, { target: { value: 'UK' } });
-
-    // Should still show a valid factor
-    const factorEl = screen.getByText(/\d+\.\d+x/);
-    expect(factorEl).toBeInTheDocument();
-  });
-
-  it('should use manual rate when checkbox is checked', () => {
-    render(<EscalationCalculator />);
-
-    // Check the manual rate checkbox
-    const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
-
-    // Manual rate input should appear
-    expect(screen.getByPlaceholderText('5.0')).toBeInTheDocument();
-
-    // Type a manual rate
-    const manualInput = screen.getByPlaceholderText('5.0');
-    fireEvent.change(manualInput, { target: { value: '10' } });
-
-    // Factor should reflect 10% annual rate
-    const factorEl = screen.getByText(/\d+\.\d+x/);
-    const factorMatch = factorEl.textContent?.match(/([\d.]+)x/);
-    const factor = parseFloat(factorMatch![1]);
-    // 3 years at 10% = 1.1^3 = 1.331
-    expect(factor).toBeCloseTo(1.331, 1);
-  });
-
-  it('should call onApply with escalated amount and factor', () => {
-    const onApply = vi.fn();
-    render(<EscalationCalculator baseAmount={50000} onApply={onApply} />);
-
-    const applyButton = screen.getByText('Apply');
-    fireEvent.click(applyButton);
-
-    expect(onApply).toHaveBeenCalledWith(
-      expect.any(Number),
-      expect.any(Number),
-    );
-    const [escalated, factor] = onApply.mock.calls[0];
-    expect(factor).toBeGreaterThan(1);
-    expect(escalated).toBeGreaterThan(50000);
-  });
-
-  it('should show disclaimer text', () => {
-    render(<EscalationCalculator />);
-    expect(screen.getByText(/Based on published indices/)).toBeInTheDocument();
-  });
-
-  it('should accept custom base amount', () => {
-    render(<EscalationCalculator baseAmount={200000} />);
-    const amountInput = screen.getByDisplayValue('200000');
-    expect(amountInput).toBeInTheDocument();
-  });
-
-  it('should update amount when user types', () => {
-    render(<EscalationCalculator />);
-    const amountInput = screen.getByDisplayValue('100000');
-    fireEvent.change(amountInput, { target: { value: '250000' } });
-    expect(screen.getByDisplayValue('250000')).toBeInTheDocument();
+    expect(screen.getByText(/No published Bulgarian index is preloaded/)).toBeInTheDocument();
   });
 });

@@ -422,44 +422,20 @@ function AiToolsStrip() {
 
 /* ── Main Component ──────────────────────────────────────────────── */
 
-// Region tokens the selector below offers; a ?region deep-link is only honoured
-// when it matches one of these so the <select> always renders a real option.
-const ADVISOR_REGION_OPTIONS = new Set([
-  'DE_BERLIN',
-  'UK_LONDON',
-  'USA_USD',
-  'CA_TORONTO',
-  'FR_PARIS',
-  'ES_BARCELONA',
-  'ZH_CHINA',
-  'TR_NATIONAL',
-  'AE_DUBAI',
-  'SA_RIYADH',
-  // Authentic national / regional official bases (own local parquet)
-  'BR_NATIONAL',
-  'ES_ANDALUCIA',
-  'IT_TOSCANA',
-  'VN_NATIONAL',
-  'ID_NATIONAL',
-  'GR_NATIONAL',
-]);
-
 export function AdvisorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   // Deep-link prefill (e.g. "Benchmark this rate" from the Cost Database,
-  // CONN-81): ?q seeds the question, ?region pre-selects the region. We never
-  // auto-send - the user reviews and submits. Read once for the initial state.
+  // CONN-81): ?q seeds the question. The Bulgarian source region is automatic;
+  // old foreign region links cannot change it. The user reviews before sending.
   const questionFromUrl = searchParams.get('q') ?? '';
   const regionFromUrl = searchParams.get('region') ?? '';
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(questionFromUrl);
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null); // null = loading
   const [aiProvider, setAiProvider] = useState<string>('');
-  const [region, setRegion] = useState(
-    regionFromUrl && ADVISOR_REGION_OPTIONS.has(regionFromUrl) ? regionFromUrl : '',
-  );
+  const region = 'BG_SOFIA';
   // Gate the destructive "New chat" action behind a confirmation so an
   // accidental click does not wipe the whole conversation context.
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
@@ -493,7 +469,7 @@ export function AdvisorPage() {
         {
           message: msg,
           project_id: activeProjectId || undefined,
-          region: region || undefined,
+          region,
           locale: i18next.language,
           history,
         },
@@ -726,33 +702,10 @@ export function AdvisorPage() {
             </p>
           </div>
 
-          {/* Region selector */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* The Bulgarian catalogue is automatic for this product. */}
+          <div className="flex items-center gap-2 shrink-0 text-2xs text-content-secondary">
             <Globe size={13} className="text-content-tertiary" aria-hidden="true" />
-            <select
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              aria-label={t('ai.advisor_region_filter', { defaultValue: 'Filter cost sources by region' })}
-              className="h-7 rounded-lg border border-border bg-surface-primary px-2 text-2xs text-content-secondary focus:outline-none focus:ring-1 focus:ring-oe-blue/30"
-            >
-              <option value="">{t('ai.all_regions', { defaultValue: 'All regions' })}</option>
-              <option value="DE_BERLIN">{t('ai.region_de_berlin', { defaultValue: 'Germany (Berlin)' })}</option>
-              <option value="UK_LONDON">{t('ai.region_uk_london', { defaultValue: 'UK (London)' })}</option>
-              <option value="USA_USD">{t('ai.region_usa_usd', { defaultValue: 'USA (USD)' })}</option>
-              <option value="CA_TORONTO">{t('ai.region_ca_toronto', { defaultValue: 'Canada (Toronto)' })}</option>
-              <option value="FR_PARIS">{t('ai.region_fr_paris', { defaultValue: 'France (Paris)' })}</option>
-              <option value="ES_BARCELONA">{t('ai.region_es_barcelona', { defaultValue: 'Spain (Barcelona)' })}</option>
-              <option value="ZH_CHINA">{t('ai.region_zh_china', { defaultValue: 'China (National)' })}</option>
-              <option value="TR_NATIONAL">{t('ai.region_tr_national', { defaultValue: 'Türkiye (National)' })}</option>
-              <option value="AE_DUBAI">{t('ai.region_ae_dubai', { defaultValue: 'UAE (Dubai)' })}</option>
-              <option value="SA_RIYADH">{t('ai.region_sa_riyadh', { defaultValue: 'Saudi Arabia' })}</option>
-              <option value="BR_NATIONAL">{t('ai.region_br_national', { defaultValue: 'Brazil (SINAPI)' })}</option>
-              <option value="ES_ANDALUCIA">{t('ai.region_es_andalucia', { defaultValue: 'Spain (Andalucía)' })}</option>
-              <option value="IT_TOSCANA">{t('ai.region_it_toscana', { defaultValue: 'Italy (Toscana)' })}</option>
-              <option value="VN_NATIONAL">{t('ai.region_vn_national', { defaultValue: 'Vietnam (Dinh Muc)' })}</option>
-              <option value="ID_NATIONAL">{t('ai.region_id_national', { defaultValue: 'Indonesia (AHSP)' })}</option>
-              <option value="GR_NATIONAL">{t('ai.region_gr_national', { defaultValue: 'Greece (GGDE)' })}</option>
-            </select>
+            <span>{t('ai.advisor_bulgarian_sources', { defaultValue: 'Bulgaria · Sofia catalogue' })}</span>
           </div>
 
           {messages.length > 0 && (

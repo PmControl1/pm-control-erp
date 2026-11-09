@@ -64,7 +64,7 @@ import { useTabKeyboardNav } from '@/shared/hooks/useTabKeyboardNav';
 import { DashboardLayoutManager } from '@/features/dashboard/DashboardLayoutManager';
 import { UpdateInlineNotice } from '@/shared/ui/UpdateChecker';
 import { apiGet, apiPatch, apiPost, apiPut, apiDelete } from '@/shared/lib/api';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';

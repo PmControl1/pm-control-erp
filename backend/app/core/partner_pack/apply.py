@@ -24,15 +24,14 @@ Design decisions (confirmed with the product owner 2026-05-29):
     all: VAT, holidays, e-invoicing and payment terms come from core registries
     by project country, and the plan reports them as built in.
 
-The headline effect of an apply is that ``get_active_pack`` starts returning the
-chosen pack (co-branding, logo, colours, shipped locales) immediately - the
-apply service busts the discovery cache so no restart is needed.
+An apply records the explicit pack selection and refreshes discovery immediately.
+The Bulgarian product keeps its baseline active without a recorded selection;
+generic pack tooling reads that explicit selection through ``get_selected_pack``.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 from collections.abc import Sequence
 from typing import Any
@@ -669,8 +668,8 @@ async def apply_pack(
             runs again, and if it still refuses the module stays enabled.
         PackStateWriteError: If the applied-pack record could not be written.
             The modules this call enabled stay enabled - enabling is additive
-            and safe - but the pack is NOT active, so this must not come back
-            as ``applied: True``. It used to: the write was logged and
+            and safe - but the explicit selection was not recorded, so this
+            must not come back as ``applied: True``. It used to: the write was logged and
             swallowed, and a full data disk turned "apply" into a report with
             no installation behind it.
     """
@@ -717,7 +716,9 @@ async def apply_pack(
     # flagship country demo of a pack that pins none. Each project has a session of its own so a
     # failure never rolls back the module changes or another project.
     installed_ids: list[uuid.UUID] = []
-    if install_demo:
+    from app.core.demo_seed import seed_demo_enabled
+
+    if install_demo and seed_demo_enabled():
         try:
             from app.core.demo_projects import PACK_DEMO_PROJECT, install_demo_project
             from app.core.partner_pack.full_install import _demo_install_list
@@ -922,15 +923,16 @@ async def unapply(*, app: FastAPI | None = None) -> dict[str, Any]:
 
 def get_applied_info() -> dict[str, Any]:
     """Current applied-pack status + whether an update is available."""
+    from app.core.market_profile import MARKET_PACK
+
     state = load_applied_state()
-    if not state:
-        # Same precedence as discovery: OE_PACK is the documented name and
-        # wins, OE_PARTNER_PACK is the older alias.
-        env = os.environ.get("OE_PACK", "").strip() or os.environ.get("OE_PARTNER_PACK", "").strip()
+    if not state or state.slug != MARKET_PACK:
+        current = get_pack_by_slug(MARKET_PACK)
         return {
-            "applied": bool(env),
-            "source": "env" if env else None,
-            "slug": env or None,
+            "applied": current is not None,
+            "source": "product-default",
+            "slug": MARKET_PACK,
+            "installed": current is not None,
         }
     current = get_pack_by_slug(state.slug)
     return {

@@ -14,13 +14,13 @@ from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 
+from app.core.market_profile import MARKET_COUNTRY, MARKET_PACK
 from app.core.partner_pack._safe_extract import has_zip_magic
 from app.core.partner_pack.apply import (
     UnknownRuleSetError,
     apply_pack,
     build_preview,
     get_applied_info,
-    unapply,
 )
 from app.core.partner_pack.discovery import (
     discover_packs,
@@ -52,6 +52,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/partner-pack", tags=["partner-pack"])
 
 
+def _require_bulgarian_pack(slug: str) -> None:
+    if slug != MARKET_PACK:
+        raise HTTPException(status_code=409, detail="This workspace uses the Bulgarian configuration automatically.")
+
+
 @router.get("/current", summary="Active partner pack manifest", dependencies=[Depends(get_current_user_payload)])
 def current_pack() -> dict[str, Any]:
     """Return the active pack's public manifest, or ``{"active": false}``.
@@ -75,7 +80,7 @@ def list_installed() -> dict[str, Any]:
     active = get_active_pack()
     return {
         "active_slug": active.slug if active else None,
-        "installed": [m.to_public_dict() for m in discover_packs()],
+        "installed": [m.to_public_dict() for m in discover_packs() if m.slug == MARKET_PACK],
     }
 
 
@@ -105,6 +110,7 @@ def applied_status() -> dict[str, Any]:
 @router.get("/apply-preview/{slug}", summary="Dry-run preview of applying a pack")
 def apply_preview(slug: str) -> dict[str, Any]:
     """Return the field-by-field effect plan without changing anything."""
+    _require_bulgarian_pack(slug)
     try:
         return build_preview(slug)
     except UnknownRuleSetError as exc:
@@ -122,6 +128,7 @@ def apply_preview(slug: str) -> dict[str, Any]:
 )
 async def apply(body: ApplyRequest, request: Request) -> dict[str, Any]:
     """Apply the pack: enable its modules, co-brand, record defaults."""
+    _require_bulgarian_pack(body.slug)
     try:
         return await apply_pack(
             body.slug,
@@ -132,7 +139,7 @@ async def apply(body: ApplyRequest, request: Request) -> dict[str, Any]:
     except UnknownRuleSetError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except PackStateWriteError as exc:
-        # The pack is not active and must not be reported as applied. 507 says
+        # The explicit application failed and must not be reported as saved. 507 says
         # what this almost always is - a data directory that is full or not
         # writable - so the admin fixes the disk rather than the pack.
         raise HTTPException(status_code=507, detail=str(exc))
@@ -158,6 +165,7 @@ async def full_install_pack(body: FullInstallRequest, request: Request) -> FullI
     embedding-model gap (it reports them as skipped). An unknown pack slug yields
     a single ``apply_pack`` step with ``status="error"``.
     """
+    _require_bulgarian_pack(body.slug)
     return await full_install(body, app=request.app)
 
 
@@ -181,6 +189,7 @@ async def full_install_pack_stream(body: FullInstallRequest, request: Request) -
     cancels that session between streamed chunks, which would kill the loaders
     mid-import (see the same note on ``erp_chat.stream_chat``).
     """
+    _require_bulgarian_pack(body.slug)
     app = request.app
 
     async def _gen() -> AsyncIterator[str]:
@@ -204,8 +213,10 @@ async def full_install_pack_stream(body: FullInstallRequest, request: Request) -
     dependencies=[Depends(RequireRole("admin"))],
 )
 async def unapply_pack(request: Request) -> dict[str, Any]:
-    """Drop co-branding and restore any modules the apply disabled."""
-    return await unapply(app=request.app)
+    """The Bulgarian baseline remains enabled for the whole product."""
+    raise HTTPException(
+        status_code=409, detail="The Bulgarian configuration is the product default and cannot be disabled."
+    )
 
 
 @router.post(
@@ -221,7 +232,7 @@ def rescan() -> dict[str, Any]:
     packs under ``<data_dir>/packs/``.
     """
     reset_cache()
-    packs = discover_packs()
+    packs = [m for m in discover_packs() if m.slug == MARKET_PACK]
     return {"count": len(packs), "slugs": [m.slug for m in packs]}
 
 
@@ -422,7 +433,7 @@ def partner_onboarding_script() -> Response:
     summary="Classifications a project in this country is filed under",
     dependencies=[Depends(get_current_user_payload)],
 )
-def project_classifications(region: str | None = None, country: str | None = None) -> dict[str, Any]:
+def project_classifications(region: str | None = None, country: str | None = MARKET_COUNTRY) -> dict[str, Any]:
     """The closed lists the project form offers for a project in ``region``/``country``.
 
     Answered by the pack that fits out that country, the one the project's

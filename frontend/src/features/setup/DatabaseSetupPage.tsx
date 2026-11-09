@@ -68,11 +68,7 @@ interface DemoProject {
 }
 
 const DEMO_PROJECTS: DemoProject[] = [
-  { id: 'residential-berlin', name: 'Berlin Residential', city: 'Berlin', flagId: 'de' },
-  { id: 'office-london', name: 'London Office', city: 'London', flagId: 'gb' },
-  { id: 'medical-us', name: 'US Medical Center', city: 'Chicago', flagId: 'us' },
-  { id: 'school-paris', name: 'Paris School', city: 'Paris', flagId: 'fr' },
-  { id: 'warehouse-dubai', name: 'Dubai Warehouse', city: 'Dubai', flagId: 'ae' },
+  { id: 'residential-sofia', name: 'Sofia Residential', city: 'Sofia', flagId: 'bg' },
 ];
 
 // ── LocalStorage helpers ────────────────────────────────────────────────────
@@ -702,9 +698,9 @@ export function DatabaseSetupPage() {
           { label: t('nav.projects', { defaultValue: 'Projects' }), onClick: () => navigate('/projects') },
         ]}
       >
-        {t('setup.intro_body', {
+        {t('setup.bg_intro_body', {
           defaultValue:
-            'Pick your country and install the matching CWICR cost database of 55,000+ priced items, so the catalogue and unit rates arrive already in the right currency and language. The same screen drops in ready-made demo projects with sections, positions and a schedule, giving you live data to estimate against straight away.',
+            'Install the Bulgarian Sofia reference catalogue, or import your own КСС and supplier prices. Reference rates retain their source currency; project totals use your project currency. A Sofia sample project is available for practice.',
         })}
       </DismissibleInfo>
 
@@ -712,9 +708,9 @@ export function DatabaseSetupPage() {
       <Card>
         <CardHeader
           title={t('setup.cost_databases', { defaultValue: 'Cost Databases' })}
-          subtitle={t('setup.cost_databases_desc', {
+          subtitle={t('setup.bg_cost_databases_desc', {
             defaultValue:
-              'Load regional cost databases with 55,000+ items and pricing data per region.',
+              'Load the Bulgarian Sofia reference catalogue or use your own pricing data.',
           })}
           action={
             <Button

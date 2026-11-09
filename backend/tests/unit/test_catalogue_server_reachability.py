@@ -34,7 +34,7 @@ async def test_failed_probe_is_not_reachable(monkeypatch, tmp_path, failure):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("names", [[], ["cwicr_en_v3"]])
+@pytest.mark.parametrize("names", [[], ["cwicr_bg_v3"]])
 async def test_successful_probe_is_reachable_even_when_empty(monkeypatch, tmp_path, names):
     def get(url, **kwargs):
         return httpx.Response(

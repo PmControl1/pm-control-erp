@@ -1,30 +1,12 @@
 # DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 # Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-"""Discover partner packs - via pip entry-points and via the repo ``packs/`` dir.
+"""Discover packs while keeping Bulgaria as this product's active market.
 
-A partner pack registers via the entry-point group
-``openconstructionerp.partner_packs``::
-
-    [project.entry-points."openconstructionerp.partner_packs"]
-    batimatech-ca = "openconstructionerp_batimatech_ca:MANIFEST"
-
-The value must point at a module-level attribute that is either:
-  * a ``PartnerPackManifest`` instance, OR
-  * a ``dict`` the loader coerces into one.
-
-In addition to pip-installed packs, ``discover_packs()`` also scans a
-``packs/`` directory so that packs are listable on the /modules page WITHOUT
-being pip-installed: the monorepo tree in a source checkout, and the community
-packs shipped beside the ``app`` package after an install. Both are found by
-``_packs_dir()``. Filesystem-discovered packs are
-listable but are NEVER auto-activated - only an explicit ``OE_PARTNER_PACK``
-env var activates a pack (see ``get_active_pack``).
-
-At boot, ``discover_packs()`` enumerates every source. ``get_active_pack()``
-picks one based on the precedence:
-
-  1. env var ``OE_PARTNER_PACK`` (matches manifest.slug)
-  2. None  - the platform runs in vanilla PM Project Management mode
+The loader still supports installed entry points, bundled packs and declarative
+packs in the data directory, because shared tooling and historical records use
+that infrastructure. ``get_active_pack`` always resolves the Bulgarian
+baseline; an old foreign environment pin or applied-pack record cannot change
+the product's market.
 """
 
 from __future__ import annotations
@@ -38,6 +20,7 @@ from importlib import resources
 from importlib.metadata import EntryPoint, entry_points
 from pathlib import Path
 
+from app.core.market_profile import MARKET_PACK
 from app.core.module_state import _resolve_data_dir
 from app.core.partner_pack._safe_extract import (
     UnsafeArchiveError,
@@ -565,31 +548,25 @@ def get_pack_by_slug(slug: str) -> PartnerPackManifest | None:
 
 
 def get_active_pack() -> PartnerPackManifest | None:
-    """Pick the active pack.
+    """Return the Bulgarian baseline, including on a clean installation.
 
-    A pack becomes active either by being *applied* in-app (persisted via the
-    /modules Partner Packs tab) or by the ``OE_PARTNER_PACK`` env var. Merely
-    discovering packs (including the source-checkout packs under ``packs/``)
-    never co-brands the app.
+    Persisted state is read without being rewritten. Only a selection of the
+    Bulgarian pack is honoured; stale foreign selections fall back to the
+    bundled Bulgarian manifest. Discovery/resource-loading remain generic.
+    """
+    selected = get_selected_pack()
+    if selected is not None and selected.slug == MARKET_PACK:
+        return selected
+    baseline = get_pack_by_slug(MARKET_PACK)
+    return baseline if baseline is not None and baseline.slug == MARKET_PACK else None
 
-    Precedence:
-      1. in-app applied pack (``pack_state.json`` in the ACTIVE data dir - see
-         ``state._resolve_state_dir``; ``partner_pack_state.json`` is the LEGACY
-         name and is still read when the current one is absent)
-      2. env ``OE_PACK=<slug>``, or its backward-compatible alias
-         ``OE_PARTNER_PACK``; ``OE_PACK`` wins if both are set
-      3. None
 
-    The two names in step 1 and the alias in step 2 are worth stating because
-    this docstring used to name only the legacy file and only the alias. Anyone
-    debugging why a workspace is scoped looks for the file this text names, does
-    not find it, concludes nothing is applied, and goes looking for a bug in the
-    scoping instead of reading the record that is right there under the other
-    name.
+def get_selected_pack() -> PartnerPackManifest | None:
+    """Read the generic applied/env selection without changing the market.
 
-    Cached per resolved state dir, so two instances resolving different data
-    dirs never share an answer; ``reset_cache()`` is called by the apply
-    service after an apply / un-apply so the change takes effect immediately.
+    Retained for pack state management and historical tooling. Runtime product
+    consumers use ``get_active_pack`` so a foreign selection cannot replace
+    the Bulgarian baseline.
     """
     # Resolve the state dir HERE (live, uncached) and key the cache on it.
     # Imported lazily to avoid any import-order issues.

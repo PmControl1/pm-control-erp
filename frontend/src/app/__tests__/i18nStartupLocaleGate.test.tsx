@@ -7,7 +7,7 @@
 // arrives in a lazy chunk. The old boot merely kicked that fetch off
 // (`void loadLocaleResource(...)`) and mounted React immediately, so the
 // first frame of every non-English session rendered through the English
-// fallback - the "English flash" the German pilot QA measured on every
+// fallback - the "English flash" the Bulgarian pilot QA measured on every
 // single page load, whatever the cache state, because the first paint is
 // synchronous and a chunk resolve never is.
 //
@@ -32,7 +32,7 @@ vi.unmock('react-i18next');
 // The shipped locale files are ~3 MB object literals; pushing one through the
 // vitest transform pipeline stalls the worker (see localeKeyResolution.test.ts).
 // The gate's behaviour does not depend on dictionary size, so the bundled
-// English and the lazily imported German are both replaced with small fixtures
+// English and the lazily imported Bulgarian are both replaced with small fixtures
 // whose values disagree on every key - which is exactly what lets an assertion
 // tell "resolved from the active locale" apart from "fell back to English"
 // without ever naming one particular production string.
@@ -42,15 +42,15 @@ const FIXTURES = vi.hoisted(() => ({
     'probe.action': 'Export',
     'probe.rows': 'Rows',
   } as Record<string, string>,
-  DE: {
-    'probe.title': 'Leistungsverzeichnis',
-    'probe.action': 'Exportieren',
-    'probe.rows': 'Zeilen',
+  BG: {
+    'probe.title': 'Количествено-стойностна сметка',
+    'probe.action': 'Експорт',
+    'probe.rows': 'Редове',
   } as Record<string, string>,
 }));
 
 vi.mock('../locales/en', () => ({ default: { translation: FIXTURES.EN } }));
-vi.mock('../locales/de.ts', () => ({ default: { translation: FIXTURES.DE } }));
+vi.mock('../locales/bg.ts', () => ({ default: { translation: FIXTURES.BG } }));
 vi.mock('@/modules/_registry', () => ({ getModuleTranslations: () => ({}) }));
 
 type I18nModule = typeof import('../i18n');
@@ -60,14 +60,14 @@ beforeAll(async () => {
   // The saved language a returning user boots with. It must be in place
   // before the module under test is imported - the module reads it at
   // evaluation time, exactly as a real page load does.
-  window.localStorage.setItem('i18nextLng', 'de');
+  window.localStorage.setItem('i18nextLng', 'bg');
   i18nMod = await import('../i18n');
 });
 
 describe('startup language gate - stored non-English locale', () => {
   it('initializes synchronously, so the gate is the only thing left to wait for', () => {
     expect(i18nMod.default.isInitialized).toBe(true);
-    expect(i18nMod.default.language).toBe('de');
+    expect(i18nMod.default.language).toBe('bg');
   });
 
   it('exposes a pending gate instead of a fire-and-forget load', () => {
@@ -76,7 +76,7 @@ describe('startup language gate - stored non-English locale', () => {
 
   it('resolves only once the locale bundle is merged into the store', async () => {
     await i18nMod.initialLocaleReady;
-    expect(i18nMod.default.hasResourceBundle('de', 'translation')).toBe(true);
+    expect(i18nMod.default.hasResourceBundle('bg', 'translation')).toBe(true);
   });
 
   it('a first render issued after the gate carries no English fallback strings', async () => {
@@ -108,7 +108,7 @@ describe('startup language gate - stored non-English locale', () => {
       expect(text, `key ${k} rendered the English fallback on first paint`).not.toBe(
         FIXTURES.EN[k],
       );
-      expect(text).toBe(FIXTURES.DE[k]);
+      expect(text).toBe(FIXTURES.BG[k]);
     }
   });
 });

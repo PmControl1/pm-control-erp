@@ -46,49 +46,25 @@ afterEach(() => {
 });
 
 describe('resolveInitialLanguage', () => {
-  it('keeps a region the UI ships, so Brazil does not open in Portugal', () => {
-    // The regression this test exists for. The browser code was split on '-'
-    // and only the base kept, so pt-BR resolved to pt and a Brazilian first
-    // run opened in European Portuguese with pt-BR.ts sitting unused. Same
-    // for the three Spanish variants.
-    firstRunWith('pt-BR');
-    expect(resolveInitialLanguage()).toBe('pt-BR');
-  });
-
-  it('keeps every regional variant we actually ship', () => {
-    for (const code of ['pt-BR', 'es-MX', 'es-CL', 'es-CO', 'en-US']) {
-      firstRunWith(code);
-      expect(resolveInitialLanguage()).toBe(code);
+  it('opens the Bulgarian product in Bulgarian regardless of browser market', () => {
+    for (const browser of ['bg-BG', 'en-US', 'pt-BR', 'de-CH', 'is-IS']) {
+      firstRunWith(browser);
+      expect(resolveInitialLanguage()).toBe('bg');
     }
   });
 
-  it('normalises the region the way i18next spells it', () => {
-    // A browser is free to send 'pt-br'; the resource bundle is registered
-    // under 'pt-BR' and that is the only spelling that finds it.
-    firstRunWith('pt-br');
-    expect(resolveInitialLanguage()).toBe('pt-BR');
-    firstRunWith('EN-us');
-    expect(resolveInitialLanguage()).toBe('en-US');
+  it('preserves an explicit Bulgarian or English choice', () => {
+    for (const language of ['bg', 'en']) {
+      firstRunWith('de-DE');
+      window.localStorage.setItem('i18nextLng', language);
+      expect(resolveInitialLanguage()).toBe(language);
+    }
   });
 
-  it('still falls back to the base language for a region we do not ship', () => {
-    // The behaviour that was already correct and must stay correct: there is
-    // no de-CH file, so a Swiss German browser gets German.
-    firstRunWith('de-CH');
-    expect(resolveInitialLanguage()).toBe('de');
-    firstRunWith('fr-CA');
-    expect(resolveInitialLanguage()).toBe('fr');
-  });
-
-  it('falls back to English for a language we do not ship at all', () => {
-    firstRunWith('is-IS');
-    expect(resolveInitialLanguage()).toBe('en');
-  });
-
-  it('lets a stored choice beat the browser, region and all', () => {
-    firstRunWith('pt-BR');
+  it('ignores a foreign language left over from the international product', () => {
+    firstRunWith('de-DE');
     window.localStorage.setItem('i18nextLng', 'de');
-    expect(resolveInitialLanguage()).toBe('de');
+    expect(resolveInitialLanguage()).toBe('bg');
   });
 });
 

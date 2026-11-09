@@ -19,7 +19,7 @@ import i18n from 'i18next';
 import { API_BASE, apiGet } from '@/shared/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 
-import { SUPPORTED_LANGUAGES, languageChosenHere } from './i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES, languageChosenHere } from './i18n';
 
 const SUPPORTED_CODES: readonly string[] = SUPPORTED_LANGUAGES.map((l) => l.code);
 
@@ -27,9 +27,8 @@ const SUPPORTED_CODES: readonly string[] = SUPPORTED_LANGUAGES.map((l) => l.code
  * The account language to switch to after a sign-in, or ``null`` to keep the
  * one on screen.
  *
- * ``en`` is never restored: it is the column default every account starts
- * with, so it says nothing about what the person chose, and restoring it would
- * turn a browser that matched their language into an English one.
+ * New accounts default to Bulgarian. English is an explicit supported
+ * alternative and follows the account across browsers as well.
  */
 export function accountLanguageToApply(
   account: string | null | undefined,
@@ -38,7 +37,7 @@ export function accountLanguageToApply(
   supported: readonly string[] = SUPPORTED_CODES,
 ): string | null {
   if (chosenHere) return null;
-  if (!account || account === 'en') return null;
+  if (!account) return null;
   if (!supported.includes(account)) return null;
   return account === current ? null : account;
 }

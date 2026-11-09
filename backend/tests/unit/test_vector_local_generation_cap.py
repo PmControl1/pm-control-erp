@@ -36,7 +36,7 @@ import pytest
 
 from app.modules.costs import router
 
-DB_ID = "XX_LOCAL_CAP"
+DB_ID = "BG_SOFIA"
 PAGE = 7
 ITEMS = 25
 DIM = 8

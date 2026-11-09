@@ -201,7 +201,9 @@ class UserCreate(BaseModel):
         pattern=r"^(admin|manager|editor|viewer)$",
         description="User role. Must be one of: admin, manager, editor, viewer",
     )
-    locale: str = Field(default="en", max_length=10, description="Preferred locale code (e.g. en, de, fr)")
+    locale: str = Field(
+        default="bg", max_length=10, description="Preferred locale (Bulgarian by default; English available)"
+    )
     company: str = Field(
         default="",
         max_length=255,
@@ -278,7 +280,7 @@ class AdminUserCreate(BaseModel):
         default="viewer",
         description="User role. One of: admin, manager, editor, viewer.",
     )
-    locale: str = Field(default="en", max_length=10)
+    locale: str = Field(default="bg", max_length=10)
     is_active: bool = Field(default=True)
 
     @field_validator("password")

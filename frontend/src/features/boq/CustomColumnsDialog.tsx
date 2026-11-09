@@ -76,7 +76,7 @@ const COLUMN_TYPE_ICONS: Record<CustomColumnDef['column_type'], typeof Type> = {
 
 /** Quick-insert formula presets surfaced as chips below the textarea. */
 const FORMULA_PRESETS: { label: string; snippet: string; hint: string }[] = [
-  { label: '× 1.19 (VAT)', snippet: '=$QUANTITY * $UNIT_RATE * 1.19', hint: 'Total with German VAT' },
+  { label: '× 1.20 (ДДС)', snippet: '=$QUANTITY * $UNIT_RATE * 1.20', hint: 'Total with Bulgarian VAT (20%)' },
   { label: 'qty × rate', snippet: '=$QUANTITY * $UNIT_RATE', hint: 'Net total' },
   { label: 'pos ref', snippet: '=pos("01.001").qty', hint: 'Pull qty from another row' },
   { label: 'if branch', snippet: '=if($QUANTITY > 100, $UNIT_RATE * 0.95, $UNIT_RATE)', hint: 'Volume discount' },

@@ -44,6 +44,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.market_profile import MARKET_LOCALE
 from app.database import GUID, Base
 
 # ── Development ─────────────────────────────────────────────────────────
@@ -367,7 +368,7 @@ class Buyer(Base):
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     email: Mapped[str] = mapped_column(String(255), nullable=False, default="", index=True)
     phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default=MARKET_LOCALE)
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="lead", index=True)
     contract_value: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False, default=Decimal("0"))
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="")
@@ -723,7 +724,7 @@ class Lead(Base):
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     email: Mapped[str] = mapped_column(String(255), nullable=False, default="", index=True)
     phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default=MARKET_LOCALE)
     budget_min: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     budget_max: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="")
@@ -858,7 +859,7 @@ class SalesContract(Base):
     # ISO 3166-2 region code (e.g. "DE-BE", "GB-ENG"). Optional -
     # falls back to the development's jurisdiction at write time.
     governing_law: Mapped[str] = mapped_column(String(16), nullable=False, default="")
-    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default=MARKET_LOCALE)
     # {base, vat, stamp_duty, legal_fees, options_value, discounts}
     total_price_breakdown: Mapped[dict] = mapped_column(  # type: ignore[assignment]
         JSON, nullable=False, default=dict, server_default="{}"

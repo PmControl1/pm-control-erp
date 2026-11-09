@@ -37,6 +37,7 @@ import {
 // ── Static data ──────────────────────────────────────────────────────────────
 
 const TIMEZONES = [
+  'Europe/Sofia',
   'UTC',
   'Europe/London',
   'Europe/Berlin',
@@ -376,7 +377,7 @@ export function RegionalSettings({ animationDelay = '0ms' }: { animationDelay?: 
   });
 
   // Local state — seeded from backend, falls back to store
-  const timezone = prefs?.timezone ?? 'UTC';
+  const timezone = prefs?.timezone ?? 'Europe/Sofia';
   const measurementSystem = (prefs?.measurement_system as MeasurementSystem) ?? storeMeasurement;
   // Do NOT substitute 'A4' for a missing value, which is what this line used
   // to do. The account default is now 'auto' (follow the project's country),

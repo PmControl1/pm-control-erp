@@ -18,7 +18,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, CheckCircle2, Clock, Lock, AlertTriangle } from 'lucide-react';
 
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { Button, ConfirmDialog } from '@/shared/ui';
 import { useConfirm } from '@/shared/hooks/useConfirm';

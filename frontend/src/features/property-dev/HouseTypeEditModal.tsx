@@ -5,10 +5,8 @@
  * house-type catalogue.
  *
  * Design notes:
- *   * Country picker uses the full ISO 3166-1 alpha-2 dataset via
- *     <CountryCombobox> with searchable type-ahead AND a "Custom
- *     region (free text)" escape hatch for non-country scopes (DACH,
- *     EU-wide, GCC, …).
+ *   * New house types use Bulgaria and EUR automatically. Existing entries
+ *     keep their country, custom region and currency when edited.
  *   * Two-column dense layout for ≥md viewports with a live "preview"
  *     panel that mirrors what catalogue consumers will see (code +
  *     name + flag + key specs).
@@ -36,6 +34,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { getErrorMessage } from '@/shared/lib/api';
 import { onlyChangedFields } from '@/shared/lib/apiHelpers';
 import { getCountry } from '@/shared/lib/countries';
+import { BULGARIAN_PROJECT_DEFAULTS } from '@/shared/lib/marketProfile';
 
 import {
   createHouseTypeCatalogue,
@@ -92,7 +91,7 @@ interface FormState {
 function blankState(): FormState {
   return {
     project_id: '',
-    countryValue: '',
+    countryValue: BULGARIAN_PROJECT_DEFAULTS.country_code,
     customRegion: '',
     code: '',
     name: '',
@@ -104,7 +103,7 @@ function blankState(): FormState {
     parking_spots: '',
     typical_price_min: '',
     typical_price_max: '',
-    currency: '',
+    currency: BULGARIAN_PROJECT_DEFAULTS.currency,
     construction_type: '',
     energy_class: '',
     sales_channel: '',
@@ -322,9 +321,8 @@ export function HouseTypeEditModal({
           ? t('property_dev.house_type.edit_title', { defaultValue: 'Edit house type' })
           : t('property_dev.house_type.new_title', { defaultValue: 'New house type' })
       }
-      subtitle={t('property_dev.house_type.modal_subtitle', {
-        defaultValue:
-          'Define a tenant-owned house type so plots and price-matrix rules can reference it. Any country supported; pick "Custom region" for cross-border or non-country scopes.',
+      subtitle={isEdit ? undefined : t('property_dev.house_type.bulgaria_subtitle', {
+        defaultValue: 'Define a house type for your Bulgarian project.',
       })}
       footer={
         <div className="flex items-center justify-end gap-2">
@@ -424,14 +422,14 @@ export function HouseTypeEditModal({
             </WideModalField>
             <WideModalField
               label={t('property_dev.house_type.country_label', { defaultValue: 'Country / region' })}
-              hint={t('property_dev.house_type.country_hint', {
+              hint={isEdit ? t('property_dev.house_type.country_hint', {
                 defaultValue:
                   'Pick any of the 180+ ISO countries, or switch to "Custom region" for cross-border scopes.',
-              })}
+              }) : undefined}
               error={customRegionErr}
               span={2}
             >
-              <CountryCombobox
+              {isEdit ? <CountryCombobox
                 value={form.countryValue}
                 customValue={form.customRegion}
                 allowEmpty
@@ -449,7 +447,9 @@ export function HouseTypeEditModal({
                   set('customRegion', v);
                   markTouched('customRegion');
                 }}
-              />
+              /> : (
+                <input readOnly value="България / Bulgaria" className={inputCls} />
+              )}
             </WideModalField>
             <WideModalField
               label={t('property_dev.house_type.description_label', {
@@ -625,6 +625,7 @@ export function HouseTypeEditModal({
               <input
                 type="text"
                 value={form.currency}
+                readOnly={!isEdit}
                 onChange={(e) =>
                   set(
                     'currency',
@@ -632,16 +633,16 @@ export function HouseTypeEditModal({
                   )
                 }
                 onBlur={() => markTouched('currency')}
-                list="house-type-currency-list"
+                list={isEdit ? 'house-type-currency-list' : undefined}
                 maxLength={3}
                 placeholder="EUR"
                 className={currencyErr ? inputErrCls : inputCls}
               />
-              <datalist id="house-type-currency-list">
+              {isEdit && <datalist id="house-type-currency-list">
                 {COMMON_CURRENCIES.map((c) => (
                   <option key={c} value={c} />
                 ))}
-              </datalist>
+              </datalist>}
             </WideModalField>
           </WideModalSection>
 

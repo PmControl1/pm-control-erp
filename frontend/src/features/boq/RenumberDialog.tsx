@@ -55,7 +55,7 @@ const SCHEMES: SchemeInfo[] = [
     titleKey: 'boq.renumber_scheme_gap10',
     titleDefault: 'Gap of 10',
     descKey: 'boq.renumber_scheme_gap10_desc',
-    descDefault: 'Leaves room to insert positions like 01.15 between 01.10 and 01.20 later. Standard German tender output.',
+    descDefault: 'Leaves room to insert positions like 01.15 between 01.10 and 01.20 later.',
     example: ['01', '01.10', '01.20', '01.30', '02', '02.10'],
     recommended: true,
   },
