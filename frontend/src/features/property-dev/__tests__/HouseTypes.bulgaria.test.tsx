@@ -32,7 +32,9 @@ describe('Bulgarian house types', () => {
     expect(screen.getByDisplayValue('България / Bulgaria')).toHaveAttribute('readonly');
     expect(screen.getByDisplayValue('EUR')).toHaveAttribute('readonly');
     expect(screen.queryByRole('option', { name: /Deutschland/ })).toBeNull();
-    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'project' } });
+    const project = screen.getAllByRole('combobox')[0];
+    if (!project) throw new Error('Project selector is missing');
+    fireEvent.change(project, { target: { value: 'project' } });
     fireEvent.change(screen.getByPlaceholderText('TYPE-A'), { target: { value: 'TYPE-BG' } });
     fireEvent.change(screen.getByPlaceholderText('2-bed coastal townhouse'), { target: { value: 'Bulgarian house' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create' }));
@@ -57,6 +59,7 @@ describe('Bulgarian house types', () => {
     renderContent(<HouseTypeSettingsPage />);
     await waitFor(() => expect(fetchHouseTypes).toHaveBeenCalledWith('BG', undefined));
     const country = screen.getAllByRole('combobox')[0];
+    if (!country) throw new Error('Country filter is missing');
     expect(country).toHaveValue('BG');
     fireEvent.change(country, { target: { value: '' } });
     await waitFor(() => expect(fetchHouseTypes).toHaveBeenCalledWith(undefined, undefined));

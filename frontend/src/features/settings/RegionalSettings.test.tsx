@@ -227,7 +227,7 @@ describe('the number format row', () => {
       expect(pressed).toHaveLength(1);
       return pressed;
     });
-    expect(buttons[0]).toHaveTextContent(example(resolveNumberLocale('auto')));
+    expect(buttons[0]).toHaveTextContent(flatten(example(resolveNumberLocale('auto'))));
   });
 
   it('refuses the seeded German pattern on a browser that never chose', async () => {
@@ -246,7 +246,7 @@ describe('the number format row', () => {
       return found;
     });
     expect(pressed[0]).not.toHaveTextContent(example('de-DE'));
-    expect(pressed[0]).toHaveTextContent(example(resolveNumberLocale('auto')));
+    expect(pressed[0]).toHaveTextContent(flatten(example(resolveNumberLocale('auto'))));
   });
 
   it('keeps the German pattern once this browser has chosen German', async () => {

@@ -2655,7 +2655,7 @@ function ColumnMappingPanel({
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ImportDatabasePage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
