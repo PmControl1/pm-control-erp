@@ -27,8 +27,11 @@ const SUPPORTED_CODES: readonly string[] = SUPPORTED_LANGUAGES.map((l) => l.code
  * The account language to switch to after a sign-in, or ``null`` to keep the
  * one on screen.
  *
- * New accounts default to Bulgarian. English is an explicit supported
- * alternative and follows the account across browsers as well.
+ * ``en`` is never restored. It was the column default every account carried
+ * before the product became Bulgarian-first, so on those accounts it says
+ * nothing about what the person chose; restoring it would switch a Bulgarian
+ * screen to English at sign-in. Someone who wants English picks it in the
+ * browser, and that choice wins here anyway.
  */
 export function accountLanguageToApply(
   account: string | null | undefined,
@@ -37,7 +40,7 @@ export function accountLanguageToApply(
   supported: readonly string[] = SUPPORTED_CODES,
 ): string | null {
   if (chosenHere) return null;
-  if (!account) return null;
+  if (!account || account === 'en') return null;
   if (!supported.includes(account)) return null;
   return account === current ? null : account;
 }
