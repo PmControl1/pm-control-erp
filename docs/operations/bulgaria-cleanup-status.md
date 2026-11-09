@@ -36,8 +36,13 @@ Fresh local checks on 9 November 2026:
 | Changed frontend ESLint | Passed; source i18n module has the existing lint exclusion |
 | Repository hygiene and package-data references | Passed |
 | Deployment script tests | 20 passed |
-| Strict TypeScript, all application/E2E/config projects | In progress |
+| Strict TypeScript, all application/E2E/config projects | Passed |
 | Production Vite build | Incomplete: environment killed the process, exit 137 |
+
+The final test-only type guards and unused-binding cleanup also passed all
+18 tests in the three affected frontend suites and changed-file ESLint.
+TypeScript batches 1–5 passed in the first fresh run; after fixing the two
+new-test type errors, batches 6–9 and the E2E/config projects passed on rerun.
 
 The PostgreSQL workflow test creates a project without market selections,
 imports a synthetic BGN КСС, applies the Bulgarian ДДС template, verifies
