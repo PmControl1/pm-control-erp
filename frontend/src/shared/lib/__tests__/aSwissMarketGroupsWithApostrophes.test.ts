@@ -100,15 +100,14 @@ describe('the project pickers', () => {
     expect(lookupCountryDefault('IE')).toEqual({ region: 'Ireland', currency: 'EUR' });
   });
 
-  it('offer every region and currency the country defaults name', () => {
-    // The auto-fill silently does nothing for a value no option carries, so
-    // a default pointing at a missing option looks fine and fills nothing.
-    const regionBlock = createProjectSource().split('const REGION_GROUPS')[1]?.split('\n];')[0] ?? '';
-    const regions = new Set([...regionBlock.matchAll(/value:\s*'([^']+)'/g)].map((m) => m[1]));
+  it('offer every currency the country defaults name', () => {
+    // The create page stopped filling region and currency from the address
+    // when the product became Bulgaria-only: a new project is always BG and
+    // EUR. So the region half of this mapping reaches no picker any more, and
+    // the currency half is checked against the list the edit form still offers.
+    expect(createProjectSource()).not.toContain('lookupCountryDefault(');
     const currencies = new Set(CURRENCY_GROUPS.flatMap((g) => g.options.map((o) => o.value)));
-    expect(regions.size).toBeGreaterThan(20);
     for (const [cc, entry] of Object.entries(COUNTRY_DEFAULTS)) {
-      expect(regions.has(entry.region), `${cc} -> region ${entry.region}`).toBe(true);
       expect(currencies.has(entry.currency), `${cc} -> currency ${entry.currency}`).toBe(true);
     }
   });

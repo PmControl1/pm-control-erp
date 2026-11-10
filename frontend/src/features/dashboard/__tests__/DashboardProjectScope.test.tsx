@@ -138,6 +138,7 @@ vi.mock('@/app/i18n', () => ({
   CORE_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
   EXTRA_LANGUAGES: [],
   SUPPORTED_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
+  MARKET_UI_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
   getLanguageByCode: () => ({ code: 'en', name: 'English', flag: 'gb', country: 'gb' }),
   browserRegionForLanguage: () => null,
   default: {

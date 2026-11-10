@@ -25,6 +25,14 @@
 // below are the English defaults written in the component.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// The number format row is tested on a browser that never chose a language,
+// which in the Bulgarian product opens in Bulgarian, so 'auto' resolves to a
+// locale the row has a button for. src/test/setup.ts stores an English choice
+// for the rest of the suite; drop it before app/i18n is imported.
+vi.hoisted(() => {
+  window.localStorage.removeItem('i18nextLng');
+});
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

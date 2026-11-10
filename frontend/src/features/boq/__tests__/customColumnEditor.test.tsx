@@ -263,10 +263,11 @@ describe('CustomColumnsDialog - calculated column flow', () => {
     fireEvent.click(screen.getByText('Show form'));
     fireEvent.click(screen.getByRole('radio', { name: /Calculated/i }));
 
-    fireEvent.click(screen.getByRole('button', { name: /× 1.19 \(VAT\)/i }));
+    // The VAT preset is Bulgarian ДДС at 20%.
+    fireEvent.click(screen.getByRole('button', { name: /× 1\.20 \(ДДС\)/i }));
     const textarea = screen.getByPlaceholderText(
       /quantity \* unit_rate/i,
     ) as HTMLTextAreaElement;
-    expect(textarea.value).toContain('1.19');
+    expect(textarea.value).toContain('* 1.20');
   });
 });

@@ -105,6 +105,16 @@ cost-breakdown registry, country-less because it is not a breakdown. Whether
 Austria should get B 1801-1 cost groups is a live product question, and it
 needs a code table and seeded codes rather than a line in the map.
 
+**Since the product became Bulgaria-only.**
+
+The region picker ships one option, ``BG``, and the project page offers no
+standards picker at all: a Bulgarian project's standard comes from its region.
+So the region population is one ISO code, the standards half of this file
+asserts that the page's list is empty and that the market region still resolves
+a standard, and the macro-region anchors are kept as guards for the values the
+multi-country picker wrote, which projects created before the change still
+carry.
+
 **Would anyone know if a project fell to the default?**
 
 No, unless they are reading logs. ``_report_default`` emits one WARNING naming
@@ -118,14 +128,12 @@ nothing to notice.
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 from types import MappingProxyType
 
 import pytest
 
-import app
 from app.core import classification_registry
 from app.core.classification_registry import (
     CLASSIFICATION_STANDARD_LABELS,
@@ -136,37 +144,29 @@ from app.core.classification_registry import (
     resolve_standard,
     standard_for_country,
 )
+from app.core.market_profile import MARKET_REGION
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PICKER = REPO_ROOT / "frontend" / "src" / "features" / "projects" / "CreateProjectPage.tsx"
 
-#: The product's own country registry, 198 rows, resolved from the imported
-#: package rather than a path guess. Read for ``name_en`` so the standards
-#: labels are checked against a country list the product ships rather than one
-#: written in this file.
-COUNTRIES_JSON = Path(app.__file__).resolve().parent / "modules" / "i18n_foundation" / "seed_data" / "countries.json"
-
-#: The picker's free-text escape hatch. It is a UI mode rather than a region and
-#: never reaches the backend as itself: the page substitutes the typed text
-#: before submitting. Excluded from the population for that reason, not waived.
+#: The multi-country picker's free-text escape hatch. Other pickers in the app
+#: still ship it, so the widened standards gate below still drops it as a UI
+#: mode rather than a standard.
 FREE_TEXT_OPTION = "__custom__"
 
 #: Options that are meant to answer the default, named so that "we decided this
 #: one has no country" is never confused with "nobody looked". An option in this
 #: table still falls to DEFAULT_CLASSIFICATION_STANDARD, and its per-process
 #: warning from ``_report_default`` is therefore expected rather than a signal.
-PICKER_REGIONS_WITH_NO_COUNTRY: dict[str, str] = {
-    "INTL": (
-        "International / Multi-region names no country by construction, so there is nothing to "
-        "resolve to and any anchor would be a guess dressed as an answer. DIN 276 by fall-through "
-        "is as defensible as any other guess here, and a user who wants a different one names the "
-        "standard explicitly, which beats the region."
-    ),
-}
+#: Empty since the picker became Bulgaria-only: its one option is a country.
+PICKER_REGIONS_WITH_NO_COUNTRY: dict[str, str] = {}
 
-#: The picker's macro options and the member country each is anchored on, with
-#: what the anchor costs. Asserted below, so re-pointing an anchor is a
-#: deliberate edit here rather than a silent change of answer for a whole region.
+#: The macro options the multi-country picker shipped, and the member country
+#: each is anchored on, with what the anchor costs. The Bulgarian picker no
+#: longer offers them, but projects created before it still carry these stored
+#: values and the resolver still reads them, so the anchor stays asserted:
+#: re-pointing one is a deliberate edit here rather than a silent change of
+#: answer for every project stored under it.
 #:
 #: Where the members agree the anchor is only a spelling. Where they disagree the
 #: reason says so, because "every member reads this" and "we picked one" produce
@@ -270,9 +270,9 @@ def _assert_parse_is_complete(declaration: str) -> list[tuple[str, str]]:
     A regex that matches nothing yields an empty population, and every
     ``for option in population`` assertion over it then passes while measuring
     nothing. So the count of parsed pairs is checked against a count taken a
-    different way - occurrences of the ``value:`` key - and the free-text option
-    is asserted present, since it is the one value both literals are guaranteed
-    to carry.
+    different way - occurrences of the ``value:`` key - and the market region
+    is asserted present, since it is the one value the Bulgarian picker is
+    guaranteed to carry.
 
     Args:
         declaration: The ``const`` name to read.
@@ -294,10 +294,10 @@ def _assert_parse_is_complete(declaration: str) -> list[tuple[str, str]]:
         f"{declared} 'value:' keys. The parse is dropping options, and a dropped option is one this "
         f"gate never checks.\nparsed: {[v for v, _ in parsed]}"
     )
-    assert FREE_TEXT_OPTION in {v for v, _ in parsed}, (
-        f"{FREE_TEXT_OPTION!r} is missing from the parsed {declaration} options. It is the picker's "
-        "free-text escape hatch and has always shipped; its absence means the parse is reading the "
-        "wrong block, or the picker changed in a way this gate has not caught up with."
+    assert MARKET_REGION in {v for v, _ in parsed}, (
+        f"the market region {MARKET_REGION!r} is missing from the parsed {declaration} options. "
+        "The Bulgarian picker always ships it; its absence means the parse is reading the wrong "
+        "block, or the picker changed in a way this gate has not caught up with."
     )
     assert len(parsed) == len({v for v, _ in parsed}), (
         f"{declaration} ships a duplicate option value: {[v for v, _ in parsed]}"
@@ -311,17 +311,16 @@ def _shipped_options() -> list[tuple[str, str]]:
 
 
 def _population() -> list[tuple[str, str]]:
-    """The shipped options minus the free-text UI mode."""
-    return [o for o in _shipped_options() if o[0] != FREE_TEXT_OPTION]
+    """The shipped region options."""
+    return _shipped_options()
 
 
 # ── The population, cross-checked before anything is asserted over it ─────
 
 
-@pytest.mark.parametrize("declaration", ["REGION_GROUPS", "STANDARD_GROUPS"])
-def test_the_picker_parse_finds_every_option_the_file_declares(declaration: str) -> None:
-    """Cross-check both populations two independent ways before trusting them."""
-    _assert_parse_is_complete(declaration)
+def test_the_picker_parse_finds_every_option_the_file_declares() -> None:
+    """Cross-check the region population two independent ways before trusting it."""
+    _assert_parse_is_complete("REGION_GROUPS")
 
 
 # ── The gate ──────────────────────────────────────────────────────────────
@@ -389,7 +388,8 @@ def test_no_declaration_names_an_option_the_picker_no_longer_ships() -> None:
 
     An entry naming a value the picker has dropped, or one that now resolves on
     its own, is dead text that makes the tables look more considered than they
-    are.
+    are. ``MACRO_OPTION_ANCHORS`` is outside this check on purpose: it records
+    stored values the picker no longer offers.
     """
     shipped = {v for v, _ in _shipped_options()}
     problems: list[str] = []
@@ -402,9 +402,6 @@ def test_no_declaration_names_an_option_the_picker_no_longer_ships() -> None:
                 f"  PICKER_REGIONS_WITH_NO_COUNTRY[{value!r}]: now resolves to "
                 f"{normalise_region(value)!r}, so the entry is stale and should be deleted"
             )
-    for value in sorted(MACRO_OPTION_ANCHORS):
-        if value not in shipped:
-            problems.append(f"  MACRO_OPTION_ANCHORS[{value!r}]: the picker no longer ships this option")
 
     assert problems == [], "these declarations no longer describe anything:\n" + "\n".join(problems)
 
@@ -496,175 +493,32 @@ def test_a_resolved_region_also_reaches_its_country_validation_rule_pack() -> No
 
 # ── The second mirror: the standards picker ───────────────────────────────
 
-#: Tokens that appear in a standards label beside the country names and name no
-#: single country. Named rather than skipped, because a token the resolver
-#: cannot read is exactly the shape that let "Austria" sit beside VOCI: silence
-#: from an instrument is indistinguishable from agreement.
-STANDARD_LABEL_TOKENS_THAT_NAME_NO_COUNTRY: dict[str, str] = {
-    "CIS": (
-        "A bloc rather than a country, and the registry maps all five of its construction markets "
-        "to GESN individually (RU, UA, BY, KZ, MN). The label says CIS because a Kazakh estimator "
-        "would not otherwise recognise the row as theirs, and there is nothing for it to resolve "
-        "to that would say more than the countries already do."
-    ),
-}
 
-_PARENTHESISED = re.compile(r"\(([^)]*)\)")
+def test_the_project_page_offers_no_standards_picker_and_the_region_decides() -> None:
+    """The Bulgarian project page names no standard; the region resolves one.
 
-
-def _country_tokens(label: str) -> list[str]:
-    """The country names a standards label claims, in order.
-
-    The convention in the shipped labels is a parenthesised tail listing the
-    countries the standard is read in, separated by a slash or a comma:
-    ``"MasterFormat (US / Canada)"``, ``"GESN / FER (Russia, CIS)"``. Text
-    before the parenthesis is the standard's own name and never a country, which
-    matters because ``"NRM 1/2"`` and ``"GESN / FER"`` both carry the separator.
-
-    Args:
-        label: The option label as shipped.
-
-    Returns:
-        The trimmed tokens, empty when the label names no country.
+    The multi-country page offered a standards picker, and this half of the file
+    checked every row's value and the country beside it against the registry.
+    The Bulgarian page ships ``STANDARD_GROUPS`` empty: a new project's standard
+    is left blank and ``resolve_standard`` reads it from the region. So the
+    assertion is now the pair of facts that make that safe - the list really is
+    empty, so no unchecked row can appear in it, and the market region reaches a
+    standard by region rather than falling through to the default.
     """
-    return [
-        piece.strip() for group in _PARENTHESISED.findall(label) for piece in re.split(r"[/,]", group) if piece.strip()
-    ]
-
-
-def _country_name_to_iso() -> dict[str, str]:
-    """English country name to alpha-2, from the product's shipped registry.
-
-    Raises:
-        AssertionError: The registry is missing or implausibly small. An empty
-            mapping would make every label token unresolvable and the whole
-            standards half of this file would then measure nothing.
-    """
-    assert COUNTRIES_JSON.is_file(), (
-        f"the shipped country registry is not at {COUNTRIES_JSON}. This gate reads it so the "
-        "standards labels are checked against a country list the product ships; do not replace it "
-        "with a name-to-code table written in this file, which would be a third mirror of the same "
-        "data."
-    )
-    rows = json.loads(COUNTRIES_JSON.read_text(encoding="utf-8"))
-    mapping = {row["name_en"].upper(): row["iso_code"].upper() for row in rows if row.get("name_en")}
-    assert len(mapping) > 150, (
-        f"the shipped country registry resolved {len(mapping)} names, which is too few to be the "
-        "real list. Every label token would fall through as unresolvable and this half of the file "
-        "would pass over an empty population."
-    )
-    return mapping
-
-
-def _iso_for_label_token(token: str) -> str | None:
-    """The country a standards-label token names, or ``None``.
-
-    Tried through the product's own resolvers in order: ``normalise_region``,
-    which knows the aliases and macro names, then the shipped country registry's
-    English names, which knows the spellings the resolver deliberately does not
-    chase.
-    """
-    return normalise_region(token) or _country_name_to_iso().get(token.upper())
-
-
-def test_every_shipped_standard_option_is_one_the_registry_can_resolve() -> None:
-    """A value outside the known set is written and then dropped on the floor.
-
-    ``resolve_standard`` accepts an explicit standard only when it is in
-    ``KNOWN_CLASSIFICATION_STANDARDS``. An option carrying a value that is
-    merely labelled writes it onto the project and then falls through to the
-    region and to DIN 276, with no error and nothing a user could see. Three
-    options - UniFormat, Uniclass and OmniClass - and a short ``gbt`` for China
-    once did exactly that.
-    """
-    offenders = sorted(
-        f"{value!r} ({label})"
-        for value, label in _options_in("STANDARD_GROUPS")
-        if value != FREE_TEXT_OPTION and value not in KNOWN_CLASSIFICATION_STANDARDS
-    )
-    assert offenders == [], (
-        f"the standards picker offers {offenders}, which resolve_standard does not accept. Writing "
-        "one onto a project stores a standard the product then ignores, falling through to the "
-        f"region and to {DEFAULT_CLASSIFICATION_STANDARD!r}. Being in "
-        "CLASSIFICATION_STANDARD_LABELS is not enough: a standard has a label so a CostItem encoded "
-        "against it can be named, and it is known only if the product renders a section path for it."
+    source = PICKER.read_text(encoding="utf-8")
+    assert re.search(r"const STANDARD_GROUPS: OptionGroup\[\] = \[\];", source), (
+        f"{PICKER.name} no longer declares STANDARD_GROUPS as an empty list. If the page offers a "
+        "standards picker again, restore the row-by-row checks this test replaced: every value in "
+        "KNOWN_CLASSIFICATION_STANDARDS, and every country beside a name one the registry maps to it."
     )
 
-
-@pytest.mark.parametrize(
-    ("value", "label"),
-    [o for o in _options_in("STANDARD_GROUPS") if o[0] != FREE_TEXT_OPTION and _country_tokens(o[1])],
-)
-def test_a_standards_label_names_the_country_the_registry_maps(value: str, label: str) -> None:
-    """The country beside the name must be one that reads that standard.
-
-    The label is hand-written and the registry has no opinion about wording, so
-    the two can drift, and did: "VOCI (Austria)" while ``COUNTRY_TO_STANDARD``
-    resolves VOCI only for IT. An Austrian picking the one row carrying their
-    country's name wrote the Italian standard onto their project, and neither
-    side was internally inconsistent, so nothing anywhere went red.
-    """
-    problems: list[str] = []
-    for token in _country_tokens(label):
-        iso = _iso_for_label_token(token)
-        if iso is None:
-            if token in STANDARD_LABEL_TOKENS_THAT_NAME_NO_COUNTRY:
-                continue
-            problems.append(
-                f"  {token!r} names no country the product knows. Neither normalise_region nor the "
-                "shipped country registry resolves it, so nobody can check what it claims. Spell it "
-                "the way the country registry does, or name it in "
-                "STANDARD_LABEL_TOKENS_THAT_NAME_NO_COUNTRY with the reason it is not a country."
-            )
-            continue
-        actual = standard_for_country(iso)
-        if actual != value:
-            problems.append(
-                f"  {token!r} resolves to {iso}, and the registry maps {iso} to {actual!r}, not "
-                f"{value!r}. An estimator in {token} who picks the row carrying their own country's "
-                f"name writes {value!r} onto their project while their real standard is {actual!r}."
-            )
-
-    assert problems == [], (
-        f"the standards option {value!r} ({label}) names a country the registry disagrees with:\n" + "\n".join(problems)
+    resolved = resolve_standard(None, MARKET_REGION)
+    assert resolved.matched and resolved.source == "region", (
+        f"a {MARKET_REGION} project with no explicit standard resolves to {resolved.standard!r} with "
+        f"source={resolved.source!r}. With no picker on the page the region is the only way the "
+        "standard is chosen, so it must resolve from the region and not fall through to the default."
     )
-
-
-def test_every_standard_a_country_reads_is_offered_by_the_picker() -> None:
-    """The other direction: a standard nobody can select from the page.
-
-    The picker's own comment records this half of the defect. GESN, BC3, UNTEC,
-    VOCI, SINAPI, Sekisan, KBIM and Birim Fiyat were all resolvable server-side
-    and absent from the page, so an estimator in any of those countries could
-    not name their own standard on a project. A standard added to
-    ``COUNTRY_TO_STANDARD`` tomorrow is unreachable the same way until someone
-    adds the row, and nothing but this would say so.
-
-    The five standards that carry a label and no country - gaeb, omniclass,
-    onorm, uniclass, uniformat - are outside ``KNOWN_CLASSIFICATION_STANDARDS``
-    and so outside this assertion by construction, not by waiver.
-    """
-    offered = {value for value, _ in _options_in("STANDARD_GROUPS")}
-    missing = sorted(s for s in KNOWN_CLASSIFICATION_STANDARDS if s not in offered)
-    assert missing == [], (
-        f"the registry resolves {missing} for at least one country and the standards picker offers "
-        "no row for them, so an estimator in that country cannot name their own standard. Add the "
-        "option with the country beside it, the way the rest of the group is written."
-    )
-
-
-def test_no_declared_label_token_has_quietly_become_resolvable() -> None:
-    """A stale waiver is a waiver nobody reads."""
-    stale = sorted(
-        f"{token!r} now resolves to {_iso_for_label_token(token)!r}"
-        for token in STANDARD_LABEL_TOKENS_THAT_NAME_NO_COUNTRY
-        if _iso_for_label_token(token) is not None
-    )
-    assert stale == [], f"these declarations are dead text and should be deleted: {stale}"
-    thin = sorted(
-        token for token, reason in STANDARD_LABEL_TOKENS_THAT_NAME_NO_COUNTRY.items() if len(reason.strip()) < 20
-    )
-    assert thin == [], f"these declarations carry no usable reason: {thin}"
+    assert resolved.standard == standard_for_country(MARKET_REGION)
 
 
 def test_the_unmapped_standards_are_labelled_and_unreachable_on_purpose() -> None:
@@ -724,6 +578,10 @@ def test_the_gate_is_actually_watching_the_alias_table(monkeypatch: pytest.Monke
     ``normalise_region`` reads the mapping from its own module namespace at call
     time, so replacing the attribute is enough. The catalogue mapping is built
     from the alias table and memoised, so its cache is cleared on both sides.
+
+    The Bulgarian picker ships an ISO code, which resolves without the alias
+    table, so the control runs over the stored macro values the anchors guard:
+    those are the values that only resolve through it.
     """
     monkeypatch.setattr(classification_registry, "REGION_ALIAS_TO_COUNTRY", MappingProxyType({}))
     classification_registry._catalogue_region_to_country.cache_clear()
@@ -731,7 +589,7 @@ def test_the_gate_is_actually_watching_the_alias_table(monkeypatch: pytest.Monke
     try:
         unresolved = [
             value
-            for value, _ in _population()
+            for value in sorted(MACRO_OPTION_ANCHORS)
             if classification_registry.normalise_region(value) is None and value not in PICKER_REGIONS_WITH_NO_COUNTRY
         ]
     finally:
@@ -740,16 +598,16 @@ def test_the_gate_is_actually_watching_the_alias_table(monkeypatch: pytest.Monke
         classification_registry._reported_defaults.clear()
 
     assert unresolved, (
-        "emptying REGION_ALIAS_TO_COUNTRY left every picker option resolving, so this gate is not "
-        "reading the alias table and would stay green through the original defect"
+        "emptying REGION_ALIAS_TO_COUNTRY left every stored macro region resolving, so the anchor "
+        "gate is not reading the alias table and would stay green through the original defect"
     )
 
 
 # ── Every standards picker the app ships, not only the project one ────────
 #
-# ``test_every_shipped_standard_option_is_one_the_registry_can_resolve`` above
-# reads ``STANDARD_GROUPS`` and nothing else, so its population is one file.
-# That is how the defect survived being fixed. When UniFormat, Uniclass and
+# The project page's standards checks once read ``STANDARD_GROUPS`` and nothing
+# else, so their population was one file. That is how the defect survived being
+# fixed. When UniFormat, Uniclass and
 # OmniClass were removed from the project picker for writing values
 # ``resolve_standard`` drops, nobody looked at the other surfaces that offer a
 # classification standard, and two of them went on shipping UniFormat and
@@ -758,13 +616,14 @@ def test_the_gate_is_actually_watching_the_alias_table(monkeypatch: pytest.Monke
 # second gate that would drift from this one.
 #
 # Swept 2026-09-07 across ``frontend/src`` for any option list offering
-# ``masterformat`` as a value. Exactly three files carry one and all three are
-# named below. A fourth picker added tomorrow is invisible here until somebody
-# adds the row, which is the same shape of gap, so the sweep is recorded:
+# ``masterformat`` as a value, and again 2026-11-10 after the project page's
+# list was emptied for the Bulgarian product (asserted empty above). Exactly two
+# files carry one now and both are named below. A third picker added tomorrow is
+# invisible here until somebody adds the row, which is the same shape of gap, so
+# the sweep is recorded:
 #
 #     git grep -ln "value: 'masterformat'" -- frontend/src
 STANDARD_PICKERS: dict[str, tuple[Path, str]] = {
-    "CreateProjectPage.STANDARD_GROUPS": (PICKER, "const STANDARD_GROUPS"),
     "QuickEstimatePage.STANDARDS": (
         REPO_ROOT / "frontend" / "src" / "features" / "ai" / "QuickEstimatePage.tsx",
         "const STANDARDS",
@@ -781,7 +640,6 @@ STANDARD_PICKERS: dict[str, tuple[Path, str]] = {
 #: catches one that reads the wrong literal entirely and still finds a coherent
 #: handful. Changing a picker means changing the number here, deliberately.
 STANDARD_PICKER_OPTION_COUNTS: dict[str, int] = {
-    "CreateProjectPage.STANDARD_GROUPS": 16,
     "QuickEstimatePage.STANDARDS": 4,
     "CreateAssemblyPage.STANDARDS": 3,
 }
@@ -931,7 +789,7 @@ def test_a_standards_picker_ships_the_population_this_gate_expects(name: str) ->
 
 
 def test_every_standards_picker_in_the_app_offers_only_values_the_product_honours() -> None:
-    """The mirrors must agree with the registry, and there are three of them.
+    """The mirrors must agree with the registry, and there are two of them.
 
     ``resolve_standard`` accepts an explicit standard only when it is in
     ``KNOWN_CLASSIFICATION_STANDARDS``, which is 13 of the 18 slugs carrying a

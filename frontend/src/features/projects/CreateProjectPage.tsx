@@ -66,12 +66,22 @@ export interface OptionGroup {
   options: RegionOption[];
 }
 
-const REGION_GROUPS: OptionGroup[] = [{
-  group: 'Europe',
-  options: [{ value: 'BG', label: 'Bulgaria', iso: 'BG' }],
-}];
+// Bulgaria is the only market, so new projects are always BG. The backend
+// region gates read this literal as their population
+// (test_every_shipped_*_option_*), so keep one option per line and the closing
+// bracket on its own line.
+const REGION_GROUPS: OptionGroup[] = [
+  {
+    group: 'Europe',
+    options: [
+      { value: 'BG', label: 'Bulgaria', iso: 'BG' },
+    ],
+  },
+];
 
-// Existing classification values are displayed without offering foreign standards.
+// No standards picker: a Bulgarian project's standard comes from its region.
+// An existing project's stored standard is still shown, as its raw value, by
+// GroupedSelectField in edit mode.
 const STANDARD_GROUPS: OptionGroup[] = [];
 
 // ── Currencies (all major construction market currencies) ─────────────────

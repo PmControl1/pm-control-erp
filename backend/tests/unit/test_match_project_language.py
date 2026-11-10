@@ -45,10 +45,18 @@ def test_every_project_form_region_is_known() -> None:
     assert missing == []
 
 
-def test_no_stale_label_entries() -> None:
-    """The table carries no label the form no longer offers."""
-    stale = sorted(set(PROJECT_REGION_LABELS) - set(_form_region_values()))
-    assert stale == []
+def test_the_bulgarian_form_region_resolves_to_bulgarian() -> None:
+    """The one value the form stores is Bulgaria, read in Bulgarian.
+
+    The table also keeps the labels the multi-country form wrote, because
+    projects created before the Bulgarian product still carry them, so it is no
+    longer expected to equal the form's options; ``test_form_label_resolves``
+    pins those legacy labels instead.
+    """
+    assert _form_region_values() == ["BG"]
+    assert PROJECT_REGION_LABELS["BG"] == ("BG", "bg")
+    assert project_language("BG") == "bg"
+    assert project_country("BG") == "BG"
 
 
 @pytest.mark.parametrize(

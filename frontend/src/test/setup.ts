@@ -237,3 +237,12 @@ const localStorageMock = (() => {
   };
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+// Run the suite as a reader who chose English in this browser. The Bulgarian
+// product opens in Bulgarian when nothing is stored (resolveInitialLanguage in
+// app/i18n.ts), and numbers follow the i18next language, so without a stored
+// choice every component test would read Bulgarian text and Bulgarian digit
+// grouping. Before the Bulgarian product jsdom's navigator.language ('en-US')
+// did this implicitly. Tests of the first-run language clear or set this key
+// themselves before importing app/i18n.
+localStorageMock.setItem('i18nextLng', 'en');
