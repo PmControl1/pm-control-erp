@@ -32,6 +32,8 @@ export interface BatchActionBarProps {
    * Optional: caller may omit if the bulk-update endpoint is unavailable.
    */
   onBatchFactor?: (ids: string[], kind: BatchFactorKind, factor: number) => void;
+  /** Existing project standard; Bulgarian bills do not require a foreign classification. */
+  classificationStandard?: string;
   /** v3.12.0 — set the classification code on all selected positions. */
   onBatchSetClassification?: (
     ids: string[],
@@ -76,6 +78,7 @@ export function BatchActionBar({
   onBatchChangeUnit,
   onClearSelection,
   onBatchFactor,
+  classificationStandard,
   onBatchSetClassification,
   onBatchFindReplace,
   onBatchSetValue,
@@ -95,6 +98,12 @@ export function BatchActionBar({
   const factorPanelRef = useRef<HTMLDivElement>(null);
   const classPanelRef = useRef<HTMLDivElement>(null);
   const count = selectedIds.length;
+  // Preserve editing for a legacy project's declared standard without offering
+  // foreign standards to a Bulgarian КСС or changing imported classification data.
+  const existingStandard = classificationStandard?.trim().toLowerCase();
+  const editableStandard = ['din276', 'nrm', 'masterformat'].includes(existingStandard ?? '')
+    ? existingStandard as BatchClassificationStandard
+    : null;
 
   // Trap Tab / restore focus on close, matching the shared modal a11y pattern.
   useFocusTrap(findReplacePanelRef, !!findReplaceDialog);
@@ -297,10 +306,10 @@ export function BatchActionBar({
           )}
 
           {/* v3.12.0 Stream A — set classification */}
-          {onBatchSetClassification && (
+          {onBatchSetClassification && editableStandard && (
             <button
               type="button"
-              onClick={() => setClassDialog({ standard: 'din276', code: '' })}
+              onClick={() => setClassDialog({ standard: editableStandard, code: '' })}
               aria-label={t('boq.batch_set_classification', { defaultValue: 'Set classification' })}
               className="inline-flex items-center gap-1.5 rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 transition-colors"
             >
@@ -506,20 +515,9 @@ export function BatchActionBar({
                 <span className="text-xs font-medium text-content-secondary">
                   {t('boq.batch_class_standard', { defaultValue: 'Standard' })}
                 </span>
-                <select
-                  value={classDialog.standard}
-                  onChange={(e) =>
-                    setClassDialog({
-                      ...classDialog,
-                      standard: e.target.value as BatchClassificationStandard,
-                    })
-                  }
-                  className="mt-1 w-full h-9 rounded-md border border-border bg-surface-primary px-2 text-sm text-content-primary focus:outline-none focus:ring-2 focus:ring-oe-blue/30"
-                >
-                  <option value="din276">DIN 276</option>
-                  <option value="nrm">NRM</option>
-                  <option value="masterformat">MasterFormat</option>
-                </select>
+                <span className="mt-1 block text-sm text-content-primary">
+                  {{ din276: 'DIN 276', nrm: 'NRM', masterformat: 'MasterFormat' }[classDialog.standard]}
+                </span>
               </label>
               <label className="mt-3 block">
                 <span className="text-xs font-medium text-content-secondary">

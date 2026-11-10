@@ -12,6 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
+from app.core.market_profile import MARKET_LOCALE
 from app.core.provenance import Provenance
 
 # ── R7 money serialization helper ───────────────────────────────────────
@@ -441,7 +442,7 @@ class PlotReserveRequest(BaseModel):
     full_name: str = Field(default="", max_length=255)
     email: str = Field(default="", max_length=255)
     phone: str | None = Field(default=None, max_length=40)
-    language: str = Field(default="en", max_length=10)
+    language: str = Field(default=MARKET_LOCALE, max_length=10)
     reservation_deadline: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -585,7 +586,7 @@ class BuyerCreate(BaseModel):
     full_name: str = Field(default="", max_length=255)
     email: str = Field(default="", max_length=255)
     phone: str | None = Field(default=None, max_length=40)
-    language: str = Field(default="en", max_length=10)
+    language: str = Field(default=MARKET_LOCALE, max_length=10)
     status: str = Field(
         default="lead",
         pattern=r"^(lead|reserved|contracted|completed|cancelled)$",
@@ -1308,7 +1309,7 @@ class LeadCreate(BaseModel):
     full_name: str = Field(default="", max_length=255)
     email: str = Field(default="", max_length=255)
     phone: str | None = Field(default=None, max_length=40)
-    language: str = Field(default="en", max_length=10)
+    language: str = Field(default=MARKET_LOCALE, max_length=10)
     budget_min: Decimal | None = Field(default=None, ge=0)
     budget_max: Decimal | None = Field(default=None, ge=0)
     currency: str = Field(default="", max_length=8)
@@ -1489,7 +1490,7 @@ class ReservationConvertToSpaRequest(BaseModel):
     contract_number: str | None = Field(default=None, pattern=_CONTRACT_NUMBER_PATTERN)
     signing_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     governing_law: str = Field(default="", max_length=16)
-    language: str = Field(default="en", max_length=10)
+    language: str = Field(default=MARKET_LOCALE, max_length=10)
     total_value: Decimal = Field(..., ge=0)
     currency: str = Field(..., min_length=3, max_length=3)
     total_price_breakdown: dict[str, Any] = Field(default_factory=dict)
@@ -1516,7 +1517,7 @@ class SalesContractCreate(BaseModel):
     tenant_id: UUID | None = None
     signing_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     governing_law: str = Field(default="", max_length=16)
-    language: str = Field(default="en", max_length=10)
+    language: str = Field(default=MARKET_LOCALE, max_length=10)
     total_price_breakdown: dict[str, Any] = Field(default_factory=dict)
     total_value: Decimal = Field(default=Decimal("0"), ge=0)
     currency: str = Field(default="", max_length=3)

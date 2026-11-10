@@ -41,7 +41,7 @@ from app.modules.costs import router
 READ = 7
 ITEMS = 25
 DIM = 16
-DB_ID = "XX_VECTOR_BOUND"
+DB_ID = "BG_SOFIA"
 
 
 def _write_vector_parquet(path: Path, items: int) -> None:

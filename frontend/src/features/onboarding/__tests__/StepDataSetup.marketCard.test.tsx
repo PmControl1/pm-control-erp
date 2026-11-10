@@ -1,15 +1,9 @@
 // @ts-nocheck
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
-//
-// Picking a national market card in onboarding (the Turkish base priced into
-// Paris, in French) used to store the card's region, which is the home base,
-// so the job installed the plain Turkish base and the French text never
-// landed. The pick now loads the base and then runs the market load for the
-// card. When that second step fails the base is already in, so the wizard must
-// keep the failure and a retry on screen rather than show the base as ready.
+// A stale API catalogue must not reintroduce foreign setup choices.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { followCostDbLoad, loadBaseMarket, embeddingModelStatus } = vi.hoisted(() => ({
@@ -106,47 +100,20 @@ function renderStep() {
   );
 }
 
-async function clickParisCard() {
-  const cards = await screen.findAllByTestId('base-variant-card');
-  fireEvent.click(cards.find((el) => el.textContent?.includes('Paris')));
-}
-
-describe('StepDataSetup, a national market card', () => {
+describe('StepDataSetup, Bulgarian catalogue setup', () => {
   beforeEach(() => {
     followCostDbLoad.mockReset();
     loadBaseMarket.mockReset();
-    embeddingModelStatus.mockResolvedValue({ state: 'not_requested', enabled: false });
-    followCostDbLoad.mockResolvedValue({
-      outcome: 'completed',
-      job: { id: 'j', kind: 'onboarding.load_cwicr', state: 'success', outcome: 'completed', pct: 100, total: 22494 },
-    });
+    embeddingModelStatus.mockResolvedValue({ enabled: false, installed: false });
   });
 
-  it('loads the base and then prices it into the picked card', async () => {
-    loadBaseMarket.mockResolvedValue({ text_language: 'fr', text_language_requested: 'fr' });
+  it('does not offer foreign bases from a stale server response', async () => {
     renderStep();
-
-    await clickParisCard();
-    fireEvent.click(screen.getByRole('button', { name: /Load Database/i }));
-
-    await waitFor(() => expect(loadBaseMarket).toHaveBeenCalledTimes(1));
-    expect(followCostDbLoad.mock.calls[0][0]).toBe('TR_NATIONAL');
-    expect(loadBaseMarket.mock.calls[0][0].variant_id).toBe('TR_NATIONAL:FR_PARIS_fr');
-  });
-
-  it('keeps a failed market step on screen with its reason and a retry', async () => {
-    loadBaseMarket.mockRejectedValueOnce(new Error("The 'fr' text of 'TR_NATIONAL' could not be loaded"));
-    loadBaseMarket.mockResolvedValueOnce({ text_language: 'fr', text_language_requested: 'fr' });
-    renderStep();
-
-    await clickParisCard();
-    fireEvent.click(screen.getByRole('button', { name: /Load Database/i }));
-
-    const failed = await screen.findByTestId('onboarding-market-failed');
-    expect(failed.textContent).toMatch(/could not be loaded/);
-    fireEvent.click(screen.getByRole('button', { name: /Retry/i }));
-
-    await waitFor(() => expect(loadBaseMarket).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.queryByTestId('onboarding-market-failed')).toBeNull());
+    await screen.findByRole('button', { name: 'Load Database' });
+    expect(screen.queryByTestId('base-variant-card')).toBeNull();
+    expect(screen.queryByText('Turkiye (Birim Fiyat)')).toBeNull();
+    expect(screen.queryByText('France')).toBeNull();
+    expect(followCostDbLoad).not.toHaveBeenCalled();
+    expect(loadBaseMarket).not.toHaveBeenCalled();
   });
 });

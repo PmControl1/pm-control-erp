@@ -47,6 +47,7 @@ from sqlalchemy import String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.i18n import get_locale
+from app.core.market_profile import MARKET_COST_REGION
 from app.core.validation.messages import translate
 from app.dependencies import (
     CurrentUserId,
@@ -498,17 +499,14 @@ async def import_catalog_from_github(
     public CWICR data repository and caches it, so a region imported once
     stays available without network access.
 
-    Accepts any of the region ids in ``REGION_MAP``: the 30 metro locales
-    (AR_DUBAI, AU_SYDNEY, BG_SOFIA, CS_PRAGUE, DE_BERLIN, ENG_TORONTO,
-    SP_BARCELONA, FR_PARIS, HI_MUMBAI, HR_ZAGREB, ID_JAKARTA, IT_ROME,
-    JA_TOKYO, KO_SEOUL, MX_MEXICOCITY, NG_LAGOS, NL_AMSTERDAM, NZ_AUCKLAND,
-    PL_WARSAW, PT_SAOPAULO, RO_BUCHAREST, RU_STPETERSBURG, SV_STOCKHOLM,
-    TH_BANGKOK, TR_ISTANBUL, TR_NATIONAL, UK_GBP, USA_USD, VI_HANOI,
-    ZA_JOHANNESBURG, ZH_SHANGHAI, ZH_CHINA) plus the authentic national /
-    regional bases (BR_NATIONAL, ES_ANDALUCIA, IT_TOSCANA, GR_NATIONAL). The
-    codeless coefficient bases VN_NATIONAL and ID_NATIONAL are recognised keys
-    but have no resource catalog to import.
+    This product offers the Bulgarian Sofia reference catalogue. The shared
+    registry retains other region metadata for existing saved resources.
     """
+    if region != MARKET_COST_REGION:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Reference catalogue '{region}' is not available in the Bulgarian product. Use {MARKET_COST_REGION}.",
+        )
     if region not in REGION_MAP:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

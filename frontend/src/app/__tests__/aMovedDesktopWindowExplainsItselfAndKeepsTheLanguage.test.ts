@@ -33,7 +33,7 @@ describe('the account language comes back on a fresh origin', () => {
     expect(accountLanguageToApply('it', 'de', true, supported)).toBeNull();
   });
 
-  it('does not treat the column default en as a choice', () => {
+  it('does not treat the old column default en as a choice', () => {
     expect(accountLanguageToApply('en', 'de', false, supported)).toBeNull();
   });
 
@@ -42,5 +42,13 @@ describe('the account language comes back on a fresh origin', () => {
     expect(accountLanguageToApply('', 'en', false, supported)).toBeNull();
     expect(accountLanguageToApply('xx', 'en', false, supported)).toBeNull();
     expect(accountLanguageToApply('de', 'de', false, supported)).toBeNull();
+  });
+  it('limits the Bulgarian product to its two offered interface languages', () => {
+    expect(accountLanguageToApply('bg', 'en', false)).toBe('bg');
+    expect(accountLanguageToApply('de', 'bg', false)).toBeNull();
+  });
+
+  it('keeps an existing account with the old en default in Bulgarian at sign-in', () => {
+    expect(accountLanguageToApply('en', 'bg', false)).toBeNull();
   });
 });

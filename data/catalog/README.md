@@ -2,6 +2,13 @@
 
 Extracted from the CWICR Construction Cost Database (55,719 work items, 900K+ resource rows).
 
+PM Project Management offers the Sofia (`BG_SOFIA`) catalogue through the
+application. Unused foreign regional CSV/XLSX catalogues and the Toronto
+exports have been removed from this checkout. Sofia is downloaded on demand;
+an operator may also provide `regions/DDC_CWICR_BG_SOFIA_Catalog.csv` locally.
+The shared reference resources below remain available for existing tooling.
+They are reference data, not a verified Bulgarian price book.
+
 ## Files
 
 | File | Resources | Size | Description |
@@ -87,7 +94,7 @@ Data Driven Construction (DDC) CWICR Database
 - https://github.com/datadrivenconstruction/OpenConstructionEstimate-DDC-CWICR
 
 The `cwicr_*.csv` files above are an extract of the global CWICR base. The
-per-region catalogues in `regions/` come from several different bases, and
+upstream per-region catalogues come from several different bases, and
 they do not all share one origin. Eleven of them (`AR_DUBAI`, `DE_BERLIN`,
 `ENG_TORONTO`, `FR_PARIS`, `HI_MUMBAI`, `PT_SAOPAULO`, `RU_STPETERSBURG`,
 `SP_BARCELONA`, `UK_GBP`, `USA_USD`, `ZH_SHANGHAI`) are the same global base

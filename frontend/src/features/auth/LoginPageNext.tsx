@@ -35,7 +35,7 @@ import { readRememberChoice, saveRememberChoice, useAuthStore } from '@/stores/u
 import { extractErrorMessageFromBody } from '@/shared/lib/api';
 import { loginFailureKindFromResponse } from './loginError';
 import { AuthBackground } from './AuthBackground';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { BRAND_NAME, TEST_BUILD } from '@/shared/brand';
 

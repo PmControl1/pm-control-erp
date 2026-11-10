@@ -91,16 +91,13 @@ describe('resolveCountryOffer, on the packs the wheel ships', () => {
     expect(offer).toEqual({ kind: 'pack', pack: expect.objectContaining({ slug: 'brazil-sinapi' }) });
   });
 
-  it('offers the pack for Germany now that germany-de ships, and a preset for Canada', () => {
+  it('retains shared installed-pack resolution without offering foreign presets', () => {
     // Germany now ships germany-de in the wheel; Canada still has no wheel pack.
     expect(resolveCountryOffer('de', WHEEL_PACKS)).toEqual({
       kind: 'pack',
       pack: expect.objectContaining({ slug: 'germany-de' }),
     });
-    expect(resolveCountryOffer('ca', WHEEL_PACKS)).toEqual({
-      kind: 'preset',
-      preset: expect.objectContaining({ id: 'ca' }),
-    });
+    expect(resolveCountryOffer('ca', WHEEL_PACKS)).toBeNull();
   });
 
   it('offers the partner pack once it is present alongside the country pack', () => {
@@ -121,15 +118,12 @@ describe('resolveCountryOffer, on the packs the wheel ships', () => {
     });
   });
 
-  it('translates GB to the uk preset when no British pack is present', () => {
+  it('does not offer foreign curated presets when a British pack is absent', () => {
     // The curated ids are not all ISO: the United Kingdom's preset is 'uk'
     // and the pack tags itself GB. With the pack present the pack wins; with
     // it absent the preset has to still be reachable.
     const noBritishPack = WHEEL_PACKS.filter((p) => p.slug !== 'uk-jct');
-    expect(resolveCountryOffer('gb', noBritishPack)).toEqual({
-      kind: 'preset',
-      preset: expect.objectContaining({ id: 'uk' }),
-    });
+    expect(resolveCountryOffer('gb', noBritishPack)).toBeNull();
     expect(resolveCountryOffer('gb', WHEEL_PACKS)).toEqual({
       kind: 'pack',
       pack: expect.objectContaining({ slug: 'uk-jct' }),
@@ -156,7 +150,7 @@ describe('resolveCountryOffer, on the packs the wheel ships', () => {
       (p) => p.slug !== 'hungary-hu' && p.slug !== 'russia-gesn',
     );
     expect(resolveCountryOffer('hu', without)).toBeNull();
-    expect(resolveCountryOffer('ru', without)?.kind).toBe('preset');
+    expect(resolveCountryOffer('ru', without)).toBeNull();
   });
 
   it('answers null rather than defaulting to the United States', () => {

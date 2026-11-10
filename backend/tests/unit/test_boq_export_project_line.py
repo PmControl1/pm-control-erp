@@ -36,6 +36,10 @@ class TestProjectLine:
     def test_names_the_job_the_standard_and_the_region(self) -> None:
         assert _project_line(_Project()) == "Project: Riverside HQ  |  Standard: din276  |  Region: DACH"
 
+    def test_bulgarian_document_names_the_job_in_bulgarian(self) -> None:
+        project = _Project(name="Жилищна сграда", classification_standard="", region="BG")
+        assert _project_line(project, "bg-BG") == "Обект: Жилищна сграда  |  Регион: BG"
+
     def test_a_project_that_could_not_be_read_prints_no_line(self) -> None:
         # Not an empty string: the caller must be able to tell "nothing to say"
         # from "say nothing", because an empty subtitle would still take a row.
@@ -74,6 +78,12 @@ class TestExportDetails:
         lines = _export_details("Project: Riverside HQ", "eur", self._AT)
         # 23:30 at UTC-5 is already the 5th in UTC, which is the date printed.
         assert lines == ["Project: Riverside HQ", "Currency: EUR  |  Exported: 2026-10-05"]
+
+    def test_bulgarian_document_states_the_money_and_export_date(self) -> None:
+        assert _export_details("Обект: Жилищна сграда", "eur", self._AT, "bg") == [
+            "Обект: Жилищна сграда",
+            "Валута: EUR  |  Изнесено: 2026-10-05",
+        ]
 
     def test_no_project_still_states_currency_and_date(self) -> None:
         assert _export_details(None, "USD", self._AT) == ["Currency: USD  |  Exported: 2026-10-05"]

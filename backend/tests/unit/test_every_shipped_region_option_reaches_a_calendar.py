@@ -46,6 +46,7 @@ from pathlib import Path
 import pytest
 
 from app.core.country_registries import iso_codes
+from app.core.market_profile import MARKET_REGION
 from app.modules.schedule.service import (
     _CALENDAR_BY_COUNTRY,
     _CALENDAR_BY_LABEL,
@@ -58,9 +59,9 @@ from app.modules.schedule.service import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PICKER = REPO_ROOT / "frontend" / "src" / "features" / "projects" / "CreateProjectPage.tsx"
 
-#: The picker's free-text escape hatch. It is a UI mode rather than a region, and
-#: the value never reaches the backend: the page substitutes the typed text
-#: before submitting. Excluded from the population for that reason, not waived.
+#: The multi-country picker's free-text escape hatch. It is a UI mode rather than
+#: a region, and the value never reaches the backend. The Bulgarian picker does
+#: not ship it; it stays excluded so a future picker that does is not misread.
 FREE_TEXT_OPTION = "__custom__"
 
 _DAY_NAMES = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -83,69 +84,22 @@ def _names(days: object) -> str:
 #: a calendar of their own would only duplicate it. The reason is required
 #: because "it happens to be Monday-Friday" and "nobody looked" produce the same
 #: resolver output, and only a written reason tells them apart.
+#:
+#: The picker is Bulgaria-only, so its one option is the ISO code ``BG``; the
+#: multi-country picker's entries left with it.
 PICKER_REGIONS_THAT_ARE_MONDAY_TO_FRIDAY: dict[str, str] = {
-    "Australia": "Saturday-Sunday weekend.",
-    "Bulgaria": (
+    "BG": (
         "Saturday-Sunday weekend; Labour Code art. 136 sets a five-day week of eight-hour days. "
         "Holidays, including the days the Council of Ministers moves, are separate."
     ),
-    "Croatia": "Saturday-Sunday weekend; the Labour Act sets a 40-hour week over five days.",
-    "Czech": "Saturday-Sunday weekend.",
-    "INTL": "Multi-region, so no single week applies; DEFAULT is the neutral answer rather than a guess.",
-    "Ireland": "Saturday-Sunday weekend.",
-    "Japan": "Saturday-Sunday weekend.",
-    "Korea": "Saturday-Sunday weekend.",
-    "Mexico": "Saturday-Sunday weekend.",
-    "Netherlands": "Saturday-Sunday weekend.",
-    "NewZealand": "Saturday-Sunday weekend.",
-    "Nordics": (
-        "Saturday-Sunday weekend across all four. Deliberately not routed to the DACH calendar, "
-        "which _CALENDAR_BY_LEGACY_HEAD's 'NORDIC' entry would suggest: DACH is also Monday-Friday "
-        "and eight hours, so routing there changes no computed date and only makes a Stockholm "
-        "project render a badge reading 'Germany/DACH'."
-    ),
-    "SouthAfrica": "Saturday-Sunday weekend.",
-    "UA": "Existing i18n_foundation work_calendars.json UA seed declares ISO weekdays 1-5; holidays are separate.",
 }
 
 #: Options whose week is a genuinely open question, kept apart from the table
 #: above so that "we checked and it is Monday-Friday" is never confused with "we
 #: could not tell". These answer DEFAULT today, which is a guess, and each line
-#: says what would settle it. Splitting the option or sourcing a calendar is a
-#: product decision, not a test's to make.
-PICKER_REGIONS_WHOSE_WEEK_IS_UNSETTLED: dict[str, str] = {
-    "HU": (
-        "JUR-03: neither core working-week registry nor i18n calendar seeds contains Hungary. "
-        "Verify the standard week and annual exchanged working Saturdays before adding a country calendar; "
-        "the selector exposes the existing DEFAULT with week_fallback=true meanwhile."
-    ),
-    "NorthAfrica": (
-        "Genuinely split: Egypt, Libya, Algeria and Sudan rest Friday-Saturday and work "
-        "Sunday-Thursday, while Morocco and Tunisia rest Saturday-Sunday. No single week is right "
-        "for the option as shipped, and Egypt is the largest construction market in it, so DEFAULT "
-        "is wrong there. Settled by splitting the picker option, not by widening a calendar."
-    ),
-    "EastAfrica": (
-        "Kenya, Tanzania and Uganda are Monday-Friday, but Ethiopia and much of the region run a "
-        "six-day site week, which is the same unsourced construction-convention question the CHINA "
-        "and INDIA entries carry. Settled by sourcing a site week, not by assuming one."
-    ),
-    "WestAfrica": (
-        "Nigeria, Ghana and Senegal are Monday-Friday by statute, with a six-day site week common "
-        "in practice. Same unsourced question as EastAfrica."
-    ),
-    "LatinAmerica": (
-        "Covers countries whose statutory weeks differ materially: Brazil already has its own "
-        "Monday-Saturday 44h entry, while Mexico is listed separately. What the residual 'Other' "
-        "option should mean is undecided."
-    ),
-    "SoutheastAsia": (
-        "Monday-Friday for the office week across most of the region, but Indonesia, Malaysia and "
-        "Vietnam commonly run six-day construction weeks. Unsourced, same class as the CHINA entry: "
-        "a longer site week is a deliberate model this product already ships, so what is undecided "
-        "here is whether the region has one, not whether its rest day is misplaced."
-    ),
-}
+#: should say what would settle it. Splitting the option or sourcing a calendar
+#: is a product decision, not a test's to make. Empty: Bulgaria's week is settled.
+PICKER_REGIONS_WHOSE_WEEK_IS_UNSETTLED: dict[str, str] = {}
 
 
 #: Quote-agnostic on purpose: the repo has no frontend autoformatter, so a file
@@ -194,8 +148,9 @@ def test_the_picker_parse_finds_every_option_the_file_declares() -> None:
     A regex that matches nothing yields an empty population, and every
     ``for option in population`` assertion below then passes while measuring
     nothing. So the count of parsed pairs is checked against a count taken a
-    different way - occurrences of the ``value:`` key - and the free-text option
-    is asserted present, since it is the one value guaranteed to be in the list.
+    different way - occurrences of the ``value:`` key - and the market region
+    is asserted present, since it is the one value the Bulgarian picker is
+    guaranteed to ship.
     """
     block = _picker_block()
     parsed = _shipped_options()
@@ -211,10 +166,10 @@ def test_the_picker_parse_finds_every_option_the_file_declares() -> None:
         "keys. The parse is dropping options, and a dropped option is one this gate never checks.\n"
         f"parsed: {[v for v, _ in parsed]}"
     )
-    assert FREE_TEXT_OPTION in {v for v, _ in parsed}, (
-        f"{FREE_TEXT_OPTION!r} is missing from the parsed options. It is the picker's free-text "
-        "escape hatch and has always shipped; its absence means the parse is reading the wrong "
-        "block, or the picker changed in a way this gate has not caught up with."
+    assert MARKET_REGION in {v for v, _ in parsed}, (
+        f"the market region {MARKET_REGION!r} is missing from the parsed options. The Bulgarian "
+        "picker always ships it; its absence means the parse is reading the wrong block, or the "
+        "picker changed in a way this gate has not caught up with."
     )
     assert len(parsed) == len({v for v, _ in parsed}), (
         f"the picker ships a duplicate option value: {[v for v, _ in parsed]}"

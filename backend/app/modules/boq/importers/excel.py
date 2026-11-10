@@ -1557,6 +1557,8 @@ def _parse_csv(
     rows: list[dict[str, Any]] = []
     row_numbers: list[int] = []
     for line_number, raw_row in enumerate(rows_iter, start=header_number + 1):
+        if _is_export_fx_appendix(raw_row):
+            break
         row: dict[str, Any] = {}
         for idx, val in enumerate(raw_row):
             canonical = column_map.get(idx)
@@ -1661,6 +1663,19 @@ def _header_at(rows_iter: Iterable[tuple[Any, ...]], header_row: int) -> tuple[t
     return None, rows
 
 
+def _is_export_fx_appendix(raw_row: Iterable[Any]) -> bool:
+    """Our single-cell frozen-FX heading closes the bill, before audit rows.
+
+    Exact exported headings only: a work item mentioning exchange rates,
+    with a description or any other cell, remains a work item.
+    """
+    values = [str(value).strip().casefold() for value in raw_row if value is not None and str(value).strip()]
+    return len(values) == 1 and values[0] in {
+        "fx rates (frozen at export)",
+        "валутни курсове (към износа)",
+    }
+
+
 def _read_sheet_rows(
     worksheet: Any,
     *,
@@ -1699,6 +1714,8 @@ def _read_sheet_rows(
     rows: list[dict[str, Any]] = []
     row_numbers: list[int] = []
     for sheet_row, raw_row in enumerate(rows_iter, start=header_number + 1):
+        if _is_export_fx_appendix(raw_row):
+            break
         row: dict[str, Any] = {}
         for idx, val in enumerate(raw_row):
             canonical = column_map.get(idx)
@@ -1995,6 +2012,7 @@ _SUMMARY_WORDS_BY_LANGUAGE: dict[str, dict[str, tuple[str, ...]]] = {
         "tax": ("ддс", "данък добавена стойност"),
         "grand_total": (
             "общо с ддс",
+            "обща стойност",
             "всичко",
             "всичко с ддс",
             "обща стойност с ддс",

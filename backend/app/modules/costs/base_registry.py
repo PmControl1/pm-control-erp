@@ -941,6 +941,8 @@ UNKNOWN_BASE_STATE: dict = {
 def public_catalog(
     loaded_counts: dict[str, int] | None = None,
     base_states: dict[str, dict] | None = None,
+    *,
+    allowed_regions: frozenset[str] | None = None,
 ) -> dict:
     """Serialize the catalog for the API, merging live loaded counts.
 
@@ -951,6 +953,8 @@ def public_catalog(
             shows the true figure after import rather than only the estimate.
         base_states: Region id to the stored market and language of that base
             (``BaseState.public()``), from ``oe_costs_base_state``.
+        allowed_regions: Optional product-market projection for available downloads.
+            The complete registry remains available for resolving saved cost rows.
 
     Returns:
         A JSON-ready dict with a ``families`` list and roll-up totals, plus
@@ -961,7 +965,10 @@ def public_catalog(
     states = base_states or {}
     families = []
     for fam in BASE_FAMILIES:
-        variants = [_variant_public(v, counts, states) for v in fam.variants]
+        offered = [v for v in fam.variants if allowed_regions is None or v.region in allowed_regions]
+        if not offered:
+            continue
+        variants = [_variant_public(v, counts, states) for v in offered]
         families.append(
             {
                 "key": fam.key,
@@ -970,8 +977,8 @@ def public_catalog(
                 "origin": fam.origin,
                 "origin_flag": fam.origin_flag,
                 "description": fam.description,
-                "market_count": len(fam.variants),
-                "repriceable_markets": fam.repriceable_markets,
+                "market_count": len(offered),
+                "repriceable_markets": fam.repriceable_markets if allowed_regions is None else 0,
                 "attribution": fam.attribution or None,
                 "licence": fam.licence or None,
                 # Representative catalogue size: markets in a family share the
@@ -981,12 +988,12 @@ def public_catalog(
                 "variants": variants,
             }
         )
-    all_variants = iter_variants()
+    all_variants = [v for fam in families for v in fam["variants"]]
     return {
         "repo": REPO,
         "families": families,
         "total_bases": len(all_variants),
-        "total_families": len(BASE_FAMILIES),
+        "total_families": len(families),
         "loaded_regions": sorted(r for r, c in counts.items() if c > 10),
         "base_states": {
             region: dict(states.get(region) or UNKNOWN_BASE_STATE)

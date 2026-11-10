@@ -16,6 +16,7 @@
 // StepFinish.workspace.test.tsx; it is not mounted again here.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import i18n from '@/app/i18n';
 import { render, screen, within, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -32,8 +33,8 @@ vi.mock('@/shared/lib/api', async () => {
   return { ...actual, ...api };
 });
 
-// The welcome step switches the UI language as it mounts and the English
-// escape hatch switches it again. The switch is asserted, not performed.
+// Explicit language choices and the English escape hatch are observed without
+// changing the English message assertions used by this suite.
 const changeLanguage = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 vi.mock('@/app/i18n', async () => {
   const actual = await vi.importActual<typeof import('@/app/i18n')>('@/app/i18n');
@@ -177,6 +178,8 @@ const onboardingPost = () => {
 };
 
 beforeEach(() => {
+  // These message assertions exercise the supported English fallback.
+  void i18n.changeLanguage('en');
   localStorage.clear();
   api.apiGet.mockReset();
   api.apiPost.mockReset();
@@ -219,6 +222,20 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('the onboarding wizard, first screen to the app', () => {
+  it('keeps the resolved interface language when the browser uses a foreign locale', async () => {
+    const browserLanguage = vi.spyOn(navigator, 'language', 'get').mockReturnValue('de-DE');
+    try {
+      renderWizard();
+      await heading('Welcome to PM Project Management');
+      expect(changeLanguage).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: /Deutsch/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /Български/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /English \(International\)/ })).toBeInTheDocument();
+    } finally {
+      browserLanguage.mockRestore();
+    }
+  });
+
   it('walks every step as a general contractor and saves exactly what was picked', async () => {
     const client = renderWizard();
 
@@ -524,7 +541,7 @@ describe('loading a cost base by hand on the data step', () => {
     const cwicr = {
       id: 'job-cwicr',
       kind: 'onboarding.load_cwicr',
-      arg: 'ENG_TORONTO',
+      arg: 'BG_SOFIA',
       pct: 0,
       message: null,
       error: null,

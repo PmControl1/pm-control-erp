@@ -370,6 +370,10 @@ def resolve_language(code: str | None) -> str | None:
 # ``None`` means the label does not name one (a multi-country group spanning
 # several languages). ``test_match_project_language`` fails when the form
 # gains a value this table does not know.
+#
+# The Bulgarian form stores only ``BG``. Every other entry is a value the
+# multi-country form wrote, kept so projects created before then still resolve
+# their language the way they always did.
 PROJECT_REGION_LABELS: dict[str, tuple[str | None, str | None]] = {
     # Europe
     "DACH": ("DE", "de"),
@@ -384,6 +388,7 @@ PROJECT_REGION_LABELS: dict[str, tuple[str | None, str | None]] = {
     "Czech": ("CZ", "cs"),
     "Croatia": ("HR", "hr"),
     "Bulgaria": ("BG", "bg"),
+    "BG": ("BG", "bg"),
     "HU": ("HU", "hu"),
     "UA": ("UA", "uk"),
     "Turkey": ("TR", "tr"),

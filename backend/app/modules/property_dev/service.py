@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.events import event_bus, publish_after_commit
 from app.core.i18n import get_locale
 from app.core.json_merge import merge_metadata
+from app.core.market_profile import MARKET_LOCALE
 from app.core.money import money_quantum
 from app.core.pdf_branding import (
     DEFAULT_BRAND,
@@ -3663,7 +3664,7 @@ class PropertyDevService:
                 full_name=lead.full_name,
                 email=lead.email,
                 phone=lead.phone,
-                language=lead.language or "en",
+                language=lead.language or MARKET_LOCALE,
                 status="reserved",
                 currency=data.currency,
                 deposit_amount=data.deposit_amount,
@@ -3975,7 +3976,7 @@ class PropertyDevService:
             tenant_id=res_tenant_id_snap,
             signing_date=data.signing_date,
             governing_law=data.governing_law or "",
-            language=data.language or "en",
+            language=data.language or MARKET_LOCALE,
             total_price_breakdown=data.total_price_breakdown,
             total_value=data.total_value,
             currency=data.currency,
@@ -4088,7 +4089,7 @@ class PropertyDevService:
             tenant_id=data.tenant_id,
             signing_date=data.signing_date,
             governing_law=data.governing_law or "",
-            language=data.language or "en",
+            language=data.language or MARKET_LOCALE,
             total_price_breakdown=data.total_price_breakdown,
             total_value=data.total_value,
             currency=data.currency or "",

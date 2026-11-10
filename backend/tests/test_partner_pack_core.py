@@ -12,6 +12,7 @@ from app.core.partner_pack.discovery import (
     discover_packs,
     get_active_pack,
     get_pack_by_slug,
+    get_selected_pack,
     reset_cache,
 )
 from app.core.partner_pack.manifest import (
@@ -58,7 +59,7 @@ class TestManifestSchema:
     def test_manifest_valid(self, sample_manifest: PartnerPackManifest) -> None:
         assert sample_manifest.slug == "test-pack"
         assert sample_manifest.effective_powered_by == (
-            "Powered by OpenConstructionERP · In partnership with Test Partner"
+            "Powered by PM Project Management · In partnership with Test Partner"
         )
 
     def test_custom_powered_by_text_wins(self) -> None:
@@ -164,7 +165,7 @@ class TestDiscovery:
                 return_value=[],
             ),
         ):
-            active = get_active_pack()
+            active = get_selected_pack()
             assert active is not None
             assert active.slug == "other-pack"
 
@@ -269,18 +270,19 @@ class TestRouter:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         reset_cache()
+        bulgarian_manifest = sample_manifest.model_copy(update={"slug": "bulgaria-bg"})
 
         class EP:
-            name = "test-pack"
+            name = "bulgaria-bg"
             value = "openconstructionerp_test:MANIFEST"
 
             @staticmethod
             def load() -> PartnerPackManifest:
-                return sample_manifest
+                return bulgarian_manifest
 
-        # Activation is explicit-only: a pack is only active when named by
-        # OE_PARTNER_PACK. Discovering a pack must not auto-activate it.
-        monkeypatch.setenv("OE_PARTNER_PACK", "test-pack")
+        # The product baseline is active even without an environment pin.
+        monkeypatch.delenv("OE_PARTNER_PACK", raising=False)
+        monkeypatch.delenv("OE_PACK", raising=False)
         with (
             patch("app.core.partner_pack.discovery.entry_points", return_value=[EP()]),
             patch(
@@ -292,7 +294,7 @@ class TestRouter:
             assert r.status_code == 200
             data = r.json()
             assert data["active"] is True
-            assert data["manifest"]["slug"] == "test-pack"
+            assert data["manifest"]["slug"] == "bulgaria-bg"
             assert data["manifest"]["branding"]["primary_color"] == "#BE1B2F"
 
     def test_logo_404_when_no_pack(self, client: TestClient) -> None:

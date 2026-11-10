@@ -4776,7 +4776,53 @@ async def export_boq_csv(
     )
 
 
-def _project_line(project: Any) -> str | None:
+def _sheet_export_labels(locale: str = "en") -> dict[str, str]:
+    """Human-facing workbook text; technical interchange names stay stable."""
+    labels = {
+        "sheet": "BOQ",
+        "project": "Project",
+        "standard": "Standard",
+        "region": "Region",
+        "currency": "Currency",
+        "exported": "Exported",
+        "ordinal": "Pos.",
+        "description": "Description",
+        "unit": "Unit",
+        "quantity": "Quantity",
+        "unit_rate": "Unit Rate",
+        "total": "Total",
+        "subtotal": "Subtotal",
+        "direct_cost": "Direct Cost",
+        "grand_total": "Grand Total",
+        "fx_rates": "FX Rates (frozen at export)",
+        "base_currency": "Base currency",
+        "title": "Bill of Quantities",
+    }
+    if (locale or "").replace("_", "-").split("-", 1)[0].lower() == "bg":
+        labels.update(
+            sheet="КСС",
+            project="Обект",
+            standard="Стандарт",
+            region="Регион",
+            currency="Валута",
+            exported="Изнесено",
+            ordinal="№ по ред",
+            description="Наименование на СМР",
+            unit="Ед. мярка",
+            quantity="Количество",
+            unit_rate="Ед. цена",
+            total="Стойност",
+            subtotal="Общо за раздел",
+            direct_cost="Общо за СМР",
+            grand_total="Обща стойност",
+            fx_rates="Валутни курсове (към износа)",
+            base_currency="Основна валута",
+            title="Количествено-стойностна сметка",
+        )
+    return labels
+
+
+def _project_line(project: Any, locale: str = "en") -> str | None:
     """The project line printed above the table of an exported sheet.
 
     The bill's own name says which bill this is and not which job it belongs
@@ -4794,7 +4840,8 @@ def _project_line(project: Any) -> str | None:
     """
     if project is None:
         return None
-    labels = (("Project", "name"), ("Standard", "classification_standard"), ("Region", "region"))
+    text = _sheet_export_labels(locale)
+    labels = ((text["project"], "name"), (text["standard"], "classification_standard"), (text["region"], "region"))
     parts = []
     for label, attr in labels:
         value = str(getattr(project, attr, "") or "").strip()
@@ -4803,14 +4850,13 @@ def _project_line(project: Any) -> str | None:
     return "  |  ".join(parts) or None
 
 
-def _export_details(project_line: str | None, currency: str, exported_at: datetime) -> list[str]:
+def _export_details(project_line: str | None, currency: str, exported_at: datetime, locale: str = "en") -> list[str]:
     """The detail lines of the Excel export's document block, under the bill's name.
 
     The project line, then the money and the moment: which currency every
     total on the sheet is stated in, and when the figures were taken. A sheet
     forwarded a week later is otherwise a set of numbers with no unit and no
-    date. The date is ISO, like the rest of the sheet's own text, which is
-    English and declared so.
+    date. The date stays ISO so the exported document is unambiguous.
 
     Args:
         project_line: From :func:`_project_line`, ``None`` when the project
@@ -4822,8 +4868,9 @@ def _export_details(project_line: str | None, currency: str, exported_at: dateti
     Returns:
         One or two lines, never an empty one.
     """
-    money = [f"Currency: {currency.strip().upper()}"] if currency and currency.strip() else []
-    when = f"Exported: {exported_at.astimezone(UTC).date().isoformat()}"
+    text = _sheet_export_labels(locale)
+    money = [f"{text['currency']}: {currency.strip().upper()}"] if currency and currency.strip() else []
+    when = f"{text['exported']}: {exported_at.astimezone(UTC).date().isoformat()}"
     lines = [project_line] if project_line else []
     lines.append("  |  ".join([*money, when]))
     return lines
@@ -4838,6 +4885,7 @@ def _render_boq_xlsx(
     base_ccy: str,
     fx_map: Mapping[str, Any],
     exported_at: datetime | None = None,
+    locale: str = "en",
 ) -> bytes:
     """Write the Excel export of a bill already read from the database.
 
@@ -4854,6 +4902,12 @@ def _render_boq_xlsx(
     from openpyxl.utils import get_column_letter
 
     ai_row_count = 0
+    text = _sheet_export_labels(locale)
+    if text["sheet"] == "КСС" and any(
+        getattr(markup, "category", "") == "tax" and getattr(markup, "is_active", True)
+        for markup in structured_data.markups
+    ):
+        text["grand_total"] = "Всичко с ДДС"
 
     def _xl_row_currency(p: Any) -> str:
         meta = getattr(p, "metadata", None) or getattr(p, "metadata_", None) or {}
@@ -4866,7 +4920,7 @@ def _render_boq_xlsx(
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "BOQ"
+    ws.title = text["sheet"]
 
     # The bill's name, its project, currency and date go above the table at
     # the end, as one document block (see the letterhead call below).
@@ -4874,14 +4928,15 @@ def _render_boq_xlsx(
 
     # ── Header row: standard + custom ────────────────────────────────────
     # Extended set preserves roundtrip data (BUG-163-175) while keeping
-    # the classic first-seven columns stable for backwards compatibility.
+    # the classic column order stable. Bulgarian human headings use the shared
+    # importer's existing aliases; identity/JSON columns retain canonical names.
     standard_headers = [
-        "Pos.",
-        "Description",
-        "Unit",
-        "Quantity",
-        "Unit Rate",
-        "Total",
+        text["ordinal"],
+        text["description"],
+        text["unit"],
+        text["quantity"],
+        text["unit_rate"],
+        text["total"],
         "Currency",
         "Classification",
         "Classification JSON",
@@ -4940,9 +4995,7 @@ def _render_boq_xlsx(
         # section object was missing). Neutralise against CSV formula
         # injection - the embedded user-controlled ordinal/description must
         # not be parsed by Excel as a formula.
-        full_label = f"Subtotal: {sec_ordinal} {sec_desc}".strip().rstrip(":")
-        if full_label == "Subtotal":
-            full_label = "Subtotal"
+        full_label = f"{text['subtotal']}: {sec_ordinal} {sec_desc}".strip().rstrip(":")
         label_cell = ws.cell(row=row, column=2, value=neutralise_formula(full_label))
         label_cell.font = subtotal_font
         label_cell.fill = light_gray_fill
@@ -5111,7 +5164,7 @@ def _render_boq_xlsx(
         ws.cell(row=row_idx, column=7, value=neutralise_formula(base_ccy or ""))
         return row_idx + 1
 
-    current_row = _write_money_row(current_row, "Direct Cost", structured_data.direct_cost)
+    current_row = _write_money_row(current_row, text["direct_cost"], structured_data.direct_cost)
     for markup in structured_data.markups:
         current_row = _write_money_row(current_row, f"  {markup.name}", markup.amount)
 
@@ -5120,7 +5173,7 @@ def _render_boq_xlsx(
     for c in range(1, len(headers) + 1):
         ws.cell(row=total_row, column=c).border = top_border
 
-    total_label = ws.cell(row=total_row, column=2, value="Grand Total")
+    total_label = ws.cell(row=total_row, column=2, value=text["grand_total"])
     total_label.font = grand_total_font
     total_label.border = top_border
 
@@ -5142,9 +5195,9 @@ def _render_boq_xlsx(
     last_row = total_row
     if fx_map:
         appendix_row = total_row + 2
-        hdr = ws.cell(row=appendix_row, column=1, value="FX Rates (frozen at export)")
+        hdr = ws.cell(row=appendix_row, column=1, value=text["fx_rates"])
         hdr.font = bold_font
-        ws.cell(row=appendix_row + 1, column=1, value="Base currency")
+        ws.cell(row=appendix_row + 1, column=1, value=text["base_currency"])
         ws.cell(
             row=appendix_row + 1,
             column=2,
@@ -5216,7 +5269,7 @@ def _render_boq_xlsx(
     apply_company_header(
         ws,
         title=boq_data.name,
-        details=_export_details(project_line, base_ccy, exported_at or datetime.now(tz=UTC)),
+        details=_export_details(project_line, base_ccy, exported_at or datetime.now(tz=UTC), locale),
     )
 
     # ── Workbook origin metadata ──────────────────────────────────────────
@@ -5229,7 +5282,7 @@ def _render_boq_xlsx(
         _xtok = _xb.decode("ascii")
         wb.properties.creator = "OpenConstructionERP · DataDrivenConstruction"
         wb.properties.lastModifiedBy = "PM Project Management"
-        wb.properties.title = f"Bill of Quantities - {boq_data.name}"
+        wb.properties.title = f"{text['title']} - {boq_data.name}"
         wb.properties.description = f"Generated by PM Project Management (https://openconstructionerp.com) · {_xtok}"
     except Exception:  # noqa: BLE001 - best-effort metadata stamp
         pass
@@ -5300,7 +5353,9 @@ async def export_boq_excel(
     from app.modules.projects.repository import ProjectRepository
 
     project = await ProjectRepository(session).get_by_id(boq_data.project_id)
-    project_line = _project_line(project)
+    locale = str(getattr(project, "locale", "") or "")
+    language = "bg" if locale.lower().replace("_", "-").split("-", 1)[0] == "bg" else "en"
+    project_line = _project_line(project, language)
 
     # Styling the sheet cell by cell and deflating it is pure CPU that grows with
     # the bill, so it runs in a worker thread; the reads above stay on the loop
@@ -5313,6 +5368,7 @@ async def export_boq_excel(
         project_line=project_line,
         base_ccy=base_ccy,
         fx_map=fx_map,
+        locale=language,
     )
 
     filename = f"{boq_data.name}.xlsx"
@@ -5322,11 +5378,8 @@ async def export_boq_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={
             "Content-Disposition": attachment_disposition(filename),
-            # The sheet's own text, the column headers and the project line, is
-            # written in English literals and the route takes no locale. Declaring
-            # it stops the Accept-Language middleware from labelling the workbook
-            # with the language the reader asked for.
-            "Content-Language": "en",
+            # The project's document language, independent of the HTTP reader.
+            "Content-Language": language,
         },
     )
 

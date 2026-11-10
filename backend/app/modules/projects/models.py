@@ -39,7 +39,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import GUID, Base
 
-MATCH_DEFAULT_TARGET_LANGUAGE: str = _os.environ.get("MATCH_DEFAULT_TARGET_LANGUAGE", "en").strip().lower() or "en"
+MATCH_DEFAULT_TARGET_LANGUAGE: str = _os.environ.get("MATCH_DEFAULT_TARGET_LANGUAGE", "bg").strip().lower() or "bg"
 MATCH_DEFAULT_CLASSIFIER: str = "none"
 
 
@@ -72,13 +72,11 @@ class Project(Base):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    region: Mapped[str] = mapped_column(String(50), nullable=False, default="")
-    classification_standard: Mapped[str] = mapped_column(String(50), nullable=False, default="din276")
-    # No EUR bias: empty string means "not chosen yet", mirroring the
-    # ProjectCreate schema default. API creates always pass an explicit
-    # value; the empty default only applies to bare ORM constructions.
-    currency: Mapped[str] = mapped_column(String(10), nullable=False, default="")
-    locale: Mapped[str] = mapped_column(String(10), nullable=False, default="de")
+    region: Mapped[str] = mapped_column(String(50), nullable=False, default="BG")
+    classification_standard: Mapped[str] = mapped_column(String(50), nullable=False, default="")
+    # Defaults affect new bare ORM rows only; stored projects are not rewritten.
+    currency: Mapped[str] = mapped_column(String(10), nullable=False, default="EUR")
+    locale: Mapped[str] = mapped_column(String(10), nullable=False, default="bg")
     validation_rule_sets: Mapped[list] = mapped_column(  # type: ignore[assignment]
         JSON,
         nullable=False,

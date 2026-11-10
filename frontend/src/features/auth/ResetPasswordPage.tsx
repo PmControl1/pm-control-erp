@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle2, AlertTriangle, Globe, ChevronDown } from 'lucide-react';
 import { Button, Input, Logo, CountryFlag } from '@/shared/ui';
-import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES, getLanguageByCode } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { AuthBackground } from './AuthBackground';

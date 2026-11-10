@@ -514,6 +514,29 @@ export function BaseCatalogBrowser({
     />
   );
 
+  // A single Bulgarian reference catalogue needs no country search or family
+  // selector. Keep the generic browser below for shared tools and fixtures.
+  if (catalog.total_bases === 1 && familyRows.length === 1 && familyRows[0]?.variants.length === 1) {
+    const { family, variants } = familyRows[0]!;
+    const variant = variants[0]!;
+    return (
+      <div className={className}>
+        <div className="max-w-sm">
+          {renderCard(variant, variant.market, variant.language)}
+        </div>
+        {family.attribution && (
+          <p className="mt-2 text-xs text-content-tertiary" data-testid="base-family-attribution">
+            {t('costs.base_source_attribution', {
+              defaultValue: 'Source: {{attribution}}, {{licence}}',
+              attribution: family.attribution,
+              licence: family.licence ?? '',
+            })}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       {/* Search + summary */}

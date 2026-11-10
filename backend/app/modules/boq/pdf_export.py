@@ -115,6 +115,46 @@ _PDF_LABELS: dict[str, dict[str, str]] = {
         "subject": "Bill of Quantities",
         "tax_vat": "VAT",
     },
+    "bg": {
+        "ai_generated": "Създадено с ИИ",
+        "cost_estimate": "КОЛИЧЕСТВЕНО-СТОЙНОСТНА СМЕТКА",
+        "summary": "ОБОБЩЕНИЕ",
+        "project": "Обект:",
+        "boq": "КСС:",
+        "date": "Дата:",
+        "status": "Статус:",
+        "prepared_by": "Съставил:",
+        "approved_by": "Одобрил:",
+        "signature_hint": "Име / Подпис / Дата",
+        "contents": "Раздели / Позиции:",
+        "pos": "№",
+        "description": "Наименование на СМР",
+        "unit": "Ед. м.",
+        "qty": "Кол-во",
+        "rate": "Ед. цена",
+        "total": "Стойност",
+        "subtotal": "Общо за раздел:",
+        "other_positions": "Други позиции",
+        "direct_cost": "Стойност на СМР:",
+        "markups": "Допълнителни разходи (без ДДС):",
+        "net_total": "Общо без ДДС:",
+        "gross_total": "Всичко с ДДС",
+        "page": "Страница",
+        "of": "от",
+        "generated": "Създадено:",
+        "summary_report": "Обобщена справка",
+        "positions_omitted": "{count} позиции (подробният списък е пропуснат поради обема)",
+        "section": "Раздел",
+        "items": "Позиции",
+        "cost_summary": "Обобщена стойност",
+        "table_of_contents": "Съдържание",
+        "resources_omitted": "Ресурсната разбивка не е отпечатана поради големия брой ресурсни редове.",
+        "status_draft": "Чернова",
+        "status_final": "Одобрена",
+        "status_archived": "Архивирана",
+        "subject": "Количествено-стойностна сметка",
+        "tax_vat": "ДДС",
+    },
     "de": {
         "ai_generated": "KI-generiert",
         "cost_estimate": "KOSTENSCHÄTZUNG",
@@ -695,6 +735,13 @@ def _tax_split(boq_data: Any) -> tuple[list[Any], Decimal, Decimal, Decimal]:
     tax_amount = sum((Decimal(str(m.amount)) for m in tax_lines), Decimal("0"))
     gross_total = Decimal(str(boq_data.net_total))
     return tax_lines, tax_amount, gross_total - tax_amount, gross_total
+
+
+def _gross_total_label(labels: dict[str, str], tax_lines: list[Any]) -> str:
+    """A Bulgarian total claims included VAT only when the bill carries tax."""
+    if labels.get("tax_vat") == "ДДС" and not tax_lines:
+        return "Обща стойност"
+    return labels["gross_total"]
 
 
 def _position_meta(pos: Any) -> dict[str, Any]:
@@ -1285,7 +1332,7 @@ def _build_cover_page(
     if not tax_rows:
         tax_rows = [(_zero_tax_fallback_label(country_code, lb), Decimal("0"))]
     summary_rows.extend((label, _fc(amount), False) for label, amount in tax_rows)
-    summary_rows.append((f"{lb['gross_total']}:", _fc(gross_total), True))
+    summary_rows.append((f"{_gross_total_label(lb, tax_lines)}:", _fc(gross_total), True))
 
     summary_table_data = []
     for label, value, is_total in summary_rows:
@@ -1661,7 +1708,7 @@ def _build_boq_table(
         [
             "",
             "",
-            Paragraph(f"<b>{lb['gross_total']} ({currency}):</b>", styles["cell_bold_right"]),
+            Paragraph(f"<b>{_gross_total_label(lb, tax_lines)} ({currency}):</b>", styles["cell_bold_right"]),
             "",
             "",
             Paragraph(f"<b>{_fc(gross_total)}</b>", styles["cell_bold_right"]),
@@ -1693,6 +1740,8 @@ def _build_boq_table(
 
     # Per-row styling
     for ri, row_type in row_styles:
+        if lb.get("tax_vat") == "ДДС" and row_type in {"subtotal", "total_line", "markup", "vat", "grand_total"}:
+            style_commands.append(("SPAN", (2, ri), (4, ri)))
         if row_type == "section":
             style_commands.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#e8e8ee")))
             style_commands.append(("LINEBELOW", (0, ri), (-1, ri), 0.5, colors.HexColor("#cccccc")))
@@ -1958,7 +2007,7 @@ def _cost_totals_table(
         )
     cost_rows.append(
         [
-            Paragraph(f"<b>{lb['gross_total']} ({currency}):</b>", styles["cell_bold_right"]),
+            Paragraph(f"<b>{_gross_total_label(lb, tax_lines)} ({currency}):</b>", styles["cell_bold_right"]),
             Paragraph(f"<b>{_fc(gross_total)}</b>", styles["cell_bold_right"]),
         ]
     )
@@ -2042,6 +2091,10 @@ def generate_boq_pdf(
     col_qty = 25 * mm
     col_rate = 30 * mm
     col_total = 30 * mm
+    if (locale or "").lower().startswith("bg"):
+        # A КСС gives the work description most of the page; long Bulgarian
+        # headings must not be squeezed into the old 30 mm description column.
+        col_pos, col_unit, col_qty, col_rate, col_total = (18 * mm, 14 * mm, 20 * mm, 25 * mm, 30 * mm)
     col_desc = uw - col_pos - col_unit - col_qty - col_rate - col_total
     table_col_widths = [col_pos, col_desc, col_unit, col_qty, col_rate, col_total]
 

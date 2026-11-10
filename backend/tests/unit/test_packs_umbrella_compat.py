@@ -22,7 +22,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core.partner_pack import state as pack_state
-from app.core.partner_pack.discovery import get_active_pack, reset_cache
+from app.core.partner_pack.discovery import get_selected_pack, reset_cache
 from app.core.partner_pack.manifest import PartnerBranding, PartnerPackManifest
 from app.core.partner_pack.router import alias_router, router
 from app.dependencies import get_current_user_payload
@@ -116,7 +116,7 @@ class TestEnvAlias:
             patch("app.core.partner_pack.discovery.entry_points", return_value=[FakeEP("legacy-pack", m)]),
             patch("app.core.partner_pack.discovery._discover_filesystem_packs", return_value=[]),
         ):
-            active = get_active_pack()
+            active = get_selected_pack()
             assert active is not None
             assert active.slug == "legacy-pack"
 
@@ -133,7 +133,7 @@ class TestEnvAlias:
             ),
             patch("app.core.partner_pack.discovery._discover_filesystem_packs", return_value=[]),
         ):
-            active = get_active_pack()
+            active = get_selected_pack()
             assert active is not None
             assert active.slug == "pack-b"
 
@@ -199,14 +199,14 @@ class TestRouteAlias:
     def test_old_and_new_routes_return_same_data(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
         reset_cache()
         m = PartnerPackManifest(
-            slug="alias-pack",
-            partner_name="Alias Co",
-            metadata={"country": "DE", "country_name_en": "Germany"},
+            slug="bulgaria-bg",
+            partner_name="Bulgaria",
+            metadata={"country": "BG", "country_name_en": "Bulgaria"},
         )
         monkeypatch.delenv("OE_PACK", raising=False)
-        monkeypatch.setenv("OE_PARTNER_PACK", "alias-pack")
+        monkeypatch.delenv("OE_PARTNER_PACK", raising=False)
         with (
-            patch("app.core.partner_pack.discovery.entry_points", return_value=[FakeEP("alias-pack", m)]),
+            patch("app.core.partner_pack.discovery.entry_points", return_value=[FakeEP("bulgaria-bg", m)]),
             patch("app.core.partner_pack.discovery._discover_filesystem_packs", return_value=[]),
         ):
             old = client.get("/api/v1/partner-pack/current")

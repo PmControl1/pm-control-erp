@@ -61,7 +61,6 @@ import { CustomCategoryList } from './CustomCategoryList';
 import { costsGuide } from './costsGuide';
 import { UsageBadge } from './UsageBadge';
 import { EscalationCalculator } from './EscalationCalculator';
-import { RegionalAdjustPanel } from './RegionalAdjustPanel';
 import { CostCategoryTree } from '@/features/boq/CostCategoryTree';
 import { fetchCategoryTree, type CategoryTreeNode } from '@/features/boq/api';
 import { getUnitsForLocale } from '@/features/boq/boqHelpers';
@@ -605,7 +604,6 @@ export function CostsPage() {
   // via the backend's catalog_id query param, mirroring the region filter.
   const [catalogId, setCatalogId] = useState('');
   const [showEscalation, setShowEscalation] = useState(false);
-  const [showRegionalAdjust, setShowRegionalAdjust] = useState(false);
   const [semanticSearch, setSemanticSearch] = useState(false);
   const semanticOff = useSemanticSearchOff();
 
@@ -1211,15 +1209,6 @@ export function CostsPage() {
             <Button
               variant="secondary"
               size="sm"
-              icon={<Layers size={14} />}
-              onClick={() => setShowRegionalAdjust((p) => !p)}
-              className={showRegionalAdjust ? 'border-oe-blue/40 text-oe-blue-text bg-oe-blue-subtle/20' : ''}
-            >
-              {t('costs.regional_adjust.toggle', { defaultValue: 'Regional Adjust' })}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
               icon={<Plus size={14} />}
               onClick={() => setShowCreateItem(true)}
               data-guide="costs-add-item"
@@ -1285,29 +1274,6 @@ export function CostsPage() {
                     defaultValue: 'Escalated amount {{amount}} (factor {{factor}}) copied to clipboard',
                     amount: text,
                     factor: fmtFixed(factor, 4),
-                  }),
-                });
-              }
-            });
-          }}
-        />
-      )}
-
-      {/* Regional Adjust panel (collapsible, v3.12.0) */}
-      {showRegionalAdjust && (
-        <RegionalAdjustPanel
-          className="animate-fade-in"
-          onApplyPreview={(preview) => {
-            const text = new Intl.NumberFormat(getNumberLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(preview.adjusted_rate);
-            copyToClipboard(text).then((ok) => {
-              if (ok) {
-                addToast({
-                  type: 'success',
-                  title: t('common.copied', { defaultValue: 'Copied' }),
-                  message: t('costs.regional_rate_copied', {
-                    defaultValue: 'Adjusted rate {{amount}} (factor {{factor}}) copied to clipboard',
-                    amount: text,
-                    factor: fmtFixed(preview.factor_applied, 4),
                   }),
                 });
               }

@@ -48,6 +48,7 @@ function pack(slug: string, country: string, partnerName: string) {
 /** A slice of what the community wheel ships, in the slug order the server
  *  lists it: Australia first, no Canadian pack, three packs for the US. */
 const WHEEL = [
+  pack('bulgaria-bg', 'BG', 'Bulgaria Construction Pack'),
   pack('aus', 'AU', 'Australia Construction Pack'),
   pack('brazil-sinapi', 'BR', 'Brazil Construction Pack'),
   pack('germany-de', 'DE', 'Germany Construction Pack'),
@@ -86,34 +87,25 @@ async function renderPicker() {
     </QueryClientProvider>,
   );
   // The grid is drawn once the packs arrive.
-  await screen.findAllByRole('button', { pressed: false });
+  await screen.findByRole('button', { name: /Set up.*Bulgaria/i });
 }
 
 function pressedTiles(): HTMLElement[] {
   return screen.queryAllByRole('button', { pressed: true });
 }
 
-describe('which pack the ready-made grid preselects', () => {
-  it('preselects no other country for an en-CA reader', async () => {
-    browser('en-CA');
-    await renderPicker();
-    expect(pressedTiles()).toEqual([]);
-    expect(document.body.textContent).not.toMatch(/Set up Australia/);
-  });
-
-  it('preselects the one pack of the reader\'s own country', async () => {
-    browser('pt-BR');
-    await renderPicker();
-    const pressed = pressedTiles();
-    expect(pressed).toHaveLength(1);
-    expect(pressed[0]?.textContent).toMatch(/Brazil/);
-  });
-
-  it('leaves the choice to an en-US reader whose country has several packs', async () => {
-    browser('en-US');
-    await renderPicker();
-    expect(pressedTiles()).toEqual([]);
-  });
+describe('the automatic Bulgarian ready-made configuration', () => {
+  it.each(['en-CA', 'pt-BR', 'en-US', 'bg-BG'])(
+    'preselects Bulgaria for browser %s and hides foreign packs', async (language) => {
+      browser(language);
+      await renderPicker();
+      expect(pressedTiles()).toHaveLength(0);
+      expect(screen.getByRole('button', { name: /Set up.*Bulgaria/i })).toBeTruthy();
+      expect(screen.queryByText('Australia Construction Pack')).toBeNull();
+      expect(screen.queryByText('Brazil Construction Pack')).toBeNull();
+      expect(screen.queryByText('US Construction Pack')).toBeNull();
+    },
+  );
 });
 
 describe('packToPreselect', () => {

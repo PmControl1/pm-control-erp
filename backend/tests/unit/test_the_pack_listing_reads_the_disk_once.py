@@ -12,6 +12,10 @@ The listing now scans the entry-points once and answers each flag once per
 process, and ``reset_cache()`` (called by install, rescan, apply and un-apply)
 drops both. These tests count the scans and the reads through monkeypatch, so
 they fail if either cache is removed and also if the invalidation stops working.
+
+The listing shows only the Bulgarian pack (``MARKET_PACK``), so the pack these
+tests drop carries that slug; a pack under any other slug is never listed and
+would leave nothing to count.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ from pathlib import Path
 
 import pytest
 
+from app.core.market_profile import MARKET_PACK
 from app.core.partner_pack import discovery as discovery_mod
 from app.core.partner_pack import state as state_mod
 from app.core.partner_pack.discovery import _iter_entry_points, reset_cache
@@ -85,7 +90,7 @@ def counted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 def test_the_second_listing_neither_scans_nor_reads(counted: tuple[Path, dict[str, int]]) -> None:
     data_dir, calls = counted
-    _write_pack(data_dir / "packs", "acme")
+    _write_pack(data_dir / "packs", MARKET_PACK)
 
     first = list_installed()
     # One scan per pack group, and one read per declared file.
@@ -103,7 +108,7 @@ def test_the_second_listing_neither_scans_nor_reads(counted: tuple[Path, dict[st
 
 def test_reset_cache_lets_the_listing_see_a_file_added_since(counted: tuple[Path, dict[str, int]]) -> None:
     data_dir, calls = counted
-    root = _write_pack(data_dir / "packs", "acme")
+    root = _write_pack(data_dir / "packs", MARKET_PACK)
     assert _flags(list_installed())["has_favicon"] is False
 
     (root / "favicon.ico").write_bytes(b"\x00\x00\x01\x00")
@@ -118,11 +123,11 @@ def test_reset_cache_lets_the_listing_see_a_file_added_since(counted: tuple[Path
 
 def test_the_rescan_route_drops_both_caches(counted: tuple[Path, dict[str, int]]) -> None:
     data_dir, calls = counted
-    root = _write_pack(data_dir / "packs", "acme")
+    root = _write_pack(data_dir / "packs", MARKET_PACK)
     assert _flags(list_installed())["has_onboarding_script"] is False
 
     (root / "onboarding.yaml").write_text("steps: []\n", encoding="utf-8")
-    assert rescan() == {"count": 1, "slugs": ["acme"]}
+    assert rescan() == {"count": 1, "slugs": [MARKET_PACK]}
     assert _flags(list_installed())["has_onboarding_script"] is True
 
 

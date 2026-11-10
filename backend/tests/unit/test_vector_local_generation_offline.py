@@ -29,7 +29,7 @@ import pytest
 from app.modules.costs import router
 from app.modules.costs.repository import CostItemRepository
 
-DB_ID = "XX_OFFLINE"
+DB_ID = "BG_SOFIA"
 ITEMS = 4
 DIM = 8
 

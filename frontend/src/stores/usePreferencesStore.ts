@@ -53,6 +53,7 @@ export type DateFormat = 'auto' | 'DD.MM.YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
  */
 export type NumberLocale =
   | 'auto'
+  | 'bg-BG'
   | 'de-DE'
   | 'en-US'
   | 'en-GB'
@@ -293,7 +294,7 @@ const SEEDED_ACCOUNT_LOCALE: NumberLocale | undefined =
  * currency while lakh and crore grouping was unreachable by any choice.
  */
 export const NUMBER_LOCALES: readonly NumberLocale[] = [
-  'auto', 'de-DE', 'en-US', 'en-GB', 'fr-FR', 'ru-RU', 'ar-SA', 'ar-EG', 'ja-JP', 'zh-CN', 'es-MX', 'en-IN', 'de-CH',
+  'auto', 'bg-BG', 'de-DE', 'en-US', 'en-GB', 'fr-FR', 'ru-RU', 'ar-SA', 'ar-EG', 'ja-JP', 'zh-CN', 'es-MX', 'en-IN', 'de-CH',
 ];
 
 /**
@@ -309,6 +310,7 @@ export const NUMBER_LOCALES: readonly NumberLocale[] = [
  * the point `de-CH` and `it-CH` write.
  */
 const COUNTRY_NUMBER_LOCALE: ReadonlyMap<string, NumberLocale> = new Map<string, NumberLocale>([
+  ['bg', 'bg-BG'],
   ['in', 'en-IN'],
   ['ch', 'de-CH'],
 ]);

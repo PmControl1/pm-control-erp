@@ -83,7 +83,7 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
 
 def _call(state: dict[str, Any], base: str, market: str) -> dict:
     return asyncio.run(
-        costs_router.load_base_market(base, market, session=_Session(), _user_id="u", service=state["service"])
+        costs_router.load_base_market_data(base, market, session=_Session(), _user_id="u", service=state["service"])
     )
 
 

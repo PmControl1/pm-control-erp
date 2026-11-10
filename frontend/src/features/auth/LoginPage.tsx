@@ -28,7 +28,7 @@ import {
   type FirstRunStatus,
 } from './desktopBootstrap';
 import { safeNextPath } from './nextPath';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { BRAND_NAME, TEST_BUILD } from '@/shared/brand';

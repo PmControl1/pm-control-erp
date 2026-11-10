@@ -150,7 +150,7 @@ def two_disagreeing_servers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, qdr
 
     monkeypatch.setattr(qdrant_snapshot_loader, "restore_snapshot_file", _fake_restore)
 
-    db_id = sorted(costs_router._GITHUB_SNAPSHOT_FILES)[0]
+    db_id = "BG_SOFIA"
     return cwicr, general, uploads, db_id
 
 

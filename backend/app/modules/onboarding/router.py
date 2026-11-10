@@ -179,6 +179,10 @@ async def provision(body: ProvisionRequest, user_id: CurrentUserId, session: Ses
     re-provisioning the same region or sample reuses that job instead of
     importing twice. After a failure it starts a new attempt.
     """
+    from app.core.demo_seed import seed_demo_enabled
+
+    demos_enabled = seed_demo_enabled()
+    skipped_demo_ids = body.demo_ids if not demos_enabled else []
     jobs: list[JobState] = []
 
     if body.region:
@@ -195,7 +199,7 @@ async def provision(body: ProvisionRequest, user_id: CurrentUserId, session: Ses
         jobs.append(_job_state(row))
 
     # dict.fromkeys de-dupes while preserving the wizard's order.
-    for demo_id in dict.fromkeys(body.demo_ids):
+    for demo_id in dict.fromkeys(body.demo_ids if demos_enabled else []):
         if not demo_id:
             continue
         key = await _attempt_key(
@@ -211,7 +215,11 @@ async def provision(body: ProvisionRequest, user_id: CurrentUserId, session: Ses
         jobs.append(_job_state(row))
 
     logger.info("onboarding: provisioned %d job(s) for user %s", len(jobs), user_id)
-    return ProvisionResponse(jobs=jobs)
+    return ProvisionResponse(
+        jobs=jobs,
+        skipped_demo_ids=skipped_demo_ids,
+        demo_skip_reason="Demo projects are turned off on this installation." if skipped_demo_ids else None,
+    )
 
 
 @router.get("/jobs/", response_model=StatusResponse)

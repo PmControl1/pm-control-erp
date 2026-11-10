@@ -59,15 +59,13 @@ import {
 import { Logo, Button, CountryFlag, Badge } from '@/shared/ui';
 import { APP_VERSION } from '@/shared/lib/version';
 import {
-  detectCountry,
   detectCountryForLanguage,
-  matchSupportedLanguage,
   changeLanguage,
-  SUPPORTED_LANGUAGES,
+  MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES,
 } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { useToastStore } from '@/stores/useToastStore';
-import { FlagshipDemoCards } from './FlagshipDemoCards';
+import { bulgarianBaseCatalog, bulgarianCountryPacks } from './bulgarianMarket';
 import {
   useBackgroundInstallStore,
   type BgInstallStep,
@@ -308,55 +306,8 @@ function PackModulesLeftOnNote({ slug, onLeave }: { slug: string; onLeave: () =>
   );
 }
 
-// Every value here is a global-market catalogue, never a national norm base. A
-// language is not a country: `es` serves both the Spain and Mexico packs and
-// `sv` also answers for no/da/fi, so this map cannot name one country's own
-// norm system without recommending it to speakers elsewhere. That is why `pt`
-// picks PT_SAOPAULO over BR_NATIONAL, `it` IT_ROME over IT_TOSCANA and `id`
-// ID_JAKARTA over ID_NATIONAL. `zh` and `tr` were the only two that broke the
-// rule: cdf7391c1 rewrote them to ZH_CHINA and TR_NATIONAL alongside the mirror
-// rename, so the language step recommended one base while the country pack for
-// the same market installed another, and which one a user got depended on the
-// step they came through. Held by test_country_preset_regions_resolve.py, which
-// takes an exception only if it is recorded there with a reason.
-const LANG_TO_REGION: Record<string, string> = {
-  de: 'DE_BERLIN',
-  fr: 'FR_PARIS',
-  es: 'SP_BARCELONA',
-  pt: 'PT_SAOPAULO',
-  ru: 'RU_STPETERSBURG',
-  zh: 'ZH_SHANGHAI',
-  ar: 'AR_DUBAI',
-  hi: 'HI_MUMBAI',
-  en: 'USA_USD',
-  tr: 'TR_ISTANBUL',
-  it: 'IT_ROME',
-  ja: 'JA_TOKYO',
-  ko: 'KO_SEOUL',
-  nl: 'NL_AMSTERDAM',
-  pl: 'PL_WARSAW',
-  cs: 'CS_PRAGUE',
-  hr: 'HR_ZAGREB',
-  sv: 'SV_STOCKHOLM',
-  no: 'SV_STOCKHOLM',
-  da: 'SV_STOCKHOLM',
-  fi: 'SV_STOCKHOLM',
-  bg: 'BG_SOFIA',
-  ro: 'RO_BUCHAREST',
-  th: 'TH_BANGKOK',
-  vi: 'VI_HANOI',
-  id: 'ID_JAKARTA',
-};
-
-// ── Language -> Demo project mapping ────────────────────────────────────────
-
-const LANG_TO_DEMO: Record<string, string> = {
-  de: 'residential-berlin',
-  en: 'medical-us',
-  fr: 'school-paris',
-  ar: 'warehouse-dubai',
-};
-const DEFAULT_DEMO = 'office-london';
+// The product's market does not follow a browser or interface language.
+const DEFAULT_DEMO = 'residential-sofia';
 
 // ── CWICR Database definitions ──────────────────────────────────────────────
 
@@ -370,51 +321,8 @@ interface CWICRDatabase {
 }
 
 const CWICR_DATABASES: CWICRDatabase[] = [
-  // Anglosphere
-  { id: 'USA_USD', name: 'United States', city: 'New York', lang: 'English', currency: 'USD', flagId: 'us' },
-  { id: 'UK_GBP', name: 'United Kingdom', city: 'London', lang: 'English', currency: 'GBP', flagId: 'gb' },
-  { id: 'ENG_TORONTO', name: 'Canada / International', city: 'Toronto', lang: 'English', currency: 'CAD', flagId: 'ca' },
-  { id: 'AU_SYDNEY', name: 'Australia', city: 'Sydney', lang: 'English', currency: 'AUD', flagId: 'au' },
-  { id: 'NZ_AUCKLAND', name: 'New Zealand', city: 'Auckland', lang: 'English', currency: 'NZD', flagId: 'nz' },
-  // Western Europe
-  { id: 'DE_BERLIN', name: 'Germany / DACH', city: 'Berlin', lang: 'Deutsch', currency: 'EUR', flagId: 'de' },
-  { id: 'FR_PARIS', name: 'France', city: 'Paris', lang: 'Fran\u00e7ais', currency: 'EUR', flagId: 'fr' },
-  { id: 'IT_ROME', name: 'Italy', city: 'Rome', lang: 'Italiano', currency: 'EUR', flagId: 'it' },
-  { id: 'SP_BARCELONA', name: 'Spain / Latin America', city: 'Barcelona', lang: 'Espa\u00f1ol', currency: 'EUR', flagId: 'es' },
-  { id: 'NL_AMSTERDAM', name: 'Netherlands', city: 'Amsterdam', lang: 'Nederlands', currency: 'EUR', flagId: 'nl' },
-  // Central / Eastern Europe
-  { id: 'PL_WARSAW', name: 'Poland', city: 'Warsaw', lang: 'Polski', currency: 'PLN', flagId: 'pl' },
-  { id: 'CS_PRAGUE', name: 'Czech Republic', city: 'Prague', lang: 'Cestina', currency: 'CZK', flagId: 'cz' },
-  { id: 'HR_ZAGREB', name: 'Croatia', city: 'Zagreb', lang: 'Hrvatski', currency: 'EUR', flagId: 'hr' },
-  { id: 'BG_SOFIA', name: 'Bulgaria', city: 'Sofia', lang: 'Balgarski', currency: 'BGN', flagId: 'bg' },
-  { id: 'RO_BUCHAREST', name: 'Romania', city: 'Bucharest', lang: 'Romana', currency: 'RON', flagId: 'ro' },
-  { id: 'SV_STOCKHOLM', name: 'Sweden', city: 'Stockholm', lang: 'Svenska', currency: 'SEK', flagId: 'se' },
-  { id: 'TR_ISTANBUL', name: 'T\u00fcrkiye', city: 'Istanbul', lang: 'T\u00fcrk\u00e7e', currency: 'TRY', flagId: 'tr' },
-  { id: 'RU_STPETERSBURG', name: 'Russia / CIS', city: 'St. Petersburg', lang: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439', currency: 'RUB', flagId: 'ru' },
-  // Middle East / Africa
-  { id: 'AR_DUBAI', name: 'Middle East / Gulf', city: 'Dubai', lang: '\u0627\u0644\u0639\u0631\u0628\u064a\u0629', currency: 'AED', flagId: 'ae' },
-  { id: 'ZA_JOHANNESBURG', name: 'South Africa', city: 'Johannesburg', lang: 'English', currency: 'ZAR', flagId: 'za' },
-  { id: 'NG_LAGOS', name: 'Nigeria', city: 'Lagos', lang: 'English', currency: 'NGN', flagId: 'ng' },
-  // Asia-Pacific
-  { id: 'ZH_SHANGHAI', name: 'China', city: 'Shanghai', lang: '\u4e2d\u6587', currency: 'CNY', flagId: 'cn' },
-  { id: 'JA_TOKYO', name: 'Japan', city: 'Tokyo', lang: '\u65e5\u672c\u8a9e', currency: 'JPY', flagId: 'jp' },
-  { id: 'KO_SEOUL', name: 'South Korea', city: 'Seoul', lang: '\ud55c\uad6d\uc5b4', currency: 'KRW', flagId: 'kr' },
-  { id: 'TH_BANGKOK', name: 'Thailand', city: 'Bangkok', lang: '\u0e44\u0e17\u0e22', currency: 'THB', flagId: 'th' },
-  { id: 'VI_HANOI', name: 'Vietnam', city: 'Hanoi', lang: 'Ti\u1ebfng Vi\u1ec7t', currency: 'VND', flagId: 'vn' },
-  { id: 'ID_JAKARTA', name: 'Indonesia', city: 'Jakarta', lang: 'Bahasa Indonesia', currency: 'IDR', flagId: 'id' },
-  { id: 'HI_MUMBAI', name: 'India / South Asia', city: 'Mumbai', lang: 'Hindi', currency: 'INR', flagId: 'in' },
-  // Americas
-  { id: 'PT_SAOPAULO', name: 'Brazil / Portugal', city: 'S\u00e3o Paulo', lang: 'Portugu\u00eas', currency: 'BRL', flagId: 'br' },
-  { id: 'MX_MEXICOCITY', name: 'Mexico', city: 'Mexico City', lang: 'Espa\u00f1ol', currency: 'MXN', flagId: 'mx' },
-  // Authentic national / regional official bases (own local parquet, resource norms)
-  { id: 'ZH_CHINA', name: 'China (Dinge)', city: 'National', lang: '\u4e2d\u6587', currency: 'CNY', flagId: 'cn' },
-  { id: 'TR_NATIONAL', name: 'T\u00fcrkiye (Birim Fiyat)', city: 'National', lang: 'T\u00fcrk\u00e7e', currency: 'TRY', flagId: 'tr' },
-  { id: 'BR_NATIONAL', name: 'Brazil (SINAPI)', city: 'National', lang: 'Portugu\u00eas', currency: 'BRL', flagId: 'br' },
-  { id: 'ES_ANDALUCIA', name: 'Spain (BCCA)', city: 'Andaluc\u00eda', lang: 'Espa\u00f1ol', currency: 'EUR', flagId: 'es' },
-  { id: 'IT_TOSCANA', name: 'Italy (Toscana)', city: 'Toscana', lang: 'Italiano', currency: 'EUR', flagId: 'it' },
-  { id: 'VN_NATIONAL', name: 'Vietnam (Dinh Muc)', city: 'National', lang: 'Ti\u1ebfng Vi\u1ec7t', currency: 'VND', flagId: 'vn' },
-  { id: 'ID_NATIONAL', name: 'Indonesia (AHSP)', city: 'National', lang: 'Bahasa Indonesia', currency: 'IDR', flagId: 'id' },
-  { id: 'GR_NATIONAL', name: 'Greece (GGDE)', city: 'National', lang: '\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac', currency: 'EUR', flagId: 'gr' },
+  // Source prices remain BGN; project calculations convert into EUR.
+  { id: 'BG_SOFIA', name: 'Bulgaria', city: 'Sofia', lang: 'Български', currency: 'BGN', flagId: 'bg' },
 ];
 
 // ── AI Provider definitions ─────────────────────────────────────────────────
@@ -1043,57 +951,16 @@ export async function startBackgroundOnboardingProvision(opts: {
   });
 }
 
-/** Get the suggested region for the current language */
-function getSuggestedRegion(lang?: string): string {
-  const code = lang || i18n.language || 'en';
-  const base = code.split('-')[0] ?? 'en';
-  return LANG_TO_REGION[base] ?? 'ENG_TORONTO';
-}
-
-/**
- * The cost database and the country preset the data step leads with.
- *
- * The country the browser names comes first, then the UI language. Keying on
- * the language alone offered every English reader the United States base and
- * the first English preset, so an en-CA browser was never offered Canada
- * although its region said Canada. The country is looked up in the data we
- * ship rather than in a table here: the curated preset for that country
- * (through `resolveCountryOffer`, which knows GB is filed as `uk`) names both
- * its preset and its base, and a country without a preset still gets its own
- * base when `CWICR_DATABASES` carries one for its flag. A country with neither
- * (Austria, Iceland) falls back to the language's suggestion, which is where
- * every reader was before; the preset and base are an offer the reader
- * changes with one click, never an install.
- *
- * @param country lower-case ISO 3166-1 alpha-2 from `detectCountry`, or null.
- * @param lang the UI language the reader picked on the first step.
- */
+/** Workspace setup is Bulgarian regardless of browser country or UI language. */
 export function suggestDataSetup(
-  country: string | null | undefined,
-  lang: string,
+  _country: string | null | undefined,
+  _lang: string,
 ): { region: string; packId: string } {
-  const offer = resolveCountryOffer(country, []);
-  const preset = offer?.kind === 'preset' ? offer.preset : null;
-  const code = country?.toLowerCase() ?? '';
-  const ownBase =
-    preset && CWICR_DATABASES.some((db) => db.id === preset.region)
-      ? preset.region
-      : code && code !== 'xx'
-        ? CWICR_DATABASES.find((db) => db.flagId === code)?.id
-        : undefined;
-  const region = ownBase ?? getSuggestedRegion(lang);
-  if (preset) return { region, packId: preset.id };
-  const base = lang.split('-')[0] ?? 'en';
-  const byLocale = COUNTRY_PACKS.find((p) => p.locale === base);
-  const byRegion = COUNTRY_PACKS.find((p) => p.region === region);
-  return { region, packId: (byLocale ?? byRegion ?? DEFAULT_COUNTRY_PACK).id };
+  return { region: DEFAULT_COUNTRY_PACK.region, packId: DEFAULT_COUNTRY_PACK.id };
 }
 
-/** Get the suggested demo project IDs for the current language */
-function getSuggestedDemo(lang?: string): string {
-  const code = lang || i18n.language || 'en';
-  const base = code.split('-')[0] ?? 'en';
-  return LANG_TO_DEMO[base] ?? DEFAULT_DEMO;
+function getSuggestedDemo(_lang?: string): string {
+  return DEFAULT_DEMO;
 }
 
 // ── Fade wrapper for step transitions ───────────────────────────────────────
@@ -1243,8 +1110,12 @@ function StepWelcome({
   onLanguageChange: (lang: string) => void;
 }) {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState(
-    () => matchSupportedLanguage(navigator.language) ?? 'en',
+  // The application has already resolved an explicit Bulgarian/English choice.
+  // Browser language must not switch the Bulgarian product to another market.
+  const [selected, setSelected] = useState(() =>
+    SUPPORTED_LANGUAGES.some((language) => language.code === i18n.language)
+      ? i18n.language
+      : 'bg',
   );
 
   const handleSelect = useCallback(
@@ -1256,26 +1127,6 @@ function StepWelcome({
     [onLanguageChange],
   );
 
-  // BUG-LANG-AUTODETECT: ``i18nextLng`` may already hold a stale value
-  // from a previous tester / demo session even on a fresh admin
-  // registration, so a US-Windows en-US browser landed in Polish UI.
-  // The fix splits "explicit user choice" from "any past i18next
-  // default" — only ``oe_lang_explicit`` (set when the user clicks Next
-  // on the language step, see ``onSelect`` below) blocks re-detection.
-  useEffect(() => {
-    const explicit = localStorage.getItem('oe_lang_explicit');
-    if (explicit) return;
-    // Region first: a pt-BR browser must land on the card that says
-    // Português (Brasil), not the one that says Português. This used to strip
-    // the region before looking, so the wizard pre-selected European
-    // Portuguese and the user's click on Next made that the explicit choice.
-    const target = matchSupportedLanguage(navigator.language) ?? 'en';
-    if (target !== i18n.language) {
-      void changeLanguage(target);
-      onLanguageChange(target);
-    }
-    setSelected(target);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col items-center text-center">
@@ -1310,7 +1161,7 @@ function StepWelcome({
         })}
       </p>
 
-      {/* Language grid — 24 languages, flag + native name. */}
+      {/* Bulgarian and English interface choices. */}
       <div className="mt-5 w-full">
         <div className="mb-2 flex items-center justify-center gap-2 text-xs font-medium text-content-tertiary uppercase tracking-wider">
           <span className="h-px w-8 bg-border-light" aria-hidden />
@@ -1354,14 +1205,7 @@ function StepWelcome({
         variant="primary"
         size="lg"
         onClick={() => {
-          // BUG-LANG-AUTODETECT — record that the user explicitly committed
-          // to a language via the wizard. The auto-detect useEffect above
-          // checks this flag to distinguish "real choice" from "stale
-          // ``i18nextLng`` left over from a previous tester or demo
-          // session". Without this set, an English-Windows browser whose
-          // ``i18nextLng`` happens to read ``pl`` (because someone else
-          // demoed the build in Polish) would silently switch back to
-          // Polish on the next page load.
+          // Remember the language explicitly accepted in setup.
           localStorage.setItem('oe_lang_explicit', '1');
           onNext();
         }}
@@ -1471,7 +1315,7 @@ function StepStartChoice({
           <p className="mt-2.5 text-sm text-content-secondary leading-relaxed">
             {t('onboarding.ready_pack_desc', {
               defaultValue:
-                'Pick a country starter pack. It installs the language, cost databases, modules and sample projects for you.',
+                'Set up the Bulgarian workspace, cost catalogue and construction modules.',
             })}
           </p>
         </button>
@@ -1550,7 +1394,7 @@ export function ReadyPackPicker({
     staleTime: 60_000,
   });
 
-  const packs: InstalledPartnerPack[] = data?.installed ?? [];
+  const packs = bulgarianCountryPacks(data?.installed ?? []);
 
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
@@ -1569,7 +1413,7 @@ export function ReadyPackPicker({
   // browser's language does not change under the reader mid-wizard, and
   // re-reading it after they pick a UI language on the previous step would
   // make the offer chase that choice rather than where they actually are.
-  const detectedCountry = useMemo(() => detectCountry(), []);
+  const detectedCountry = 'bg';
   const countryOffer = useMemo(
     () => resolveCountryOffer(detectedCountry, packs),
     [detectedCountry, packs],
@@ -1746,7 +1590,7 @@ export function ReadyPackPicker({
         <Boxes size={24} />
       </div>
       <h2 className="text-2xl font-bold text-content-primary">
-        {t('onboarding.ready_pack_title', { defaultValue: 'Pick a ready-made pack' })}
+        {t('onboarding.bulgarian_setup_title', { defaultValue: 'Bulgarian workspace setup' })}
       </h2>
       <p className="mt-2 text-sm text-content-secondary text-center max-w-md">
         {t('onboarding.ready_pack_subtitle', {
@@ -1790,7 +1634,7 @@ export function ReadyPackPicker({
       )}
 
       {/* Pack icon grid — tidy square tiles, one per pack. */}
-      {!isLoading && packs.length > 0 && (
+      {!isLoading && packs.length > 1 && (
         <div className="mt-7 grid w-full max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {packs.map((pack) => {
             const isSelected = selectedSlug === pack.slug;
@@ -1872,7 +1716,7 @@ export function ReadyPackPicker({
           shows no heading over an empty grid. With no packs at all the filter
           removes nothing, so the no-pack deployment still gets all of them and
           still gets the Back row below. */}
-      {!isLoading && presetsWithoutPack.length > 0 && (
+      {!isLoading && presetsWithoutPack.length > 1 && (
         <div className="mt-7 w-full max-w-5xl">
           {packs.length > 0 && (
             <h3 className="mb-3 text-center text-sm font-semibold text-content-secondary">
@@ -3005,7 +2849,7 @@ function PartnerPackInstaller({
     staleTime: 60_000,
   });
 
-  const packs: InstalledPartnerPack[] = data?.installed ?? [];
+  const packs = bulgarianCountryPacks(data?.installed ?? []);
 
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
@@ -3020,7 +2864,7 @@ function PartnerPackInstaller({
   // simply the first one (`packToPreselect`).
   useEffect(() => {
     if (!selectedSlug && packs.length > 0) {
-      const own = packToPreselect(detectCountry(), packs);
+      const own = packToPreselect('bg', packs);
       if (own) setSelectedSlug(own);
     }
   }, [packs, selectedSlug]);
@@ -3205,7 +3049,7 @@ function PartnerPackInstaller({
       )}
 
       {/* Pack grid */}
-      {!isLoading && packs.length > 0 && (
+      {!isLoading && packs.length > 1 && (
         <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {packs.map((pack) => {
             const isSelected = selectedSlug === pack.slug;
@@ -3412,9 +3256,7 @@ function PackComponentRow({
 // partner-pack installer above owns the fully-worked country demos). See
 // docs/country-pack-oneclick/DESIGN.md §7.
 function CountryPackCard({
-  packs,
   selectedPack,
-  onSelectPack,
   onInstallPack,
   onPackLocale,
   onPackDb,
@@ -3443,21 +3285,6 @@ function CountryPackCard({
   recordedClassification: string | null;
 }) {
   const { t } = useTranslation();
-  const [packQuery, setPackQuery] = useState('');
-
-  const filteredPacks = (() => {
-    const q = packQuery.trim().toLowerCase();
-    if (!q) return packs;
-    return packs.filter(
-      (p) =>
-        t(p.labelKey, { defaultValue: p.labelDefault }).toLowerCase().includes(q) ||
-        p.labelDefault.toLowerCase().includes(q) ||
-        p.region.toLowerCase().includes(q) ||
-        p.classification.toLowerCase().includes(q) ||
-        p.id.toLowerCase().includes(q),
-    );
-  })();
-
   const packLabel = t(selectedPack.labelKey, { defaultValue: selectedPack.labelDefault });
   // The example project counts. Reporting the pack as fully installed while the
   // demo is still running, or has failed, is how the card came to promise more
@@ -3472,68 +3299,14 @@ function CountryPackCard({
         </div>
         <div className="min-w-0">
           <h3 className="text-base font-bold text-content-primary">
-            {t('onboarding.other_countries_title', { defaultValue: 'Other countries' })}
+            {t('onboarding.bulgarian_setup_title', { defaultValue: 'Bulgarian workspace setup' })}
           </h3>
           <p className="text-xs text-content-tertiary">
-            {t('onboarding.other_countries_subtitle', {
-              defaultValue: 'No partner pack yet? Set the language and classification for your market',
+            {t('onboarding.bulgarian_setup_subtitle', {
+              defaultValue: 'Bulgarian language, КСС and the Sofia cost catalogue are selected automatically.',
             })}
           </p>
         </div>
-      </div>
-
-      {/* Country filter */}
-      <div className="mb-2">
-        <input
-          type="search"
-          value={packQuery}
-          onChange={(e) => setPackQuery(e.target.value)}
-          placeholder={t('onboarding.country_pack_filter_placeholder', {
-            defaultValue: 'Find your country…',
-          })}
-          disabled={installing}
-          className="w-full rounded-lg bg-surface-secondary/70 px-3 py-1.5 text-xs text-content-primary placeholder:text-content-quaternary border border-transparent focus:border-oe-blue/40 focus:outline-none focus:bg-surface-secondary disabled:opacity-50"
-        />
-      </div>
-
-      {/* Country grid */}
-      <div className="mb-4 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 -mr-1 sm:grid-cols-3">
-        {filteredPacks.length === 0 && (
-          <div className="col-span-full py-6 text-center text-xs text-content-tertiary">
-            {t('onboarding.country_pack_no_results', {
-              defaultValue: 'No countries match "{{q}}"',
-              q: packQuery,
-            })}
-          </div>
-        )}
-        {filteredPacks.map((pack) => {
-          const isSelected = selectedPack.id === pack.id;
-          return (
-            <button
-              key={pack.id}
-              type="button"
-              onClick={() => !installing && onSelectPack(pack)}
-              disabled={installing}
-              aria-pressed={isSelected}
-              className={clsx(
-                'flex items-center gap-2 rounded-xl px-3 py-2 text-left transition-all duration-200',
-                isSelected
-                  ? 'bg-oe-blue-subtle/50 ring-2 ring-oe-blue/40 shadow-sm'
-                  : 'bg-surface-secondary/70 hover:bg-surface-secondary hover:shadow-sm',
-                installing && 'opacity-60 cursor-not-allowed',
-              )}
-            >
-              <CountryFlag code={pack.flagId} size={18} className="shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-medium text-content-primary">
-                  {t(pack.labelKey, { defaultValue: pack.labelDefault })}
-                </div>
-                <div className="text-2xs text-content-quaternary">{pack.classification}</div>
-              </div>
-              {isSelected && <Check size={14} className="shrink-0 text-oe-blue" />}
-            </button>
-          );
-        })}
       </div>
 
       {/* What the selected pack includes — at-a-glance chips with live status */}
@@ -4197,7 +3970,7 @@ export function StepDataSetup({
             (baseCatalog ? (
               <div className="max-h-96 overflow-y-auto pr-1 -mr-1 mb-3">
                 <BaseCatalogBrowser
-                  catalog={baseCatalog}
+                  catalog={bulgarianBaseCatalog(baseCatalog)}
                   mode="select"
                   selectedRegion={selectedMarket?.variant_id ?? selectedRegion}
                   onSelect={(v) => {
@@ -4277,7 +4050,6 @@ export function StepDataSetup({
             actually read on arrival. The partner pack installer is offered
             to admins only, like the Ready-made Pack card on the start step. */}
         {canInstallPartnerPacks && <PartnerPackInstaller onActivateLocale={applyLocale} />}
-        <FlagshipDemoCards />
         <CountryPackCard
           packs={COUNTRY_PACKS}
           selectedPack={selectedPack}

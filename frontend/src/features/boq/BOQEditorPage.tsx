@@ -5893,6 +5893,7 @@ export function BOQEditorPage() {
           onBatchChangeUnit={handleBatchChangeUnit}
           onClearSelection={handleClearSelection}
           onBatchFactor={handleBatchFactor}
+          classificationStandard={project?.classification_standard}
           onBatchSetClassification={handleBatchSetClassification}
           onBatchFindReplace={handleBatchFindReplace}
           onBatchSetValue={handleBatchSetValue}

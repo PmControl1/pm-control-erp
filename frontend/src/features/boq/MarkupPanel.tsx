@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { boqApi, type Markup, type CreateMarkupData, type UpdateMarkupData } from './api';
 import { fmtWithCurrency } from './boqHelpers';
-import { markupRegionLabel, type MarkupRegion } from './markupRegionLabel';
 import { toNum } from '@/shared/lib/money';
 import { parseDecimalInput } from '@/shared/lib/parseDecimal';
 import { useToastStore } from '@/stores/useToastStore';
@@ -17,86 +16,6 @@ import {
   Globe,
   GripVertical,
 } from 'lucide-react';
-
-/**
- * Regional templates. `code` must match backend DEFAULT_MARKUP_TEMPLATES keys;
- * the name shown is worked out in the reader's language by markupRegionLabel.
- */
-const REGIONS: MarkupRegion[] = [
-  // Europe
-  { code: 'DACH', flag: '\ud83c\udde9\ud83c\uddea', countries: ['DE', 'AT', 'CH'], standard: 'VOB/HOAI' },
-  { code: 'UK', flag: '\ud83c\uddec\ud83c\udde7', countries: ['GB'], standard: 'NRM/RICS' },
-  { code: 'FR', flag: '\ud83c\uddeb\ud83c\uddf7', standard: 'Déboursé sec' },
-  { code: 'ES', flag: '\ud83c\uddea\ud83c\uddf8', standard: 'CTE' },
-  // Italy has two stacks. A regional price list rate already includes general
-  // expenses and profit, so the price-list stack adds only safety and VAT; the
-  // price-analysis stack (backend key IT) adds them on top.
-  {
-    code: 'IT_PREZZARIO',
-    flag: '\ud83c\uddee\ud83c\uddf9',
-    standard: 'Prezzario',
-    labelKey: 'boq.markup_region.it_price_list',
-    labelDefault: 'Italy, per price list',
-    hintKey: 'boq.markup_region.it_price_list_hint',
-    hintDefault: 'Price list rates already include general expenses and profit, so only safety costs and VAT are added.',
-  },
-  {
-    code: 'IT',
-    flag: '\ud83c\uddee\ud83c\uddf9',
-    standard: 'Analisi prezzi',
-    labelKey: 'boq.markup_region.it_price_analysis',
-    labelDefault: 'Italy, per price analysis',
-    hintKey: 'boq.markup_region.it_price_analysis_hint',
-    hintDefault: 'For rates built from a price analysis: adds general expenses 15%, profit 10%, safety costs and VAT.',
-  },
-  { code: 'NL', flag: '\ud83c\uddf3\ud83c\uddf1', standard: 'STABU' },
-  { code: 'PL', flag: '\ud83c\uddf5\ud83c\uddf1', standard: 'KNR' },
-  { code: 'BE', flag: '\ud83c\udde7\ud83c\uddea', standard: 'BSAB' },
-  { code: 'CZ', flag: '\ud83c\udde8\ud83c\uddff', standard: 'TSP' },
-  { code: 'HR', flag: '\ud83c\udded\ud83c\uddf7', standard: 'Tro\u0161kovnik' },
-  { code: 'BG', flag: '\ud83c\udde7\ud83c\uddec', standard: '\u041a\u0421\u0421' },
-  { code: 'RO', flag: '\ud83c\uddf7\ud83c\uddf4', standard: 'DevGen' },
-  { code: 'GR', flag: '\ud83c\uddec\ud83c\uddf7', standard: 'ATOE' },
-  { code: 'HU', flag: '\ud83c\udded\ud83c\uddfa', standard: 'TERC' },
-  { code: 'UA', flag: '\ud83c\uddfa\ud83c\udde6', standard: '\u041a\u041d\u0423' },
-  { code: 'PT', flag: '\ud83c\uddf5\ud83c\uddf9', standard: 'ProNIC' },
-  { code: 'NORDIC', flag: '\ud83c\uddf8\ud83c\uddea', countries: ['DK', 'FI', 'NO', 'SE'], standard: 'AB 04' },
-  // Americas
-  { code: 'US', flag: '\ud83c\uddfa\ud83c\uddf8', standard: 'MasterFormat/AIA' },
-  { code: 'CA', flag: '\ud83c\udde8\ud83c\udde6', standard: 'CCDC' },
-  { code: 'BR', flag: '\ud83c\udde7\ud83c\uddf7', standard: 'TCU/SINAPI' },
-  { code: 'AR', flag: '\ud83c\udde6\ud83c\uddf7', standard: 'CAC' },
-  { code: 'CL', flag: '\ud83c\udde8\ud83c\uddf1', standard: 'CDT' },
-  { code: 'CO', flag: '\ud83c\udde8\ud83c\uddf4', standard: 'NTC' },
-  { code: 'PE', flag: '\ud83c\uddf5\ud83c\uddea', standard: 'CAPECO' },
-  // Asia-Pacific
-  { code: 'CN', flag: '\ud83c\udde8\ud83c\uddf3', standard: 'GB50500' },
-  { code: 'IN', flag: '\ud83c\uddee\ud83c\uddf3', standard: 'CPWD' },
-  { code: 'JP', flag: '\ud83c\uddef\ud83c\uddf5', standard: 'MLIT' },
-  { code: 'KR', flag: '\ud83c\uddf0\ud83c\uddf7', standard: 'KICT' },
-  { code: 'AU', flag: '\ud83c\udde6\ud83c\uddfa', standard: 'AIQS' },
-  { code: 'NZ', flag: '\ud83c\uddf3\ud83c\uddff', standard: 'NZIQS' },
-  { code: 'SG', flag: '\ud83c\uddf8\ud83c\uddec', standard: 'BCA' },
-  { code: 'MY', flag: '\ud83c\uddf2\ud83c\uddfe', standard: 'JKR' },
-  { code: 'TH', flag: '\ud83c\uddf9\ud83c\udded', standard: 'EIT' },
-  { code: 'ID', flag: '\ud83c\uddee\ud83c\udde9', standard: 'SNI' },
-  { code: 'PH', flag: '\ud83c\uddf5\ud83c\udded', standard: 'DPWH' },
-  { code: 'VN', flag: '\ud83c\uddfb\ud83c\uddf3', standard: 'BXD' },
-  // Middle East / Africa
-  { code: 'GULF', flag: '\ud83c\udde6\ud83c\uddea', labelKey: 'boq.markup_region.gulf', labelDefault: 'Gulf states', standard: 'FIDIC' },
-  // The Gulf lines at Saudi VAT (15 since 2020-07-01) rather than the Gulf 5.
-  { code: 'SA', flag: '\ud83c\uddf8\ud83c\udde6', standard: 'FIDIC' },
-  { code: 'IL', flag: '\ud83c\uddee\ud83c\uddf1', standard: 'SI' },
-  { code: 'TR', flag: '\ud83c\uddf9\ud83c\uddf7', standard: 'BIB' },
-  { code: 'NG', flag: '\ud83c\uddf3\ud83c\uddec', standard: 'BQSM' },
-  { code: 'ZA', flag: '\ud83c\uddff\ud83c\udde6', standard: 'ASAQS' },
-  { code: 'KE', flag: '\ud83c\uddf0\ud83c\uddea', standard: 'IQSK' },
-  { code: 'MA', flag: '\ud83c\uddf2\ud83c\udde6', standard: 'BPU' },
-  // CIS
-  { code: 'RU', flag: '\ud83c\uddf7\ud83c\uddfa', standard: '\u0413\u042d\u0421\u041d' },
-  // Generic
-  { code: 'DEFAULT', flag: '\ud83c\udf10', labelKey: 'boq.markup_region.generic', labelDefault: 'Generic international', standard: '' },
-];
 
 const CATEGORY_COLORS: Record<string, string> = {
   overhead: 'bg-blue-100 text-blue-700 dark:text-blue-300 dark:bg-blue-900/30',
@@ -201,13 +120,12 @@ interface EditState {
 }
 
 export function MarkupPanel({ boqId, markups, directCost, currencySymbol, currencyCode, locale, fmt, openSignal, sections }: MarkupPanelProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
 
   const [isOpen, setIsOpen] = useState(true);
   const [editState, setEditState] = useState<EditState | null>(null);
-  const [showRegionMenu, setShowRegionMenu] = useState(false);
 
   // Re-expand when the host bumps openSignal (toolbar "Markups / OH&P" jump).
   // Ignore the initial 0 so a user who manually collapsed the panel is not
@@ -254,10 +172,9 @@ export function MarkupPanel({ boqId, markups, directCost, currencySymbol, curren
   });
 
   const applyDefaultsMutation = useMutation({
-    mutationFn: (region: string) => boqApi.applyDefaults(boqId, region),
+    mutationFn: () => boqApi.applyDefaults(boqId, 'BG'),
     onSuccess: () => {
       invalidate();
-      setShowRegionMenu(false);
       addToast({ type: 'success', title: t('boq.template_applied', { defaultValue: 'Regional template applied' }) });
     },
     onError: (err: Error) => {
@@ -501,55 +418,21 @@ export function MarkupPanel({ boqId, markups, directCost, currencySymbol, curren
 
       {isOpen && (
         <div className="border-t border-border-light">
-          {/* Toolbar: Regional template + Add */}
+          {/* Applying the Bulgarian template is explicit: imported markups stay intact. */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 bg-surface-secondary/30">
-            {/* Regional template dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowRegionMenu(!showRegionMenu)}
-                aria-expanded={showRegionMenu}
-                aria-haspopup="true"
-                aria-label={t('boq.apply_template', { defaultValue: 'Apply Regional Template' })}
-                className="flex items-center gap-1.5 text-xs text-content-secondary hover:text-content-primary transition-colors rounded-md px-2 py-1.5 hover:bg-surface-secondary"
-              >
-                <Globe size={14} className="shrink-0" />
-                <span className="whitespace-nowrap">{t('boq.apply_template', { defaultValue: 'Apply Regional Template' })}</span>
-                <ChevronDown size={12} className="shrink-0" />
-              </button>
-              {showRegionMenu && (
-                <div className="absolute top-full left-0 mt-1 z-20 min-w-[280px] max-h-[400px] overflow-y-auto rounded-lg border border-border-light bg-surface-elevated shadow-lg py-1">
-                  {REGIONS.map((region) => (
-                    <button
-                      key={region.code}
-                      onClick={() => {
-                        if (markups.length > 0 && !confirm(t('boq.confirm_replace_markups', { defaultValue: 'This will replace existing markups. Continue?' }))) {
-                          setShowRegionMenu(false);
-                          return;
-                        }
-                        applyDefaultsMutation.mutate(region.code);
-                      }}
-                      disabled={applyDefaultsMutation.isPending}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-surface-secondary transition-colors flex items-center gap-2.5"
-                    >
-                      <span className="text-base leading-none">{region.flag}</span>
-                      <div className="min-w-0">
-                        <div className="text-content-primary font-medium truncate">
-                          {markupRegionLabel(region, i18n.language, t)}
-                        </div>
-                        {region.standard && (
-                          <div className="text-2xs text-content-tertiary">{region.standard}</div>
-                        )}
-                        {region.hintKey && (
-                          <div className="text-2xs text-content-tertiary whitespace-normal max-w-[260px]">
-                            {t(region.hintKey, { defaultValue: region.hintDefault ?? '' })}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (markups.length > 0 && !confirm(t('boq.confirm_replace_markups', { defaultValue: 'This will replace existing markups. Continue?' }))) return;
+                applyDefaultsMutation.mutate();
+              }}
+              disabled={applyDefaultsMutation.isPending}
+              aria-label={t('boq.apply_bulgarian_template', { defaultValue: 'Apply Bulgarian template' })}
+              className="flex items-center gap-1.5 text-xs text-content-secondary hover:text-content-primary transition-colors rounded-md px-2 py-1.5 hover:bg-surface-secondary disabled:opacity-50"
+            >
+              <Globe size={14} className="shrink-0" />
+              <span className="whitespace-nowrap">{t('boq.apply_bulgarian_template', { defaultValue: 'Apply Bulgarian template' })}</span>
+            </button>
 
             <div className="flex items-center gap-1">
               <button

@@ -156,11 +156,11 @@ def submitted(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 
 async def test_a_failed_load_can_be_provisioned_again(maker, submitted: list[str]) -> None:
-    base = f"onboarding:{ALICE}:load_cwicr:ENG_TORONTO"
+    base = f"onboarding:{ALICE}:load_cwicr:BG_SOFIA"
     first = await _job(maker, owner=ALICE, status="failed", key=base)
 
     async with _client(maker, ALICE) as client:
-        resp = await client.post("/api/v1/onboarding/provision", json={"region": "ENG_TORONTO"})
+        resp = await client.post("/api/v1/onboarding/provision", json={"region": "BG_SOFIA"})
     assert resp.status_code == 200, resp.text
     assert submitted == [f"{base}:after:{first}"]
 
@@ -168,7 +168,7 @@ async def test_a_failed_load_can_be_provisioned_again(maker, submitted: list[str
     second = await _job(maker, owner=ALICE, status="failed", key=f"{base}:after:{first}")
     await _job(maker, owner=ALICE, status="started", key=f"{base}:after:{second}")
     async with _client(maker, ALICE) as client:
-        await client.post("/api/v1/onboarding/provision", json={"region": "ENG_TORONTO"})
+        await client.post("/api/v1/onboarding/provision", json={"region": "BG_SOFIA"})
     assert submitted[-1] == f"{base}:after:{second}"
 
 
@@ -181,27 +181,30 @@ async def _cost_item(maker: async_sessionmaker, region: str) -> None:
 
 
 async def test_a_running_or_finished_load_is_reused(maker, submitted: list[str]) -> None:
-    base = f"onboarding:{ALICE}:load_cwicr:ENG_TORONTO"
+    base = f"onboarding:{ALICE}:load_cwicr:BG_SOFIA"
     await _job(maker, owner=ALICE, status="success", key=base)
-    await _cost_item(maker, "ENG_TORONTO")
+    await _cost_item(maker, "BG_SOFIA")
     async with _client(maker, ALICE) as client:
-        await client.post("/api/v1/onboarding/provision", json={"region": "ENG_TORONTO"})
+        await client.post("/api/v1/onboarding/provision", json={"region": "BG_SOFIA"})
     assert submitted == [base]
 
 
 async def test_a_loaded_cost_base_that_was_deleted_is_loaded_again(maker, submitted: list[str]) -> None:
     """A succeeded load whose items are gone says nothing about the database now."""
-    base = f"onboarding:{ALICE}:load_cwicr:ENG_TORONTO"
+    base = f"onboarding:{ALICE}:load_cwicr:BG_SOFIA"
     first = await _job(maker, owner=ALICE, status="success", key=base)
 
     async with _client(maker, ALICE) as client:
-        resp = await client.post("/api/v1/onboarding/provision", json={"region": "ENG_TORONTO"})
+        resp = await client.post("/api/v1/onboarding/provision", json={"region": "BG_SOFIA"})
     assert resp.status_code == 200, resp.text
     assert submitted == [f"{base}:after:{first}"]
 
 
-async def test_a_sample_project_that_was_deleted_is_installed_again(maker, submitted: list[str]) -> None:
-    base = f"onboarding:{ALICE}:install_demo:residential"
+async def test_a_sample_project_that_was_deleted_is_installed_again(
+    maker, submitted: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("SEED_DEMO", "true")
+    base = f"onboarding:{ALICE}:install_demo:residential-sofia"
     first = await _job(
         maker,
         owner=ALICE,
@@ -209,10 +212,10 @@ async def test_a_sample_project_that_was_deleted_is_installed_again(maker, submi
         status="success",
         key=base,
         result={"project_id": str(uuid.uuid4())},
-        arg="residential",
+        arg="residential-sofia",
     )
 
     async with _client(maker, ALICE) as client:
-        resp = await client.post("/api/v1/onboarding/provision", json={"demo_ids": ["residential"]})
+        resp = await client.post("/api/v1/onboarding/provision", json={"demo_ids": ["residential-sofia"]})
     assert resp.status_code == 200, resp.text
     assert submitted == [f"{base}:after:{first}"]

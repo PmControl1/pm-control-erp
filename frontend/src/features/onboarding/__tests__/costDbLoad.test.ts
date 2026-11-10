@@ -23,7 +23,7 @@ vi.mock('@/shared/lib/api', async () => {
 });
 
 // Initialises i18next with the English resources the messages are read from.
-import '@/app/i18n';
+import i18n from '@/app/i18n';
 import { costDbLoadReport, followCostDbLoad } from '../costDbLoad';
 import type { OnboardingJobState } from '../onboardingApi';
 
@@ -61,6 +61,8 @@ function serve(states: (elapsedMs: number) => OnboardingJobState[] | Error): voi
 }
 
 beforeEach(() => {
+  // These message assertions exercise the supported English fallback.
+  void i18n.changeLanguage('en');
   vi.useFakeTimers();
   api.apiGet.mockReset();
   api.apiPost.mockReset();

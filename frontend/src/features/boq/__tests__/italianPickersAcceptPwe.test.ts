@@ -31,11 +31,6 @@ describe('Italian import pickers', () => {
     expect(exts).toEqual(expect.arrayContaining(['.xpwe', '.pwe', '.dcf']));
   });
 
-  it('the regional price list import offers .pwe', () => {
-    const exts = acceptAfter(read('../../costs/RegionalPriceListImport.tsx'), 'const ACCEPT');
-    expect(exts).toEqual(expect.arrayContaining(['.xpwe', '.pwe']));
-  });
-
   it('the New BOQ window lists the Italian formats among its import standards', () => {
     const source = read('../CreateBOQPage.tsx');
     const row = source.split('\n').find((line) => line.includes("'boq.import_region_it'"));

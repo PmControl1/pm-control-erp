@@ -12,6 +12,7 @@
 // with items left out, and failed.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import i18n from '@/app/i18n';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -65,6 +66,8 @@ function serve(finished: OnboardingJobState[]): void {
 }
 
 beforeEach(() => {
+  // These message assertions exercise the supported English fallback.
+  void i18n.changeLanguage('en');
   api.apiGet.mockReset();
   api.apiPost.mockReset();
   useBackgroundInstallStore.getState().dismiss();

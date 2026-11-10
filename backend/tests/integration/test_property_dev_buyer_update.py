@@ -152,6 +152,7 @@ async def tenant_a(http_client):
         headers=headers,
     )
     assert buyer.status_code == 201, buyer.text
+    assert buyer.json()["language"] == "bg"
     buyer_id = buyer.json()["id"]
 
     return {
@@ -304,6 +305,24 @@ async def test_update_buyer_basic_fields(http_client, tenant_a):
     body = res.json()
     assert body["full_name"] == "Alice Updated"
     assert body["phone"] == "+49 30 7654321"
+
+
+@pytest.mark.asyncio
+async def test_explicit_buyer_language_survives_other_edits(http_client, tenant_a):
+    created = await http_client.post(
+        "/api/v1/property-dev/buyers/",
+        json={"development_id": tenant_a["development_id"], "full_name": "English buyer", "language": "en"},
+        headers=tenant_a["headers"],
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["language"] == "en"
+    updated = await http_client.patch(
+        f"/api/v1/property-dev/buyers/{created.json()['id']}",
+        json={"full_name": "English buyer updated"},
+        headers=tenant_a["headers"],
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["language"] == "en"
 
 
 @pytest.mark.asyncio

@@ -250,7 +250,7 @@ async def test_two_users_switching_two_bases_at_once_each_keep_their_own(
 
         async def _switch(engine: AsyncEngine, region: str, market: str, user: uuid.UUID) -> dict:
             async with _sessions(engine)() as s:
-                return await costs_router.load_base_market(
+                return await costs_router.load_base_market_data(
                     region, market, session=s, _user_id=str(user), service=ResourcePriceService(s)
                 )
 
@@ -362,9 +362,8 @@ async def test_the_catalog_reports_the_stored_market_and_unknown_without_one(db:
     assert out["base_states"][BASE]["market_state"] == "market"
     assert out["base_states"][BASE]["active_market"] == MARKET
     assert out["base_states"][OTHER_BASE]["market_state"] == "unknown"
-    china = next(f for f in out["families"] if f["key"] == "china")
-    active = [v["variant_id"] for v in china["variants"] if v["active"]]
-    assert active == [f"{BASE}:{MARKET}"]
+    # Historical state is retained, but it no longer offers foreign installs.
+    assert [v["region"] for f in out["families"] for v in f["variants"]] == ["BG_SOFIA"]
 
 
 async def test_a_switch_in_flight_marks_no_card_active(db: AsyncEngine) -> None:
@@ -374,8 +373,8 @@ async def test_a_switch_in_flight_marks_no_card_active(db: AsyncEngine) -> None:
         out = await costs_router.get_base_catalog(s)
 
     assert out["base_states"][BASE]["market_state"] == "switching"
-    china = next(f for f in out["families"] if f["key"] == "china")
-    assert not any(v["active"] for v in china["variants"])
+    assert [v["region"] for f in out["families"] for v in f["variants"]] == ["BG_SOFIA"]
+    assert not any(v["active"] for f in out["families"] for v in f["variants"])
 
 
 # ── The language swap after a restart ─────────────────────────────────────
@@ -573,7 +572,9 @@ def _catalog_row(code: str, price: str, currency: str, source: str = "github_imp
 
 
 async def _switch_to_london(s: AsyncSession, user: str) -> dict:
-    return await costs_router.load_base_market(BASE, MARKET, session=s, _user_id=user, service=ResourcePriceService(s))
+    return await costs_router.load_base_market_data(
+        BASE, MARKET, session=s, _user_id=user, service=ResourcePriceService(s)
+    )
 
 
 async def test_a_market_switch_reprices_stores_and_mirrors_the_catalogue(
@@ -677,7 +678,7 @@ async def test_market_switches_keep_assembly_links_to_catalogue_resources(
         links_after_switch = await _links()
         catalog_in_market = await _catalog(s)
 
-        await costs_router.restore_base_home_market(BASE, session=s, _user_id=str(uuid.uuid4()))
+        await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=str(uuid.uuid4()))
         after_home = await _catalog_ids(s)
         links_after_home = await _links()
         catalog_at_home = await _catalog(s)
@@ -692,7 +693,7 @@ async def test_market_switches_keep_assembly_links_to_catalogue_resources(
         import app.modules.catalog.router as catalog_router
 
         monkeypatch.setattr(catalog_router, "fetch_region_catalog_rows", _unreadable)
-        out = await costs_router.restore_base_home_market(BASE, session=s, _user_id=str(uuid.uuid4()))
+        out = await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=str(uuid.uuid4()))
         after_unreadable = await _catalog_ids(s)
         links_after_unreadable = await _links()
         catalog_unreadable = await _catalog(s)
@@ -739,7 +740,7 @@ async def test_return_home_gives_every_item_its_home_prices_back(db: AsyncEngine
         await ResourcePriceService(s).set_price(BASE, "R1", Decimal("4"))
         await s.commit()
 
-        out = await costs_router.restore_base_home_market(BASE, session=s, _user_id=user)
+        out = await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=user)
 
         items = await _items(s)
         staging_left = await _items(s, f"__xlate_{BASE}_home")
@@ -848,7 +849,7 @@ async def test_return_home_reprices_a_recipe_the_home_file_does_not_hold(
         await _switch_to_london(s, user)
         in_market = await _items(s)
 
-        out = await costs_router.restore_base_home_market(BASE, session=s, _user_id=user)
+        out = await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=user)
         items = await _items(s)
         sheet = {
             r.resource_key: Decimal(r.unit_price)
@@ -900,13 +901,13 @@ async def test_a_failed_sheet_rebuild_on_return_home_keeps_the_sheet_and_says_so
         real_seed = ResourcePriceService.seed_region
         monkeypatch.setattr(ResourcePriceService, "seed_region", _broken_seed)
         with pytest.raises(HTTPException) as exc:
-            await costs_router.restore_base_home_market(BASE, session=s, _user_id=user)
+            await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=user)
         sheet_after_failure = await _sheet(s)
         state_after_failure = await base_state.read_base_state(s, BASE)
 
         # The lock was let go: a second return home gets in and finishes.
         monkeypatch.setattr(ResourcePriceService, "seed_region", real_seed)
-        out = await costs_router.restore_base_home_market(BASE, session=s, _user_id=user)
+        out = await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=user)
         sheet_after_retry = await _sheet(s)
         state_after_retry = await base_state.read_base_state(s, BASE)
 
@@ -944,7 +945,7 @@ async def test_the_catalogue_is_written_while_the_switch_still_holds_the_lock(
         await _load_home_base(s)
         await ResourcePriceService(s).seed_region(BASE)
         await _switch_to_london(s, user)
-        await costs_router.restore_base_home_market(BASE, session=s, _user_id=user)
+        await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=user)
 
     assert held_during == [("market_import", True), ("github_import", True)]
 
@@ -959,7 +960,7 @@ async def test_return_home_then_market_again_lands_the_same_market_prices(
         await ResourcePriceService(s).seed_region(BASE)
         await _switch_to_london(s, user)
         first = {code: Decimal(i.rate) for code, i in (await _items(s)).items()}
-        await costs_router.restore_base_home_market(BASE, session=s, _user_id=user)
+        await costs_router.restore_base_home_market_data(BASE, session=s, _user_id=user)
         await _switch_to_london(s, user)
         second = {code: Decimal(i.rate) for code, i in (await _items(s)).items()}
     assert first == second
@@ -968,9 +969,9 @@ async def test_return_home_then_market_again_lands_the_same_market_prices(
 async def test_return_home_refuses_a_base_without_markets_or_not_loaded(db: AsyncEngine, wired: dict[str, Any]) -> None:
     async with _sessions(db)() as s:
         with pytest.raises(HTTPException) as global_base:
-            await costs_router.restore_base_home_market("FR_PARIS", session=s, _user_id="u")
+            await costs_router.restore_base_home_market_data("FR_PARIS", session=s, _user_id="u")
         with pytest.raises(HTTPException) as empty:
-            await costs_router.restore_base_home_market(BASE, session=s, _user_id="u")
+            await costs_router.restore_base_home_market_data(BASE, session=s, _user_id="u")
     assert global_base.value.status_code == 404
     assert empty.value.status_code == 404
 
@@ -987,7 +988,7 @@ async def test_return_home_without_its_file_changes_nothing(
         await _switch_to_london(s, str(uuid.uuid4()))
         monkeypatch.setattr(costs_router, "_find_cwicr_file", _missing)
         with pytest.raises(HTTPException) as exc:
-            await costs_router.restore_base_home_market(BASE, session=s, _user_id="u")
+            await costs_router.restore_base_home_market_data(BASE, session=s, _user_id="u")
         items = await _items(s)
         state = await base_state.read_base_state(s, BASE)
     assert exc.value.status_code == 502

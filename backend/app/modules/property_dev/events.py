@@ -71,6 +71,7 @@ from decimal import Decimal
 from typing import Any
 
 from app.core.events import Event, event_bus
+from app.core.market_profile import MARKET_LOCALE
 from app.database import async_session_factory
 
 logger = logging.getLogger(__name__)
@@ -401,7 +402,7 @@ async def _on_crm_lead_qualified(event: Event) -> dict[str, Any] | None:
                 full_name=full_name,
                 email=email,
                 phone=phone,
-                language=(meta.get("language") or "en"),
+                language=(meta.get("language") or MARKET_LOCALE),
                 status="lead",
                 currency=(meta.get("currency") or ""),
                 jurisdiction=(meta.get("jurisdiction") or "").upper(),

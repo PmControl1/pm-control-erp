@@ -9,24 +9,14 @@ import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { SUPPORTED_LANGUAGES } from '@/app/i18n';
 import { PROJECT_LANGUAGES } from './projectLanguages';
 
 const BACKEND_LOCALES = join(dirname(fileURLToPath(import.meta.url)), '../../../../backend/locales');
 
 describe('project languages', () => {
-  it('offers Ukrainian under its own code', () => {
-    const uk = PROJECT_LANGUAGES.find((l) => l.value === 'uk');
-    expect(uk?.label).toBe('Українська');
-  });
-
-  it('offers every base language of the interface picker', () => {
-    const base = SUPPORTED_LANGUAGES.map((l) => l.code).filter((c) => !c.includes('-'));
-    expect(PROJECT_LANGUAGES.map((l) => l.value)).toEqual(base);
-  });
-
-  it('leaves the regional variants out', () => {
-    expect(PROJECT_LANGUAGES.some((l) => l.value.includes('-'))).toBe(false);
+  it('offers Bulgarian first and English as the fallback', () => {
+    expect(PROJECT_LANGUAGES.map((language) => language.value)).toEqual(['bg', 'en']);
+    expect(PROJECT_LANGUAGES[0]?.label).toBe('Български');
   });
 
   it('offers only languages the backend has a locale file for', () => {
@@ -35,10 +25,4 @@ describe('project languages', () => {
     expect(missing).toEqual([]);
   });
 
-  it('keeps the languages the form offered before', () => {
-    const before = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'cs', 'hr', 'hu', 'ru', 'tr', 'ar', 'zh', 'ja',
-      'ko', 'hi', 'th', 'vi', 'id', 'sv', 'no', 'da', 'fi'];
-    const offered = new Set(PROJECT_LANGUAGES.map((l) => l.value));
-    expect(before.filter((c) => !offered.has(c))).toEqual([]);
-  });
 });

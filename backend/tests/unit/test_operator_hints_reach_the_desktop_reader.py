@@ -620,57 +620,47 @@ def test_a_hint_words_itself_for_the_install_it_is_read_on(
     )
 
 
-def test_the_two_import_time_hints_word_themselves_for_the_build_they_load_in(
+def test_the_import_time_hint_words_itself_for_the_build_it_loads_in(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Two sites resolve their hint at import time, not at read time.
+    """One site resolves its hint at import time, not at read time.
 
-    ``marketplace._VECTOR_INDEX_ENCODER`` and ``qdrant_supervisor._MISSING_CLIENT_HINT``
-    are module constants, so ``repair_hint`` runs once while the module is
-    executing rather than each time somebody reads the text. In production that
-    is the same answer either way - the PyInstaller bootloader sets
-    ``sys.frozen`` before any application module is imported and nothing clears
-    it - but it means these two cannot be proved by patching the flag alone.
-    Reloading under the patched flag is what makes them answer the question, and
-    is also what would notice if either constant were moved somewhere the import
-    order stopped being decided for us.
+    ``qdrant_supervisor._MISSING_CLIENT_HINT`` is a module constant, so
+    ``repair_hint`` runs once while the module is executing rather than each time
+    somebody reads the text. In production that is the same answer either way -
+    the PyInstaller bootloader sets ``sys.frozen`` before any application module
+    is imported and nothing clears it - but it means this one cannot be proved by
+    patching the flag alone. Reloading under the patched flag is what makes it
+    answer the question, and is also what would notice if the constant were moved
+    somewhere the import order stopped being decided for us.
+
+    ``marketplace._VECTOR_INDEX_ENCODER`` was the second such site. It went with
+    the foreign vector-index cards it was written into; the Bulgarian marketplace
+    ships no vector-index card.
     """
-    import app.core.marketplace as marketplace  # noqa: PLC0415
     import app.modules.match_elements.qdrant_supervisor as supervisor  # noqa: PLC0415
     from app.core.self_upgrade import DESKTOP_REPAIR  # noqa: PLC0415
 
     try:
         monkeypatch.delattr(sys, "frozen", raising=False)
-        importlib.reload(marketplace)
         importlib.reload(supervisor)
-        ordinary_card = marketplace._VECTOR_INDEX_ENCODER
         ordinary_client = supervisor._MISSING_CLIENT_HINT
 
         monkeypatch.setattr(sys, "frozen", True, raising=False)
-        importlib.reload(marketplace)
         importlib.reload(supervisor)
-        frozen_card = marketplace._VECTOR_INDEX_ENCODER
         frozen_client = supervisor._MISSING_CLIENT_HINT
     finally:
-        # Restore before anything else imports these. ``monkeypatch`` undoes the
-        # flag at teardown, but the modules would keep whichever text they were
-        # last executed with, and that text is global.
+        # Restore before anything else imports it. ``monkeypatch`` undoes the
+        # flag at teardown, but the module would keep whichever text it was last
+        # executed with, and that text is global.
         monkeypatch.undo()
-        importlib.reload(marketplace)
         importlib.reload(supervisor)
 
     with capsys.disabled():
-        print("\n  app/core/marketplace.py::_VECTOR_INDEX_ENCODER")
-        print(f"    ordinary install -> {ordinary_card}")
-        print(f"    frozen desktop   -> {frozen_card}")
         print("\n  app/modules/match_elements/qdrant_supervisor.py::_MISSING_CLIENT_HINT")
         print(f"    ordinary install -> {ordinary_client}")
         print(f"    frozen desktop   -> {frozen_client}")
-
-    assert "pip install sentence-transformers" in ordinary_card
-    assert "pip install" not in frozen_card, f"a marketplace card offered pip to a frozen reader: {frozen_card}"
-    assert DESKTOP_REPAIR in frozen_card
 
     assert "pip install openconstructionerp[semantic-clients]" in ordinary_client
     assert "pip install" not in frozen_client, f"the client hint offered pip to a frozen reader: {frozen_client}"
@@ -684,6 +674,14 @@ def test_the_two_import_time_hints_word_themselves_for_the_build_they_load_in(
             "the sentence that stops this reading as a broken install was parked inside the pip branch, "
             f"so the other reader lost it: {text}"
         )
+
+    from app.core import marketplace  # noqa: PLC0415
+
+    assert not any(m.category == "vector_index" for m in marketplace.MARKETPLACE_MODULES), (
+        "the marketplace ships a vector-index card again. Its install wording is resolved at import "
+        "time like the client hint above, so restore _VECTOR_INDEX_ENCODER = repair_hint(...) for it "
+        "and cover it here the same way."
+    )
 
 
 def test_the_embedder_card_drops_its_copy_box_rather_than_filling_it_with_a_dead_command(

@@ -181,7 +181,7 @@ describe('RegionalPackCard, no pack active', () => {
   it('sends the reader to a screen that renders for them, not to the guarded wizard', async () => {
     renderApp(<RegionalPackCard />);
 
-    fireEvent.click(await screen.findByText('Install a country pack'));
+    fireEvent.click(await screen.findByText('Bulgarian configuration'));
 
     // The destination has to hold. Landing back on the dashboard is the
     // defect, and it is a pass for any assertion that only watches the click.
@@ -198,7 +198,7 @@ describe('RegionalPackCard, no pack active', () => {
   it('leaves the onboarding-completed flag alone', async () => {
     renderApp(<RegionalPackCard />);
 
-    fireEvent.click(await screen.findByText('Install a country pack'));
+    fireEvent.click(await screen.findByText('Bulgarian configuration'));
 
     await waitFor(() => expect(screen.getByTestId('modules-page')).toBeTruthy());
     expect(localStorage.getItem('oe_onboarding_completed')).toBe('true');
@@ -256,7 +256,7 @@ describe('RegionalPackCard, a pack already active', () => {
   it('offers a way to the pack picker to a reader who already has a pack', async () => {
     renderApp(<RegionalPackCard />);
 
-    fireEvent.click(await screen.findByText('Change or add a country pack'));
+    fireEvent.click(await screen.findByText('Bulgarian configuration'));
 
     await waitFor(() => expect(screen.getByTestId('modules-page')).toBeTruthy());
     expect(location()).toBe('/modules?tab=partner-packs');
@@ -266,12 +266,15 @@ describe('RegionalPackCard, a pack already active', () => {
   // The two states must not both be on screen at once: the empty state's
   // primary button and this quiet one say different things about what the
   // reader already has, and a card showing both would be reporting two
-  // different answers to "which pack is on".
+  // different answers to "which pack is on". In the Bulgarian product both
+  // buttons read "Bulgarian configuration", so the check is that only one of
+  // them is drawn and that it is the quiet one, not the empty state's.
   it('does not also draw the button that belongs to the empty state', async () => {
     renderApp(<RegionalPackCard />);
 
-    await screen.findByText('Change or add a country pack');
-    expect(screen.queryByText('Install a country pack')).toBeNull();
+    await screen.findByTestId('regional-pack-active');
+    expect(screen.getAllByText('Bulgarian configuration')).toHaveLength(1);
+    expect(screen.queryByTestId('regional-pack-none')).toBeNull();
   });
 });
 
@@ -363,7 +366,7 @@ describe('RegionalPackCard, the compact tile layout', () => {
 
     await screen.findByTestId('regional-pack-error');
     expect(screen.queryByText('No regional pack is active')).toBeNull();
-    expect(screen.queryByText('Install a country pack')).toBeNull();
+    expect(screen.queryByText('Bulgarian configuration')).toBeNull();
 
     const callsBefore = vi.mocked(apiGet).mock.calls.length;
     vi.mocked(apiGet).mockResolvedValue(ACTIVE_PACK);

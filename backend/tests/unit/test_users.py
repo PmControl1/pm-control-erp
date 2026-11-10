@@ -461,13 +461,13 @@ class TestUserCreateSchema:
         )
         assert data.role == "editor"
 
-    def test_default_locale_is_en(self):
+    def test_default_locale_is_bg(self):
         data = UserCreate(
             email="user@example.com",
             password="StrongP@ss1",
             full_name="Test User",
         )
-        assert data.locale == "en"
+        assert data.locale == "bg"
 
     def test_valid_roles(self):
         for role in ("admin", "manager", "editor", "viewer"):

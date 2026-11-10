@@ -131,6 +131,7 @@ def _page_size(data: bytes) -> tuple[float, float]:
     [
         ("EUR", "IE", "123,456.78 EUR", "123.456,78 EUR"),
         ("EUR", "FR", f"123{NBSP}456,78 EUR", "123.456,78 EUR"),
+        ("EUR", "BG", f"123{NBSP}456,78 EUR", "123.456,78 EUR"),
         ("UAH", "UA", f"123{NBSP}456,78 UAH", "123,456.78 UAH"),
         ("UAH", "", f"123{NBSP}456,78 UAH", "123,456.78 UAH"),
         ("CHF", "CH", f"123{SWISS_APOSTROPHE}456.78 CHF", None),
@@ -315,6 +316,16 @@ def test_the_summary_report_in_english_reads_as_before() -> None:
     assert "Summary Report" in text
     assert "positions (full detail omitted for performance)" in text
     assert "Cost Summary" in text
+
+
+@pytest.mark.parametrize("writer", [generate_boq_pdf, generate_boq_pdf_simple])
+def test_bulgarian_total_does_not_claim_vat_without_an_active_tax(writer: Any) -> None:
+    inactive_tax = _markup("ДДС", "tax", 20, Decimal("0"))
+    inactive_tax.is_active = False
+    data = writer(_boq("EUR", [inactive_tax]), project_name="Обект", currency="EUR", country_code="BG", locale="bg")
+    text = _pdf_text(data)
+    assert "Обща стойност" in text
+    assert "Всичко с ДДС" not in text
 
 
 @pytest.mark.parametrize("writer", [generate_boq_pdf, generate_boq_pdf_simple])

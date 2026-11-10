@@ -62,8 +62,13 @@ def scope_project_query(stmt: Any, project_model: Any) -> Any:
     """
     from sqlalchemy import or_
 
+    from app.core.market_profile import MARKET_PACK
+
     slug = active_pack_slug()
-    if not slug:
+    if not slug or slug == MARKET_PACK:
+        # Bulgaria is the product baseline, not a separate partner workspace.
+        # Turning that baseline on must keep historical projects visible even
+        # when an older installation tagged them with another country pack.
         return stmt
     return stmt.where(
         or_(

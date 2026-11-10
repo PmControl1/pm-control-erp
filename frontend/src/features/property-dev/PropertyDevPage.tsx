@@ -71,7 +71,6 @@ import {
 } from '@/shared/ui/WideModal';
 import { MoneyDisplay } from '@/shared/ui/MoneyDisplay';
 import { DateDisplay } from '@/shared/ui/DateDisplay';
-import { CountryCombobox } from '@/shared/ui/CountryCombobox';
 import { useConfirm } from '@/shared/hooks/useConfirm';
 import { useTabKeyboardNav } from '@/shared/hooks/useTabKeyboardNav';
 import { useDisplayQuantity } from '@/shared/hooks/useDisplayQuantity';
@@ -80,6 +79,7 @@ import { usePreferencesStore } from '@/stores/usePreferencesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
 import { getErrorMessage, ApiError } from '@/shared/lib/api';
+import { MARKET_UI_LANGUAGES } from '@/app/i18n';
 import { EditBuyerModal } from './EditBuyerModal';
 import { BuyerAccessLinkPanel } from '@/features/buyer-portal/BuyerAccessLinkPanel';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
@@ -2892,7 +2892,7 @@ function ConvertReservationModal({
     total_value: String(defaultValue || ''),
     currency: reservation?.currency || prefCurrency || 'EUR',
     governing_law: '',
-    language: 'en',
+    language: 'bg',
   });
   const mut = useMutation({
     mutationFn: () =>
@@ -2984,7 +2984,7 @@ function ConvertReservationModal({
             value={form.governing_law}
             onChange={(e) => setForm({ ...form, governing_law: e.target.value.toUpperCase() })}
             className={inputCls}
-            placeholder="DE-BE"
+            placeholder="BG-16"
             maxLength={16}
           />
         </WideModalField>
@@ -2994,8 +2994,8 @@ function ConvertReservationModal({
             onChange={(e) => setForm({ ...form, language: e.target.value })}
             className={inputCls}
           >
-            {['en', 'de', 'ru', 'fr', 'es', 'ar'].map((l) => (
-              <option key={l} value={l}>{l}</option>
+            {MARKET_UI_LANGUAGES.map((language) => (
+              <option key={language.code} value={language.code}>{language.name}</option>
             ))}
           </select>
         </WideModalField>
@@ -6485,7 +6485,7 @@ function CreateModal({
     dev_type: 'residential' as DevelopmentType,
     // Location
     location_address: '',
-    country_code: '',
+    country_code: 'BG',
     latitude: '',
     longitude: '',
     // Scope
@@ -7276,20 +7276,11 @@ function DevelopmentFormBody({
               'Drives the house-type catalogue and the tax engine.',
           })}
         >
-          {/* Full ISO 3166-1 list via the shared searchable picker (same
-              component the house-type catalogue uses) so operators in any
-              region can pick their country - the old 12-entry <select>
-              excluded most of the world and used an invalid "UK" code. The
-              development form has no custom-region concept, so allowCustom
-              is off, keeping ``country_code`` a clean ISO code or empty. */}
-          <CountryCombobox
+          <input
             value={devForm.country_code}
-            onChange={(v) => set('country_code', v)}
-            allowEmpty
-            allowCustom={false}
-            placeholder={t('propdev.development.country_placeholder', {
-              defaultValue: 'Global / no country',
-            })}
+            readOnly
+            aria-label={t('propdev.development.country', { defaultValue: 'Country' })}
+            className={inputCls}
           />
         </WideModalField>
         <WideModalField

@@ -796,9 +796,10 @@ def test_match_default_constants_match_canonical_values():
         MATCH_DEFAULT_TARGET_LANGUAGE,
     )
 
-    # Default values when no env overrides set in the test runner.
-    # Both are documented in the architecture guide as v2.8.0 calibration.
-    assert MATCH_DEFAULT_TARGET_LANGUAGE == "en"
+    # Default values when no env overrides set in the test runner. The
+    # threshold is the v2.8.0 calibration; the language is Bulgarian because
+    # the product is Bulgaria-only.
+    assert MATCH_DEFAULT_TARGET_LANGUAGE == "bg"
     assert pytest.approx(0.85) == MATCH_DEFAULT_AUTO_LINK_THRESHOLD
 
 

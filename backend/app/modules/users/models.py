@@ -14,6 +14,7 @@ from datetime import datetime
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.market_profile import MARKET_TIMEZONE
 from app.database import GUID, Base
 
 
@@ -26,7 +27,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="editor")
-    locale: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    locale: Mapped[str] = mapped_column(String(10), nullable=False, default="bg")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Tracks when the password was last changed. Tokens issued (`iat`) before
@@ -52,7 +53,9 @@ class User(Base):
     )
 
     # Regional preferences
-    timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="UTC", server_default="UTC")
+    # Python defaults affect new accounts only; existing saved preferences and
+    # the deployed database's server default remain untouched.
+    timezone: Mapped[str] = mapped_column(String(50), nullable=False, default=MARKET_TIMEZONE, server_default="UTC")
     measurement_system: Mapped[str] = mapped_column(
         String(20), nullable=False, default="metric", server_default="metric"
     )
@@ -87,12 +90,8 @@ class User(Base):
     # option still carry "DD.MM.YYYY"; the frontend store treats that exact
     # value as "never chose" so their rendering does not change.
     date_format: Mapped[str] = mapped_column(String(20), nullable=False, default="auto", server_default="DD.MM.YYYY")
-    # No EUR bias for new accounts: empty string means "not chosen yet" and
-    # the UI falls back to the project currency / local preference store.
-    # server_default stays "EUR" on purpose - changing it would alter the
-    # table DDL and require an alembic migration for zero functional gain
-    # (ORM inserts always supply the Python-side default).
-    currency_code: Mapped[str] = mapped_column(String(10), nullable=False, default="", server_default="EUR")
+    # New Bulgarian accounts use EUR. Existing preferences are not rewritten.
+    currency_code: Mapped[str] = mapped_column(String(10), nullable=False, default="EUR", server_default="EUR")
 
     @property
     def digit_system(self) -> str:

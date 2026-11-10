@@ -145,13 +145,14 @@ jobs:
           --timeout=300 --timeout-method=signal
           --splits 6 --group ${{ matrix.shard }}
 
-      - name: Workspace AI and clash PostgreSQL regressions
+      - name: Bulgarian workflow, Workspace AI and clash PostgreSQL regressions
         if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.shard == 1 }}
         env:
           DATABASE_URL: postgresql+asyncpg://oe:oe@localhost:5432/openconstructionerp_test
           DATABASE_SYNC_URL: postgresql+psycopg2://oe:oe@localhost:5432/openconstructionerp_test
         run: >-
           pytest tests/modules/ai/test_workspace_ai.py
+          tests/integration/test_bulgaria_product_workflow.py
           tests/unit/test_clash_upsert_n_plus_one.py
           tests/unit/test_workspace_ai_lifecycle.py
           tests/unit/test_workspace_chat_agent_privacy.py -q -ra

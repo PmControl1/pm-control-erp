@@ -26,7 +26,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@/app/i18n', () => ({
-  SUPPORTED_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
+  MARKET_UI_LANGUAGES: [{ code: 'en', name: 'English', flag: 'gb', country: 'gb' }],
   getLanguageByCode: () => ({ code: 'en', name: 'English', flag: 'gb', country: 'gb' }),
 }));
 

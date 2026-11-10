@@ -27,6 +27,10 @@ vi.mock('@/app/i18n', () => ({
     { code: 'en', name: 'English', flag: 'gb', country: 'gb' },
     { code: 'de', name: 'Deutsch', flag: 'de', country: 'de' },
   ],
+  MARKET_UI_LANGUAGES: [
+    { code: 'bg', name: 'Български', flag: 'bg', country: 'bg' },
+    { code: 'en', name: 'English', flag: 'gb', country: 'gb' },
+  ],
   getLanguageByCode: (code: string) =>
     code === 'de'
       ? { code: 'de', name: 'Deutsch', flag: 'de', country: 'de' }

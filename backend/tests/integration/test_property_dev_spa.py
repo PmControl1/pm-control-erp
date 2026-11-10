@@ -209,6 +209,7 @@ async def test_convert_reservation_to_spa_creates_party_and_schedule(
     assert spa["status"] == "draft"
     assert spa["plot_id"] == plot_id
     assert spa["reservation_id"] == reservation_id
+    assert spa["language"] == "en"  # An explicit document language remains available.
 
     # 1. Primary party auto-created → SPA can be sent for signature
     parties = await http_client.get(
@@ -263,6 +264,7 @@ async def test_spa_fsm_send_sign_cancel(http_client, tenant):
     )
     assert res.status_code == 201, res.text
     spa_id = res.json()["id"]
+    assert res.json()["language"] == "bg"
 
     # Send for signature — must NOT 409 (primary party was auto-created)
     sent = await http_client.post(

@@ -25,6 +25,14 @@
 // below are the English defaults written in the component.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// The number format row is tested on a browser that never chose a language,
+// which in the Bulgarian product opens in Bulgarian, so 'auto' resolves to a
+// locale the row has a button for. src/test/setup.ts stores an English choice
+// for the rest of the suite; drop it before app/i18n is imported.
+vi.hoisted(() => {
+  window.localStorage.removeItem('i18nextLng');
+});
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -227,7 +235,7 @@ describe('the number format row', () => {
       expect(pressed).toHaveLength(1);
       return pressed;
     });
-    expect(buttons[0]).toHaveTextContent(example(resolveNumberLocale('auto')));
+    expect(buttons[0]).toHaveTextContent(flatten(example(resolveNumberLocale('auto'))));
   });
 
   it('refuses the seeded German pattern on a browser that never chose', async () => {
@@ -246,7 +254,7 @@ describe('the number format row', () => {
       return found;
     });
     expect(pressed[0]).not.toHaveTextContent(example('de-DE'));
-    expect(pressed[0]).toHaveTextContent(example(resolveNumberLocale('auto')));
+    expect(pressed[0]).toHaveTextContent(flatten(example(resolveNumberLocale('auto'))));
   });
 
   it('keeps the German pattern once this browser has chosen German', async () => {

@@ -77,6 +77,7 @@ from app.modules.projects.member_schemas import (
 )
 from app.modules.projects.module_presence import probe_project_modules
 from app.modules.projects.schemas import (
+    BulgariaProjectCreate,
     ComplianceRulePacksUpdate,
     DefaultVatApplyRequest,
     DefaultVatApplyResponse,
@@ -90,7 +91,6 @@ from app.modules.projects.schemas import (
     ProfileSpec,
     ProjectBackupResponse,
     ProjectCardMetrics,
-    ProjectCreate,
     ProjectModulePresence,
     ProjectModuleRead,
     ProjectProfileResult,
@@ -195,10 +195,10 @@ async def _verify_project_access(
     status_code=201,
     summary="Create project",
     description="Create a new construction project. Sets the current user as owner. "
-    "Configure region, classification standard, and currency for the project context.",
+    "Uses the Bulgarian market, EUR currency and Bulgarian locale automatically.",
 )
 async def create_project(
-    data: ProjectCreate,
+    data: BulgariaProjectCreate,
     user_id: CurrentUserId,
     service: ProjectService = Depends(_get_service),
 ) -> ProjectResponse:

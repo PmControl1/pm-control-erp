@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, CheckCircle2, Globe, ChevronDown } from 'lucide-react';
 import { Button, Input, Logo, CountryFlag } from '@/shared/ui';
-import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/app/i18n';
+import { MARKET_UI_LANGUAGES as SUPPORTED_LANGUAGES, getLanguageByCode } from '@/app/i18n';
 import { sortLanguagesByName } from '@/shared/lib/languageOrder';
 import { AuthBackground } from './AuthBackground';
 

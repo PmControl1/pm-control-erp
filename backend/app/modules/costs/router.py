@@ -52,6 +52,7 @@ from app.core.file_signature import (
 from app.core.file_signature import (
     require as require_signature,
 )
+from app.core.market_profile import MARKET_COST_REGION
 from app.dependencies import (
     CurrentUserId,
     CurrentUserPayload,
@@ -255,6 +256,15 @@ def _resolve_currency(
                 if warnings is not None and msg not in warnings:
                     warnings.append(msg)
     return ""
+
+
+def _require_product_cost_region(region: str) -> None:
+    """Offer only the Bulgarian reference base while keeping saved foreign rows readable."""
+    if region != MARKET_COST_REGION:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Reference database '{region}' is not available in the Bulgarian product. Use {MARKET_COST_REGION}.",
+        )
 
 
 def _get_service(session: SessionDep) -> CostItemService:
@@ -1300,6 +1310,18 @@ async def load_base_market(
     _user_id: CurrentUserId,
     service: ResourcePriceService = Depends(_get_resource_price_service),
 ) -> dict:
+    """Apply the Bulgarian product boundary before using the shared base engine."""
+    _require_product_cost_region(base_region)
+    return await load_base_market_data(base_region, market_token, session, _user_id, service)
+
+
+async def load_base_market_data(
+    base_region: str,
+    market_token: str,
+    session: SessionDep,
+    _user_id: CurrentUserId,
+    service: ResourcePriceService = Depends(_get_resource_price_service),
+) -> dict:
     """Load a national base and reprice it into one of its market/language variants.
 
     A national base ships one home market but can be repriced into any of the 48
@@ -1317,6 +1339,12 @@ async def load_base_market(
     Returns the reprice summary plus the now-active market token. 404 on an
     unknown base/market; 502 when the market CSV cannot be downloaded.
     """
+    # The supported Sofia reference base is already in its own market. The
+    # shared national-base switching implementation stays for legacy tools.
+    if not base_registry.is_national_region(base_region):
+        raise HTTPException(
+            status_code=404, detail="Country-market switching is unavailable for the Sofia reference base."
+        )
     if base_registry.variant_by_region(base_region) is None:
         raise HTTPException(status_code=404, detail=f"Unknown base region '{base_region}'.")
     if not base_registry.is_known_market(market_token):
@@ -1454,6 +1482,16 @@ async def _mirror_market_catalog(session: AsyncSession, base_region: str, rows: 
     dependencies=[Depends(RequirePermission("costs.update"))],
 )
 async def restore_base_home_market(
+    base_region: str,
+    session: SessionDep,
+    _user_id: CurrentUserId,
+) -> dict:
+    """Apply the Bulgarian product boundary before using the shared base engine."""
+    _require_product_cost_region(base_region)
+    return await restore_base_home_market_data(base_region, session, _user_id)
+
+
+async def restore_base_home_market_data(
     base_region: str,
     session: SessionDep,
     _user_id: CurrentUserId,
@@ -2520,6 +2558,8 @@ async def load_vector_from_github(
     Downloads a parquet file with pre-computed 384d embeddings (all-MiniLM-L6-v2)
     for the given region, so users don't need to run the embedding model locally.
     """
+    _require_product_cost_region(db_id)
+
     import time
 
     from app.core.vector import vector_index
@@ -2805,6 +2845,8 @@ async def restore_qdrant_snapshot(
     Downloads 3072d embeddings snapshot (~1.1 GB) and restores into Qdrant.
     Requires Qdrant server running (Docker or binary).
     """
+    _require_product_cost_region(db_id)
+
     import asyncio
     import time
 
@@ -3110,7 +3152,7 @@ def _demo_mode_enabled() -> bool:
 
 @router.get("/catalogues-v3/")
 async def list_v3_catalogues() -> dict:
-    """List the 48 CWICR v3 catalogues with install status.
+    """List the Bulgarian CWICR v3 reference catalogue with install status.
 
     Frontend powers the `/setup/databases` "Quick install from DDC" grid
     from this endpoint. Each row gets a flag, name, currency, size,
@@ -3152,6 +3194,8 @@ async def list_v3_catalogues() -> dict:
 
     catalogues: list[dict] = []
     for cat in CWICR_V3_CATALOGUES:
+        if cat.region != MARKET_COST_REGION:
+            continue
         cache_path = _v3_snapshot_cache_path(cat.region)
         snapshot_cached = cache_path.exists() and cache_path.stat().st_size > 1_000_000
 
@@ -3221,6 +3265,8 @@ async def install_v3_catalogue(
     (``PUT /collections/{name}/snapshots/recover``) has Qdrant download
     the file itself with no body-size ceiling.
     """
+    _require_product_cost_region(region)
+
     import asyncio
     import time
 
@@ -3554,13 +3600,14 @@ async def get_category_tree(
 
 @router.get("/available-databases/")
 async def list_available_databases() -> list[dict]:
-    """List all available CWICR regional databases with their IDs.
+    """List reference databases available in the Bulgarian product.
 
     Use these IDs with POST /load-cwicr/{db_id} to import cost data.
     """
     return [
         {"id": db_id, "folder": folder.split("/")[0].replace("___DDC_CWICR", "")}
         for db_id, folder in _GITHUB_CWICR_FILES.items()
+        if db_id == MARKET_COST_REGION
     ]
 
 
@@ -5453,12 +5500,12 @@ async def _find_cwicr_file(db_id: str) -> Path | None:
     include_in_schema=False,
 )
 async def get_base_catalog(session: SessionDep) -> dict:
-    """Return the full catalog of loadable CWICR cost bases.
+    """Return the Bulgarian catalog of loadable CWICR reference cost bases.
 
-    Enumerates the nine base families and every loadable market variant with its
-    work-item ("position") count, currency, language and flag, so the import
-    page, database setup and onboarding can all render one consistent, honest
-    picker before anything is downloaded. Merges the live loaded counts from
+    Offers the Sofia base with its work-item ("position") count, source currency,
+    language and flag, so import, setup and onboarding show the same choice.
+    The complete internal registry still resolves historical foreign data.
+    Merges the live loaded counts from
     ``oe_costs_item`` so a base that is already imported shows its real figure
     and a "loaded" badge.
     """
@@ -5471,7 +5518,7 @@ async def get_base_catalog(session: SessionDep) -> dict:
     # every screen and every browser shows what the rows hold rather than what
     # one browser remembers clicking.
     states = {region: state.public() for region, state in (await base_state.read_all_base_states(session)).items()}
-    return base_registry.public_catalog(loaded_counts, states)
+    return base_registry.public_catalog(loaded_counts, states, allowed_regions=frozenset({MARKET_COST_REGION}))
 
 
 @router.post(
@@ -5507,6 +5554,8 @@ async def load_cwicr_database(
     lives in that module-level helper so the partner-pack one-click installer
     can run the same load path without going through HTTP.
     """
+    _require_product_cost_region(db_id)
+
     return await load_cwicr_region(db_id, session)
 
 
