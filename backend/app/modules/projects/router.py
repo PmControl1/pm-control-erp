@@ -77,6 +77,7 @@ from app.modules.projects.member_schemas import (
 )
 from app.modules.projects.module_presence import probe_project_modules
 from app.modules.projects.schemas import (
+    BulgarianDemoInstallRequest,
     BulgariaProjectCreate,
     ComplianceRulePacksUpdate,
     DefaultVatApplyRequest,
@@ -221,15 +222,19 @@ async def create_project(
     "/demo/bulgaria",
     summary="Install or open your Bulgarian demonstration project",
     description="Every signed-in active user can explore their own sample project. "
-    "Uses the current account as owner and preserves existing edits.",
+    "Uses the current account as owner and preserves existing edits. "
+    "Omitting the request body selects the original residential example.",
 )
 async def install_bulgarian_demo_project(
     user_id: CurrentUserId,
     session: SessionDep,
+    data: BulgarianDemoInstallRequest | None = Body(default=None),
 ) -> dict:
     from app.core.bulgarian_demo import install_bulgarian_demo
 
-    result = await install_bulgarian_demo(session, uuid.UUID(user_id))
+    result = await install_bulgarian_demo(
+        session, uuid.UUID(user_id), template_id=data.template_id if data else "residential"
+    )
     return result.model_dump(mode="json")
 
 

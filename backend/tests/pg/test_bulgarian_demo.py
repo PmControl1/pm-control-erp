@@ -54,6 +54,7 @@ async def test_installs_linked_bulgarian_data_and_read_services(pg_session, tmp_
     assert project.metadata_["demo_id"] == DEMO_ID
     assert await live_demo_projects(pg_session, [project.id]) == []
     assert not result.already_installed
+    assert result.template_id == "residential"
     assert await pg_session.scalar(select(func.count()).select_from(User)) == 1
 
     boq = await pg_session.scalar(select(BOQ).where(BOQ.project_id == project.id))
@@ -116,6 +117,8 @@ async def test_repeated_install_preserves_edits_and_isolates_owners(pg_session, 
     first = await install_bulgarian_demo(pg_session, owner.id, upload_base=tmp_path)
     project = await pg_session.get(Project, first.project_id)
     project.name = "Edited example"
+    # Existing copies predate the template selector and only carry demo_id.
+    project.metadata_ = {"demo_id": DEMO_ID, "custom": "keep this edit"}
     boq = await pg_session.scalar(select(BOQ).where(BOQ.project_id == project.id))
     position = await pg_session.scalar(select(Position).where(Position.boq_id == boq.id, Position.unit != "").limit(1))
     position.unit_rate = "123.45"
@@ -123,6 +126,7 @@ async def test_repeated_install_preserves_edits_and_isolates_owners(pg_session, 
     again = await install_bulgarian_demo(pg_session, owner.id, upload_base=tmp_path)
     assert again.already_installed and again.project_id == first.project_id
     assert again.project_name == "Edited example" and position.unit_rate == "123.45"
+    assert project.metadata_ == {"demo_id": DEMO_ID, "custom": "keep this edit"}
     other_demo = await install_bulgarian_demo(pg_session, other.id, upload_base=tmp_path)
     assert other_demo.project_id != first.project_id
     assert (await pg_session.get(Project, other_demo.project_id)).owner_id == other.id

@@ -166,6 +166,7 @@ jobs:
           OE_TEST_DB: pg
         run: >-
           pytest tests/pg/test_bulgarian_demo.py tests/pg/test_bulgarian_demo_reads.py
+          tests/pg/test_bulgarian_demo_templates.py
           -q -ra --timeout=300 --timeout-method=signal
 
   backend-result:

@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.bulgarian_demo_templates import ADDITIONAL_TEMPLATES, DemoTemplate
 from app.modules.boq.models import BOQ, BOQMarkup, Position
 from app.modules.documents.models import Document
 from app.modules.fieldreports.models import FieldReport
@@ -104,49 +105,127 @@ SECTIONS = (
 )
 
 
+RESIDENTIAL_TEMPLATE = DemoTemplate(
+    key="residential",
+    demo_id=DEMO_ID,
+    name=PROJECT_NAME,
+    project_code="DEMO-BG-001",
+    project_type="residential",
+    city="Пловдив",
+    gross_floor_area="2400.000",
+    description="24 апартамента; 2400 м² надземна РЗП и 600 м² сутерен. "
+    "Роля на екипа: проектно управление и инвеститорски контрол.",
+    sections=SECTIONS,
+    phases=((-120, -91, 100), (-90, 10, 70), (11, 45, 0), (46, 105, 0), (46, 135, 0), (136, 190, 0), (191, 210, 0)),
+    tender_section=3,
+    invoice_section=1,
+    invoice_fraction="0.4",
+    invoice_payment_fraction="0.5",
+    invoice_payment="120000",
+    site_work={
+        "task_titles": (
+            "Проверка на междинното плащане DEMO-0001",
+            "Сравнение на трите оферти за фасада и дограма",
+            "Съгласуване на отворите за ВиК през плочата",
+            "Повторна проверка на защитния бетонен слой",
+            "Протокол от седмична оперативка",
+        ),
+        "meeting_title": "ДЕМО — седмична оперативка",
+        "meeting_minutes": "1. Конструкция: 70% физически напредък, 40% фактурирани количества.\n"
+        "2. Проверка на защитния слой преди бетониране.\n"
+        "3. Сравнение на офертите за фасадата.",
+        "rfi_subject": "Съгласуване на отвори за ВиК през плочата",
+        "rfi_question": "Да се потвърдят размерите и разположението на отворите преди затваряне на кофража.",
+        "rfi_discipline": "ВиК / Конструкции",
+        "defect_title": "ДЕМО — недостатъчен защитен бетонен слой",
+        "defect_description": "Плоча на кота +6.00: учебно проектно изискване 35 mm, измерени 25 mm. "
+        "Да се поставят дистанционери и да се провери отново преди бетониране.",
+        "defect_category": "Конструкция",
+        "defect_trade": "Армировка",
+        "risks": (
+            (
+                "Дълъг срок за доставка на асансьора",
+                "0.4",
+                "18000",
+                20,
+                "Ранно потвърждение на техническите параметри и писмен график за доставка.",
+            ),
+            (
+                "Студено време при бетониране",
+                "0.3",
+                "12000",
+                7,
+                "Проверка на прогнозата, план за зимно бетониране и контрол на температурите.",
+            ),
+        ),
+        "report_work": "ДЕМО — проверка на армировката и координация на ВиК отворите на кота +6.00.",
+        "report_delay": "Бетонирането изчаква повторната проверка на защитния слой.",
+    },
+)
+DEMO_TEMPLATES = {"residential": RESIDENTIAL_TEMPLATE, **ADDITIONAL_TEMPLATES}
+
+
+def get_demo_template(template_id: str) -> DemoTemplate:
+    """Resolve an explicit template before taking locks or writing any data."""
+    template = DEMO_TEMPLATES.get(template_id)
+    if template is None:
+        raise HTTPException(status_code=422, detail="Unknown Bulgarian demo template")
+    return template
+
+
 class BulgarianDemoResponse(BaseModel):
     project_id: uuid.UUID
     project_name: str
     already_installed: bool
+    template_id: str
 
 
 def _money(value: Decimal | str) -> str:
     return format(Decimal(value).quantize(Decimal("0.01")), "f")
 
 
-def _meta(**extra: object) -> dict:
-    return {"demo_id": DEMO_ID, "is_demo": True, **extra}
+def _meta(template: DemoTemplate, **extra: object) -> dict:
+    return {"demo_id": template.demo_id, "demo_template": template.key, "is_demo": True, **extra}
 
 
 async def install_bulgarian_demo(
-    session: AsyncSession, owner_id: uuid.UUID, *, today: date | None = None, upload_base: Path | None = None
+    session: AsyncSession,
+    owner_id: uuid.UUID,
+    *,
+    template_id: str = "residential",
+    today: date | None = None,
+    upload_base: Path | None = None,
 ) -> BulgarianDemoResponse:
-    """Create one active example per owner, preserving every subsequent edit.
+    """Create one active example per owner and template, preserving every edit.
 
     The endpoint requires authentication. This function also verifies the
     current account is active. It never commits: a failure rolls back all rows
     with the caller's transaction. An archived copy is left alone; an explicit
     later install creates a fresh example, without restoring archived content.
     """
+    template = get_demo_template(template_id)
     owner = await session.scalar(select(User).where(User.id == owner_id).with_for_update())
     if owner is None or not owner.is_active or owner.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Active project owner not found")
     projects = (
         await session.scalars(select(Project).where(Project.owner_id == owner_id, Project.status != "archived"))
     ).all()
-    existing = next((p for p in projects if (p.metadata_ or {}).get("demo_id") == DEMO_ID), None)
+    existing = next((p for p in projects if (p.metadata_ or {}).get("demo_id") == template.demo_id), None)
     if existing:
-        return BulgarianDemoResponse(project_id=existing.id, project_name=existing.name, already_installed=True)
+        return BulgarianDemoResponse(
+            project_id=existing.id, project_name=existing.name, already_installed=True, template_id=template.key
+        )
 
     today = today or datetime.now(UTC).date()
     day = lambda offset: (today + timedelta(days=offset)).isoformat()  # noqa: E731
-    totals = [sum((Decimal(qty) * Decimal(rate) for _, _, qty, rate in rows), Decimal(0)) for _, rows in SECTIONS]
+    totals = [
+        sum((Decimal(qty) * Decimal(rate) for _, _, qty, rate in rows), Decimal(0)) for _, rows in template.sections
+    ]
     net = sum(totals, Decimal(0))
     project = Project(
         id=uuid.uuid4(),
-        name=PROJECT_NAME,
-        description=f"{NOTICE} 24 апартамента; 2400 м² надземна РЗП и 600 м² сутерен. "
-        "Роля на екипа: проектно управление и инвеститорски контрол.",
+        name=template.name,
+        description=f"{NOTICE} {template.description}",
         owner_id=owner_id,
         region="BG",
         country_code="BG",
@@ -155,23 +234,27 @@ async def install_bulgarian_demo(
         classification_standard="",
         validation_rule_sets=["boq_quality", "bulgaria"],
         status="active",
-        project_code="DEMO-BG-001",
-        project_type="residential",
+        project_code=template.project_code,
+        project_type=template.project_type,
         phase="construction",
-        address={"city": "Пловдив", "country": "България", "country_code": "BG"},
-        planned_start_date=day(-120),
-        planned_end_date=day(210),
-        actual_start_date=day(-120),
+        address={"city": template.city, "country": "България", "country_code": "BG"},
+        planned_start_date=day(min(phase[0] for phase in template.phases)),
+        planned_end_date=day(max(phase[1] for phase in template.phases)),
+        actual_start_date=day(min(phase[0] for phase in template.phases)),
         budget_estimate=_money(net),
         contract_value=None,
-        gross_floor_area="2400.000",
+        gross_floor_area=template.gross_floor_area,
         default_vat_rate="20",
-        metadata_=_meta(demo_enrichment=False, snapshot_date=today.isoformat()),
+        metadata_=_meta(template, demo_enrichment=False, snapshot_date=today.isoformat()),
     )
     session.add(project)
     await session.flush()
     team = Team(
-        id=uuid.uuid4(), project_id=project.id, name="ДЕМО — екип на проекта", is_default=True, metadata_=_meta()
+        id=uuid.uuid4(),
+        project_id=project.id,
+        name="ДЕМО — екип на проекта",
+        is_default=True,
+        metadata_=_meta(template),
     )
     session.add(team)
     await session.flush()
@@ -184,12 +267,12 @@ async def install_bulgarian_demo(
         status="draft",
         created_by=owner_id,
         base_date=today.isoformat(),
-        metadata_=_meta(),
+        metadata_=_meta(template),
     )
     session.add(boq)
     await session.flush()
     positions: list[list[Position]] = []
-    for index, (title, rows) in enumerate(SECTIONS, 1):
+    for index, (title, rows) in enumerate(template.sections, 1):
         section = Position(
             id=uuid.uuid4(),
             boq_id=boq.id,
@@ -201,7 +284,7 @@ async def install_bulgarian_demo(
             total="0",
             sort_order=index * 100,
             source="template",
-            metadata_=_meta(),
+            metadata_=_meta(template),
         )
         session.add(section)
         await session.flush()
@@ -220,7 +303,7 @@ async def install_bulgarian_demo(
                 source="template",
                 validation_status="pending",
                 sort_order=index * 100 + line_index,
-                metadata_=_meta(currency="EUR", price_note=NOTICE),
+                metadata_=_meta(template, currency="EUR", price_note=NOTICE),
             )
             session.add(line)
             lines.append(line)
@@ -236,7 +319,9 @@ async def install_bulgarian_demo(
                 committed=Decimal(0),
                 forecast_final=totals[index - 1],
                 metadata_=_meta(
-                    basis="net", note="Платени и оставащи задължения без ДДС, изчислени от фактурите и плащанията."
+                    template,
+                    basis="net",
+                    note="Платени и оставащи задължения без ДДС, изчислени от фактурите и плащанията.",
                 ),
             )
         )
@@ -248,7 +333,7 @@ async def install_bulgarian_demo(
             percentage="20",
             apply_to="cumulative",
             sort_order=1,
-            metadata_=_meta(),
+            metadata_=_meta(template),
         )
     )
     await session.flush()
@@ -258,18 +343,17 @@ async def install_bulgarian_demo(
         project_id=project.id,
         name="ДЕМО — основен график",
         description=f"{NOTICE} Физически напредък към {today.isoformat()}; фактурирането е отделен показател.",
-        start_date=day(-120),
-        end_date=day(210),
+        start_date=day(min(phase[0] for phase in template.phases)),
+        end_date=day(max(phase[1] for phase in template.phases)),
         data_date=today.isoformat(),
         status="active",
         created_by=owner_id,
-        metadata_=_meta(),
+        metadata_=_meta(template),
     )
     session.add(schedule)
     await session.flush()
-    phases = [(-120, -91, 100), (-90, 10, 70), (11, 45, 0), (46, 105, 0), (46, 135, 0), (136, 190, 0), (191, 210, 0)]
     activities = []
-    for index, ((title, _), (start, end, progress)) in enumerate(zip(SECTIONS, phases, strict=True)):
+    for index, ((title, _), (start, end, progress)) in enumerate(zip(template.sections, template.phases, strict=True)):
         activity = Activity(
             id=uuid.uuid4(),
             schedule_id=schedule.id,
@@ -282,19 +366,19 @@ async def install_bulgarian_demo(
             status="completed" if progress == 100 else "in_progress" if progress else "not_started",
             sort_order=index,
             boq_position_ids=[str(p.id) for p in positions[index]],
-            metadata_=_meta(),
+            metadata_=_meta(template),
         )
         activities.append(activity)
         session.add(activity)
     await session.flush()
-    for before, after in [(0, 1), (1, 2), (2, 3), (2, 4), (3, 5), (4, 5), (5, 6)]:
+    for before, after in template.dependencies:
         session.add(
             ScheduleRelationship(
                 schedule_id=schedule.id,
                 predecessor_id=activities[before].id,
                 successor_id=activities[after].id,
                 relationship_type="FS",
-                metadata_=_meta(),
+                metadata_=_meta(template),
             )
         )
 
@@ -302,15 +386,19 @@ async def install_bulgarian_demo(
         id=uuid.uuid4(),
         project_id=project.id,
         boq_id=boq.id,
-        name="ДЕМО — избор на изпълнител: фасада и дограма",
+        name=f"ДЕМО — избор на изпълнител: {template.sections[template.tender_section][0].lower()}",
         description=f"{NOTICE} Сравнете цена и срок; изборът е отворен.",
         status="evaluating",
         deadline=day(-1),
-        metadata_=_meta(scope_position_ids=[str(p.id) for p in positions[3]], currency="EUR"),
+        metadata_=_meta(
+            template, scope_position_ids=[str(p.id) for p in positions[template.tender_section]], currency="EUR"
+        ),
     )
     session.add(tender)
     await session.flush()
-    for company, factor, duration in [("А", "0.98", 60), ("Б", "1.04", 45), ("В", "0.96", 90)]:
+    for company, factor, duration in zip(
+        ("А", "Б", "В"), ("0.98", "1.04", "0.96"), template.bid_durations, strict=True
+    ):
         lines = [
             {
                 "position_id": str(p.id),
@@ -318,27 +406,37 @@ async def install_bulgarian_demo(
                 "unit": p.unit,
                 "quantity": p.quantity,
                 "unit_rate": _money(Decimal(p.unit_rate) * Decimal(factor)),
-                "total": _money(Decimal(p.total) * Decimal(factor)),
+                "total": _money(Decimal(p.quantity) * Decimal(_money(Decimal(p.unit_rate) * Decimal(factor)))),
             }
-            for p in positions[3]
+            for p in positions[template.tender_section]
         ]
         session.add(
             TenderBid(
                 package_id=tender.id,
-                company_name=f"ДЕМО Фасада {company}",
+                company_name=f"ДЕМО {template.tender_company_label} {company}",
                 contact_email="",
                 currency="EUR",
-                total_amount=_money(totals[3] * Decimal(factor)),
+                total_amount=_money(sum((Decimal(line["total"]) for line in lines), Decimal(0))),
                 submitted_at=day(-3),
                 status="submitted",
                 line_items=lines,
                 notes=f"{NOTICE} Срок: {duration} календарни дни. Всички позиции са включени; суми без ДДС.",
-                metadata_=_meta(duration_days=duration),
+                metadata_=_meta(template, duration_days=duration),
             )
         )
 
+    invoice_net = totals[template.invoice_section] * Decimal(template.invoice_fraction)
+    invoice_gross = invoice_net * Decimal("1.2")
+    partial_payment = (
+        Decimal(template.invoice_payment)
+        if template.invoice_payment is not None
+        else (invoice_gross * Decimal(template.invoice_payment_fraction)).quantize(Decimal("0.01"))
+    )
     for invoice_index, (section_index, fraction, paid) in enumerate(
-        [(0, Decimal(1), Decimal("98400")), (1, Decimal("0.4"), Decimal("120000"))]
+        [
+            (0, Decimal(1), totals[0] * Decimal("1.2")),
+            (template.invoice_section, Decimal(template.invoice_fraction), partial_payment),
+        ]
     ):
         subtotal = totals[section_index] * fraction
         invoice = Invoice(
@@ -354,8 +452,8 @@ async def install_bulgarian_demo(
             amount_total=subtotal * Decimal("1.2"),
             status="paid" if invoice_index == 0 else "approved",
             created_by=owner_id,
-            notes=f"{NOTICE} ДЕМО изпълнител. Междинно плащане за {SECTIONS[section_index][0].lower()}.",
-            metadata_=_meta(),
+            notes=f"{NOTICE} ДЕМО изпълнител. Междинно плащане за {template.sections[section_index][0].lower()}.",
+            metadata_=_meta(template),
         )
         session.add(invoice)
         await session.flush()
@@ -370,7 +468,7 @@ async def install_bulgarian_demo(
                     amount=Decimal(position.total) * fraction,
                     vat_rate=Decimal(20),
                     vat_category="S",
-                    cost_category=SECTIONS[section_index][0],
+                    cost_category=template.sections[section_index][0],
                     sort_order=index,
                 )
             )
@@ -381,11 +479,11 @@ async def install_bulgarian_demo(
                 amount=paid,
                 currency_code="EUR",
                 reference="ДЕМО — примерен запис, без банков превод",
-                metadata_=_meta(),
+                metadata_=_meta(template),
             )
         )
 
-    _add_site_work(session, project.id, owner_id, today)
+    _add_site_work(session, project.id, owner_id, today, template)
     await session.flush()
     # Use the same source markers as later payment edits, so opening the
     # walkthrough and changing an invoice cannot double-post these actuals.
@@ -396,38 +494,45 @@ async def install_bulgarian_demo(
         from app.modules.documents.service import UPLOAD_BASE
 
         upload_base = UPLOAD_BASE
-    _add_documents(session, project, boq, positions, today, upload_base)
+    _add_documents(session, project, boq, positions, today, upload_base, template, partial_payment)
     await session.flush()
-    return BulgarianDemoResponse(project_id=project.id, project_name=project.name, already_installed=False)
+    return BulgarianDemoResponse(
+        project_id=project.id, project_name=project.name, already_installed=False, template_id=template.key
+    )
 
 
-def _add_site_work(session: AsyncSession, project_id: uuid.UUID, owner_id: uuid.UUID, today: date) -> None:
+def _add_site_work(
+    session: AsyncSession, project_id: uuid.UUID, owner_id: uuid.UUID, today: date, template: DemoTemplate
+) -> None:
+    from app.modules.risk.service import _compute_risk_tier, _probability_to_score
+
     def day(offset: int) -> str:
         return (today + timedelta(days=offset)).isoformat()
 
+    work = template.site_work
     meeting = Meeting(
         id=uuid.uuid4(),
         project_id=project_id,
         meeting_number="DEMO-01",
         meeting_type="coordination",
-        title="ДЕМО — седмична оперативка",
+        title=work["meeting_title"],
         meeting_date=day(-2),
-        location="Пловдив — учебен обект",
+        location=f"{template.city} — учебен обект",
         chairperson_id=owner_id,
         status="completed",
         created_by=str(owner_id),
-        minutes=f"{NOTICE}\n1. Конструкция: 70% физически напредък, 40% фактурирани количества.\n"
-        "2. Проверка на защитния слой преди бетониране.\n3. Сравнение на офертите за фасадата.",
-        metadata_=_meta(),
+        minutes=f"{NOTICE}\n{work['meeting_minutes']}",
+        metadata_=_meta(template),
     )
     session.add(meeting)
-    for title, offset, status, priority in [
-        ("Проверка на междинното плащане DEMO-0001", 3, "in_progress", "high"),
-        ("Сравнение на трите оферти за фасада и дограма", 7, "open", "normal"),
-        ("Съгласуване на отворите за ВиК през плочата", 4, "open", "high"),
-        ("Повторна проверка на защитния бетонен слой", 1, "in_progress", "urgent"),
-        ("Протокол от седмична оперативка", -2, "completed", "normal"),
-    ]:
+    task_states = [
+        (3, "in_progress", "high"),
+        (7, "open", "normal"),
+        (4, "open", "high"),
+        (1, "in_progress", "urgent"),
+        (-2, "completed", "normal"),
+    ]
+    for title, (offset, status, priority) in zip(work["task_titles"], task_states, strict=True):
         session.add(
             Task(
                 project_id=project_id,
@@ -440,65 +545,48 @@ def _add_site_work(session: AsyncSession, project_id: uuid.UUID, owner_id: uuid.
                 created_by=str(owner_id),
                 responsible_id=owner_id,
                 meeting_id=str(meeting.id),
-                metadata_=_meta(),
+                metadata_=_meta(template),
             )
         )
     session.add(
         RFI(
             project_id=project_id,
             rfi_number="DEMO-RFI-01",
-            subject="Съгласуване на отвори за ВиК през плочата",
-            question=f"{NOTICE} Да се потвърдят размерите и разположението на отворите преди затваряне на кофража.",
+            subject=work["rfi_subject"],
+            question=f"{NOTICE} {work['rfi_question']}",
             raised_by=owner_id,
             assigned_to=owner_id,
             status="open",
             priority="high",
-            discipline="ВиК / Конструкции",
+            discipline=work["rfi_discipline"],
             date_required=day(4),
             response_due_date=day(4),
             created_by=str(owner_id),
-            metadata_=_meta(),
+            metadata_=_meta(template),
         )
     )
     session.add(
         PunchItem(
             project_id=project_id,
-            title="ДЕМО — недостатъчен защитен бетонен слой",
-            description=f"{NOTICE} Плоча на кота +6.00: учебно проектно изискване 35 mm, измерени 25 mm. "
-            "Да се поставят дистанционери и да се провери отново преди бетониране.",
+            title=work["defect_title"],
+            description=f"{NOTICE} {work['defect_description']}",
             priority="high",
             status="open",
             due_date=datetime.combine(today + timedelta(days=1), time(), UTC),
-            category="Конструкция",
-            trade="Армировка",
+            category=work["defect_category"],
+            trade=work["defect_trade"],
             created_by=str(owner_id),
             assigned_to=str(owner_id),
             rework_cost_currency="EUR",
-            metadata_=_meta(),
+            metadata_=_meta(template),
         )
     )
-    for code, title, probability, cost, delay, mitigation in [
-        (
-            "DEMO-R-01",
-            "Дълъг срок за доставка на асансьора",
-            "0.4",
-            "18000",
-            20,
-            "Ранно потвърждение на техническите параметри и писмен график за доставка.",
-        ),
-        (
-            "DEMO-R-02",
-            "Студено време при бетониране",
-            "0.3",
-            "12000",
-            7,
-            "Проверка на прогнозата, план за зимно бетониране и контрол на температурите.",
-        ),
-    ]:
+    for index, (title, probability, cost, delay, mitigation) in enumerate(work["risks"], 1):
+        probability_score = _probability_to_score(float(probability))
         session.add(
             RiskItem(
                 project_id=project_id,
-                code=code,
+                code=f"DEMO-R-{index:02}",
                 title=title,
                 description=NOTICE,
                 probability=probability,
@@ -508,14 +596,14 @@ def _add_site_work(session: AsyncSession, project_id: uuid.UUID, owner_id: uuid.
                 risk_score=str(Decimal(probability) * 4),
                 status="identified",
                 currency="EUR",
-                probability_score=2,
+                probability_score=probability_score,
                 impact_score_cost=4,
                 impact_score_time=4,
-                risk_tier="medium",
+                risk_tier=_compute_risk_tier(probability_score, 4),
                 mitigation_strategy=mitigation,
                 owner_user_id=owner_id,
                 owner_name="Ръководител на демо проекта",
-                metadata_=_meta(),
+                metadata_=_meta(template),
             )
         )
     session.add(
@@ -526,16 +614,23 @@ def _add_site_work(session: AsyncSession, project_id: uuid.UUID, owner_id: uuid.
             weather_condition="clear",
             temperature_c=12,
             created_by=owner_id,
-            work_performed="ДЕМО — проверка на армировката и координация на ВиК отворите на кота +6.00.",
+            work_performed=work["report_work"],
             notes=NOTICE,
-            delays="Бетонирането изчаква повторната проверка на защитния слой.",
-            metadata_=_meta(),
+            delays=work["report_delay"],
+            metadata_=_meta(template),
         )
     )
 
 
 def _add_documents(
-    session: AsyncSession, project: Project, boq: BOQ, positions: list[list[Position]], today: date, upload_base: Path
+    session: AsyncSession,
+    project: Project,
+    boq: BOQ,
+    positions: list[list[Position]],
+    today: date,
+    upload_base: Path,
+    template: DemoTemplate,
+    partial_payment: Decimal,
 ) -> None:
     """Store actual downloadable UTF-8 files, not document-register placeholders."""
     output = io.StringIO(newline="")
@@ -553,20 +648,40 @@ def _add_documents(
                     position.total,
                 ]
             )
+
+    def euro(value: Decimal) -> str:
+        return f"{value:,.2f}".replace(",", " ").replace(".", ",")
+
+    net = sum((Decimal(p.total) for section in positions for p in section), Decimal(0))
+    fraction = Decimal(template.invoice_fraction)
+    invoiced_positions = positions[template.invoice_section]
+    invoice_net = sum((Decimal(p.total) * fraction for p in invoiced_positions), Decimal(0))
+    invoice_tax = invoice_net * Decimal("0.2")
+    invoice_gross = invoice_net + invoice_tax
+    invoice_scope = template.sections[template.invoice_section][0]
+    tender_scope = template.sections[template.tender_section][0]
+    payment_lines = "\n".join(
+        f"{p.description}: {Decimal(p.quantity) * fraction:.3f} {p.unit} × {euro(Decimal(p.unit_rate))} EUR "
+        f"= {euro(Decimal(p.total) * fraction)} EUR"
+        for p in invoiced_positions
+    )
+    progress = "; ".join(
+        f"{title}: {phase[2]}%" for (title, _), phase in zip(template.sections, template.phases, strict=True)
+    )
     files = [
         ("DEMO-KSS.csv", "text/csv", "estimate", output.getvalue()),
         (
             "DEMO-project-guide.txt",
             "text/plain",
             "other",
-            f"{project.name}\n{NOTICE}\n\n"
+            f"{project.name}\n{NOTICE}\n{template.description}\n\n"
             f"Снимка на проекта към {today.isoformat()}.\n"
-            "1. КСС: 22 позиции в 7 раздела, 1 801 140 EUR без ДДС.\n"
-            "2. График: приключена подготовка; конструкция 70%; следващи етапи планирани.\n"
-            "3. Търгове: три сравними оферти за фасада и дограма; оценяването е отворено.\n"
-            "4. Финанси: фактура DEMO-0001 — 198 600 EUR без ДДС, 238 320 EUR с ДДС; "
-            "примерно платени 120 000 EUR, остатък 118 320 EUR.\n"
-            "5. Задачи, RFI, дефект, рискове и оперативка: проследете въпроса преди бетониране.\n"
+            f"1. КСС: {sum(map(len, positions))} позиции в {len(positions)} раздела, {euro(net)} EUR без ДДС.\n"
+            f"2. График: {progress}.\n"
+            f"3. Търгове: три сравними оферти за {tender_scope.lower()}; оценяването е отворено.\n"
+            f"4. Финанси: DEMO-0001 — {euro(invoice_net)} EUR без ДДС, {euro(invoice_gross)} EUR с ДДС; "
+            f"примерно платени {euro(partial_payment)} EUR, остатък {euro(invoice_gross - partial_payment)} EUR.\n"
+            f"5. Координация: {template.site_work['rfi_subject']}.\n"
             "6. Всеки потребител отваря собствен демо проект от избора на проект в приложението.\n"
             "Достъпът и редактирането следват правата на профила; повторно отваряне запазва редакциите.\n",
         ),
@@ -574,14 +689,12 @@ def _add_documents(
             "DEMO-payment-review.txt",
             "text/plain",
             "financial",
-            f"ДЕМО — проверка на плащане\n{NOTICE}\n\n"
-            "Учебна проверка на DEMO-0001 — стоманобетонна конструкция\n"
-            "Бетон: 392.000 м³ × 155.00 EUR = 60 760.00 EUR\n"
-            "Армировка: 59.200 т × 1 450.00 EUR = 85 840.00 EUR\n"
-            "Кофраж: 2 080.000 м² × 25.00 EUR = 52 000.00 EUR\n"
-            "Нетно: 198 600.00 EUR; примерен ДДС 20%: 39 720.00 EUR; общо: 238 320.00 EUR.\n"
-            "Примерно платени: 120 000.00 EUR; неплатени: 118 320.00 EUR.\n"
-            "40% фактурирани количества не означава 40% физически напредък.\n",
+            f"ДЕМО — проверка на плащане\n{project.name}\n{NOTICE}\n\n"
+            f"Учебна проверка на DEMO-0001 — {invoice_scope.lower()}\n{payment_lines}\n"
+            f"Нетно: {euro(invoice_net)} EUR; примерен ДДС 20%: {euro(invoice_tax)} EUR; "
+            f"общо: {euro(invoice_gross)} EUR.\n"
+            f"Примерно платени: {euro(partial_payment)} EUR; неплатени: {euro(invoice_gross - partial_payment)} EUR.\n"
+            f"{fraction * 100:g}% фактурирани количества не означава същия физически напредък.\n",
         ),
     ]
     directory = upload_base / "bulgarian-demo" / str(project.id)
@@ -627,7 +740,7 @@ def _add_documents(
                     file_path=str(path.resolve()),
                     uploaded_by=str(project.owner_id),
                     tags=["ДЕМО", "България"],
-                    metadata_=_meta(boq_id=str(boq.id)),
+                    metadata_=_meta(template, boq_id=str(boq.id)),
                 )
             )
     except Exception:
