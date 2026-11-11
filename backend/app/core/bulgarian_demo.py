@@ -123,18 +123,14 @@ async def install_bulgarian_demo(
 ) -> BulgarianDemoResponse:
     """Create one active example per owner, preserving every subsequent edit.
 
-    The endpoint checks the admin role. This function also verifies the owner
-    is an active real account. It never commits: a failure rolls back all rows
+    The endpoint requires authentication. This function also verifies the
+    current account is active. It never commits: a failure rolls back all rows
     with the caller's transaction. An archived copy is left alone; an explicit
     later install creates a fresh example, without restoring archived content.
     """
     owner = await session.scalar(select(User).where(User.id == owner_id).with_for_update())
     if owner is None or not owner.is_active or owner.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Active project owner not found")
-    from app.core.demo_accounts import NON_MAILBOX_LOGINS
-
-    if owner.email.lower() in NON_MAILBOX_LOGINS:
-        raise HTTPException(status_code=403, detail="Use your own administrator account to install this example")
     projects = (
         await session.scalars(select(Project).where(Project.owner_id == owner_id, Project.status != "archived"))
     ).all()
@@ -571,8 +567,8 @@ def _add_documents(
             "4. Финанси: фактура DEMO-0001 — 198 600 EUR без ДДС, 238 320 EUR с ДДС; "
             "примерно платени 120 000 EUR, остатък 118 320 EUR.\n"
             "5. Задачи, RFI, дефект, рискове и оперативка: проследете въпроса преди бетониране.\n"
-            "6. Екип: собственикът добавя съществуващи потребители през секцията „Екип“ на проекта.\n"
-            "Достъпът изисква профил. Данните могат да се редактират; повторно отваряне запазва редакциите.\n",
+            "6. Всеки потребител отваря собствен демо проект от избора на проект в приложението.\n"
+            "Достъпът и редактирането следват правата на профила; повторно отваряне запазва редакциите.\n",
         ),
         (
             "DEMO-payment-review.txt",

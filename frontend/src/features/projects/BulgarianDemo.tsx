@@ -17,30 +17,50 @@ interface InstallResult {
   already_installed: boolean;
 }
 
-export function BulgarianDemoCard({ role, projects }: { role?: string; projects: Project[] }) {
+export function BulgarianDemoLauncher({ onOpened, className, compact = false }: { onOpened?: () => void; className?: string; compact?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const setActiveProject = useProjectContextStore((s) => s.setActiveProject);
-  const existing = projects.find((p) => p.metadata?.demo_id === BULGARIAN_DEMO_ID && p.status !== 'archived');
   const openProject = (id: string, name: string) => {
+    useProjectContextStore.getState().setActiveBOQ(null);
     setActiveProject(id, name);
     navigate(`/projects/${id}`);
   };
   const install = useMutation({
     mutationFn: () => apiPost<InstallResult>('/v1/projects/demo/bulgaria', {}),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       invalidateProjectLists(queryClient);
+      // Join the active list refresh before switching: the header otherwise
+      // can discard the newly created id against its old cached list.
+      await queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }, { cancelRefetch: false });
       queryClient.invalidateQueries({ queryKey: ['projects-dashboard-cards'] });
       addToast({ type: 'success', title: t('bg_demo.success') });
       openProject(result.project_id, result.project_name);
+      onOpened?.();
     },
     onError: (error: Error) => addToast({ type: 'error', title: t('bg_demo.failed'), message: error.message }),
   });
 
-  if (role !== 'admin' && !existing) return null;
+  return (
+    <Button
+      variant="secondary"
+      className={className}
+      loading={install.isPending}
+      icon={<ArrowRight size={16} />}
+      onClick={() => install.mutate()}
+      data-testid="bulgarian-demo-open"
+      aria-label={t('bg_demo.explore')}
+      title={t('bg_demo.explore')}
+    >
+      {t(compact ? 'bg_demo.short' : 'bg_demo.explore')}
+    </Button>
+  );
+}
 
+export function BulgarianDemoCard() {
+  const { t } = useTranslation();
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-oe-blue/20 bg-oe-blue-subtle p-4 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="bg-demo-title">
       <div className="min-w-0">
@@ -49,15 +69,7 @@ export function BulgarianDemoCard({ role, projects }: { role?: string; projects:
         </h2>
         <p className="mt-1 max-w-3xl text-sm text-content-secondary">{t('bg_demo.description')}</p>
       </div>
-      <Button
-        variant="secondary"
-        loading={install.isPending}
-        icon={<ArrowRight size={16} />}
-        onClick={() => existing ? openProject(existing.id, existing.name) : install.mutate()}
-        data-testid="bulgarian-demo-open"
-      >
-        {t(existing ? 'bg_demo.open' : 'bg_demo.create')}
-      </Button>
+      <BulgarianDemoLauncher />
     </section>
   );
 }

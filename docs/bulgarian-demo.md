@@ -2,26 +2,16 @@
 
 The Plovdiv residential demo lets colleagues explore PM-ERP through one connected Bulgarian construction scenario: a КСС, programme, contractor bids, payment example, quality observations and coordination tasks.
 
-## Create and open the demo
+## Open the demo
 
-1. Deploy the updated PM-ERP version containing this feature to your server. Adding this feature to the repository does not update a running installation or create a project there.
-2. Sign in with an administrator account and open **Projects** (**Проекти**).
-3. Select **Create demo project** (**Създай демо проект**) on the Plovdiv demo card. The application creates the sample project and opens it.
-4. Follow **DEMO · Project walkthrough** (**ДЕМО · Разходка из проекта**) on the project page. Later, use **Open demo project** (**Отвори демо проекта**) to return to it.
+1. Deploy the updated PM-ERP version containing this feature. A repository update does not update the running installation.
+2. Sign in with any active PM-ERP account, including a viewer account.
+3. Open the app's project selector and choose **Explore demo project** (**Разгледай демо проект**). The option is available even with an empty project list. On a phone, use the **Демо** action in the header. It is also available in the chat project selector and on the Projects page.
+4. The first selection creates your own sample project and opens its walkthrough. Later selections reopen it and preserve your changes.
 
-No `SEED_DEMO` setting or demo-login switch is required. Creation is an explicit administrator action. Repeating it while the demo exists returns the existing project and preserves edits; it does not reset the sample data.
+No administrator setup, manual team membership, `SEED_DEMO` setting or demo-login switch is required. Each account gets its own copy, so people can explore without changing one another's example. Ordinary account permissions still govern actions inside the demo. No project is created just by opening the app; creation happens only when someone selects the demo.
 
-## Give colleagues access
-
-Open **Team** (**Екип**) in the demo project and add colleagues using their existing PM-ERP accounts. Choose a role suited to the access you intend to give:
-
-| Role in Team | Intended use |
-| --- | --- |
-| Viewer (`viewer`) | Explore the project; use an account with the global viewer role for read-only access. |
-| Estimator (`estimator`) | Practise estimating and cost-related work with editing permissions. |
-| Project manager (`project_manager`) | Practise managing the project and its workflows. |
-
-The demo does not create guest accounts, send invitations, or automatically share the project with all users. Each colleague signs in with their own account; normal account and module permissions still apply.
+This is an authenticated in-app demonstration, not an anonymous public website. Existing project privacy remains unchanged. You may still deliberately share your own copy through the normal Team controls, but colleagues do not need this to explore their own demos.
 
 ## Suggested walkthrough
 

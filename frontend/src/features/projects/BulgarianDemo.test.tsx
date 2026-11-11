@@ -6,7 +6,7 @@ import { createInstance } from 'i18next';
 import { apiPost } from '@/shared/lib/api';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
 import { useToastStore } from '@/stores/useToastStore';
-import { BulgarianDemoCard, BulgarianDemoGuide, BULGARIAN_DEMO_ID } from './BulgarianDemo';
+import { BulgarianDemoCard, BulgarianDemoLauncher, BulgarianDemoGuide, BULGARIAN_DEMO_ID } from './BulgarianDemo';
 import { bulgarianDemoTranslations } from './bulgarianDemoTranslations';
 import type { Project } from './api';
 
@@ -24,10 +24,10 @@ function Location() {
   return <output data-testid="location">{useLocation().pathname}</output>;
 }
 
-function mountCard(role?: string, projects: Project[] = []) {
+function mountCard() {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   render(<QueryClientProvider client={client}><MemoryRouter>
-    <BulgarianDemoCard role={role} projects={projects} /><Location />
+    <BulgarianDemoCard /><Location />
   </MemoryRouter></QueryClientProvider>);
   return client;
 }
@@ -39,15 +39,15 @@ describe('Bulgarian project demo', () => {
     useToastStore.setState({ toasts: [] });
   });
 
-  it('only offers creation to an administrator', () => {
-    mountCard('viewer');
-    expect(screen.queryByTestId('bulgarian-demo-open')).toBeNull();
+  it('offers the demo immediately without a role or project-list prerequisite', () => {
+    mountCard();
+    expect(screen.getByTestId('bulgarian-demo-open')).toBeEnabled();
     expect(apiPost).not.toHaveBeenCalled();
   });
 
-  it('creates the demo explicitly, refreshes lists and opens the returned project', async () => {
-    vi.mocked(apiPost).mockResolvedValue({ project_id: demo.id, project_name: demo.name, already_installed: false });
-    const client = mountCard('admin');
+  it.each([false, true])('opens the current user demo and refreshes lists (already installed: %s)', async (alreadyInstalled) => {
+    vi.mocked(apiPost).mockResolvedValue({ project_id: demo.id, project_name: demo.name, already_installed: alreadyInstalled });
+    const client = mountCard();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     fireEvent.click(screen.getByTestId('bulgarian-demo-open'));
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/projects/bg-project'));
@@ -56,16 +56,25 @@ describe('Bulgarian project demo', () => {
     expect(useProjectContextStore.getState().activeProjectId).toBe(demo.id);
   });
 
-  it('lets an existing member open a shared demo without reinstalling it', () => {
-    mountCard('viewer', [demo]);
-    fireEvent.click(screen.getByTestId('bulgarian-demo-open'));
-    expect(screen.getByTestId('location')).toHaveTextContent('/projects/bg-project');
-    expect(apiPost).not.toHaveBeenCalled();
+  it('makes the mobile action available and closes its menu after opening', async () => {
+    vi.mocked(apiPost).mockResolvedValue({ project_id: demo.id, project_name: demo.name, already_installed: true });
+    const onOpened = vi.fn();
+    useProjectContextStore.setState({ activeProjectId: 'old-project', activeBOQId: 'old-boq' });
+    const client = new QueryClient();
+    render(<QueryClientProvider client={client}><MemoryRouter>
+      <BulgarianDemoLauncher compact onOpened={onOpened} /><Location />
+    </MemoryRouter></QueryClientProvider>);
+    const button = screen.getByRole('button', { name: 'bg_demo.explore' });
+    expect(button).toHaveTextContent('bg_demo.short');
+    fireEvent.click(button);
+    await waitFor(() => expect(onOpened).toHaveBeenCalledOnce());
+    expect(useProjectContextStore.getState().activeProjectId).toBe(demo.id);
+    expect(useProjectContextStore.getState().activeBOQId).toBeNull();
   });
 
   it('shows errors without navigating away from the project list', async () => {
     vi.mocked(apiPost).mockRejectedValue(new Error('Permission denied'));
-    mountCard('admin');
+    mountCard();
     fireEvent.click(screen.getByTestId('bulgarian-demo-open'));
     await waitFor(() => expect(useToastStore.getState().toasts.some((toast) => toast.message === 'Permission denied')).toBe(true));
     expect(screen.getByTestId('location')).toHaveTextContent('/');
@@ -92,8 +101,8 @@ describe('Bulgarian project demo', () => {
       en: { translation: bulgarianDemoTranslations.en },
     } });
     expect(Object.keys(bulgarianDemoTranslations.bg)).toEqual(Object.keys(bulgarianDemoTranslations.en));
-    expect(i18n.t('bg_demo.create')).toBe('Създай демо проект');
+    expect(i18n.t('bg_demo.explore')).toBe('Разгледай демо проект');
     await i18n.changeLanguage('en');
-    expect(i18n.t('bg_demo.create')).toBe('Create demo project');
+    expect(i18n.t('bg_demo.explore')).toBe('Explore demo project');
   });
 });

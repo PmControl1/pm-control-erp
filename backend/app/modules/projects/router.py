@@ -219,8 +219,9 @@ async def create_project(
 # Explicit Bulgarian example; available without enabling the legacy demo estate.
 @router.post(
     "/demo/bulgaria",
-    dependencies=[Depends(RequireRole("admin"))],
-    summary="Install or open the Bulgarian demonstration project",
+    summary="Install or open your Bulgarian demonstration project",
+    description="Every signed-in active user can explore their own sample project. "
+    "Uses the current account as owner and preserves existing edits.",
 )
 async def install_bulgarian_demo_project(
     user_id: CurrentUserId,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -147,8 +147,8 @@ async def test_failure_rolls_back_every_project_record(pg_session, tmp_path, mon
     assert await pg_session.scalar(select(func.count()).select_from(TenderPackage)) == 0
 
 
-@pytest.mark.parametrize("role,expected", [("viewer", 403), ("editor", 403), ("admin", 200)])
-async def test_route_requires_admin_and_uses_current_owner(pg_session, tmp_path, monkeypatch, role, expected):
+@pytest.mark.parametrize("role", ["viewer", "editor", "admin"])
+async def test_route_allows_every_role_and_uses_current_owner(pg_session, tmp_path, monkeypatch, role):
     from app.dependencies import get_current_user_payload, get_session
     from app.modules.documents import service as documents
     from app.modules.projects.router import router
@@ -168,12 +168,9 @@ async def test_route_requires_admin_and_uses_current_owner(pg_session, tmp_path,
     app.dependency_overrides[get_current_user_payload] = payload_override
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post("/api/v1/projects/demo/bulgaria")
-    assert response.status_code == expected, response.text
-    if expected == 200:
-        project = await pg_session.get(Project, uuid.UUID(response.json()["project_id"]))
-        assert project.owner_id == owner.id
-    else:
-        assert await pg_session.scalar(select(func.count()).select_from(Project)) == 0
+    assert response.status_code == 200, response.text
+    project = await pg_session.get(Project, uuid.UUID(response.json()["project_id"]))
+    assert project.owner_id == owner.id
 
 
 async def test_anonymous_request_cannot_install():
@@ -270,3 +267,75 @@ async def test_concurrent_requests_install_exactly_one_copy(pg_engine, tmp_path)
             await session.execute(delete(Project).where(Project.owner_id == owner_id))
             await session.execute(delete(User).where(User.id == owner_id))
             await session.commit()
+
+
+@pytest.mark.parametrize("account_state", ["inactive", "deleted"])
+async def test_inactive_or_deleted_account_cannot_install(pg_session, tmp_path, monkeypatch, account_state):
+    from app.dependencies import get_current_user_payload, get_session
+    from app.modules.documents import service as documents
+    from app.modules.projects.router import router
+
+    owner = await _owner(pg_session, role="viewer")
+    if account_state == "inactive":
+        owner.is_active = False
+    else:
+        owner.deleted_at = datetime.now(UTC)
+    await pg_session.flush()
+    monkeypatch.setattr(documents, "UPLOAD_BASE", tmp_path)
+    app = FastAPI()
+    app.include_router(router, prefix="/api/v1/projects")
+
+    async def session_override():
+        yield pg_session
+
+    async def payload_override():
+        # Even if a request passed authentication earlier, the installer
+        # rechecks the account before looking up or writing demo data.
+        return {"sub": str(owner.id), "role": "viewer"}
+
+    app.dependency_overrides[get_session] = session_override
+    app.dependency_overrides[get_current_user_payload] = payload_override
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v1/projects/demo/bulgaria")
+    assert response.status_code == 404, response.text
+    assert await pg_session.scalar(select(func.count()).select_from(Project)) == 0
+    assert not list(tmp_path.rglob("*.csv"))
+
+
+async def test_two_regular_users_can_open_only_their_own_demo(pg_session, tmp_path, monkeypatch):
+    from app.dependencies import get_current_user_payload, get_session
+    from app.modules.documents import service as documents
+    from app.modules.projects.router import router
+
+    first = await _owner(pg_session, role="viewer")
+    second = await _owner(pg_session, role="editor")
+    monkeypatch.setattr(documents, "UPLOAD_BASE", tmp_path)
+    app = FastAPI()
+    app.include_router(router, prefix="/api/v1/projects")
+    current_user = first
+
+    async def session_override():
+        yield pg_session
+
+    async def payload_override():
+        return {"sub": str(current_user.id), "role": current_user.role}
+
+    app.dependency_overrides[get_session] = session_override
+    app.dependency_overrides[get_current_user_payload] = payload_override
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v1/projects/demo/bulgaria")
+        assert response.status_code == 200, response.text
+        first_project = response.json()["project_id"]
+        current_user = second
+        response = await client.post("/api/v1/projects/demo/bulgaria")
+        assert response.status_code == 200, response.text
+        second_project = response.json()["project_id"]
+        assert first_project != second_project
+        assert (await client.get(f"/api/v1/projects/{second_project}")).status_code == 200
+        assert (await client.get(f"/api/v1/projects/{first_project}")).status_code == 404
+        current_user = first
+        assert (await client.get(f"/api/v1/projects/{first_project}")).status_code == 200
+        assert (await client.get(f"/api/v1/projects/{second_project}")).status_code == 404
+        reopened = await client.post("/api/v1/projects/demo/bulgaria")
+        assert reopened.json()["project_id"] == first_project
+        assert reopened.json()["already_installed"] is True

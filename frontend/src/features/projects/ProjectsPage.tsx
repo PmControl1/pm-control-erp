@@ -642,7 +642,7 @@ export function ProjectsPage() {
         })}
       </DismissibleInfo>
 
-      <BulgarianDemoCard role={me?.role} projects={projects ?? []} />
+      <BulgarianDemoCard />
 
       {/* Demo-data notice: admins see how to clear the seeded showcase
           projects right where those cards live. */}

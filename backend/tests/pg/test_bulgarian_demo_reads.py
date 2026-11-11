@@ -89,3 +89,37 @@ async def test_site_records_serialize_for_their_module_views(pg_session, tmp_pat
             response = serializer(record)
             assert response.project_id == installed.project_id
             assert response.model_dump(mode="json")["id"] == str(record.id)
+
+
+async def test_viewer_can_explore_own_demo_bill_but_not_another_users(pg_session, tmp_path):
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+
+    from app.dependencies import get_current_user_payload, get_session
+    from app.modules.boq.permissions import register_boq_permissions
+    from app.modules.boq.router import router
+
+    owner = await _owner(pg_session, role="viewer")
+    outsider = await _owner(pg_session, role="viewer")
+    installed = await install_bulgarian_demo(pg_session, owner.id, upload_base=tmp_path)
+    boq = await pg_session.scalar(select(BOQ).where(BOQ.project_id == installed.project_id))
+    register_boq_permissions()
+    app = FastAPI()
+    app.include_router(router, prefix="/api/v1/boq")
+    current_id = owner.id
+
+    async def session_override():
+        yield pg_session
+
+    async def payload_override():
+        return {"sub": str(current_id), "role": "viewer"}
+
+    app.dependency_overrides[get_session] = session_override
+    app.dependency_overrides[get_current_user_payload] = payload_override
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        url = f"/api/v1/boq/boqs/{boq.id}/structured/"
+        response = await client.get(url)
+        assert response.status_code == 200, response.text
+        assert Decimal(str(response.json()["grand_total"])) == Decimal("2161368")
+        current_id = outsider.id
+        assert (await client.get(url)).status_code == 404
