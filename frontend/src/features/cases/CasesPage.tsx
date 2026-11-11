@@ -44,7 +44,6 @@ import {
   FolderKanban,
   UserRound,
   Flag,
-  Globe,
   Loader2,
   FilePlus2,
   PenLine,
@@ -53,8 +52,6 @@ import {
   X,
   SlidersHorizontal,
   ChevronDown,
-  Check,
-  Package,
   Signpost,
   type LucideProps,
 } from "lucide-react";
@@ -62,13 +59,11 @@ import {
   Badge,
   Button,
   CountryFlag,
-  CountryFlagBackdrop,
   EmptyState,
 } from "@/shared/ui";
 import { fmtList } from "@/shared/lib/formatters";
 import { useNearViewport } from "@/shared/hooks/useNearViewport";
 import { useActiveProjectId } from "@/shared/hooks/useActiveProjectId";
-import { useInstalledPacks } from "@/shared/hooks/usePartnerPack";
 import { useProjectContextStore } from "@/stores/useProjectContextStore";
 import { projectsApi } from "@/features/projects/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -77,7 +72,6 @@ import { PLAYBOOKS, getPlaybook } from "./playbooks";
 import { caseIdFromPlaybookId } from "./api";
 import { useAuthoredCases } from "./useCustomCases";
 import { PlaybookRunner } from "./PlaybookRunner";
-import { MarketPackPanel } from "./MarketPackPanel";
 import { FeaturedArticle } from "./FeaturedArticle";
 import {
   CasePackStrip,
@@ -133,8 +127,6 @@ import type {
 } from "./types";
 
 import { regionDisplayName } from "./regions";
-import { homeMarketFirst, homeMarketForLanguage } from "./homeMarket";
-import { countCasesByMarket, orderMarkets } from "./marketCases";
 import { compareNames } from '@/shared/lib/collator';
 import {
   CASE_TRACKS,
@@ -210,7 +202,7 @@ export function CasesPage() {
 }
 
 function CasesList() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const runs = useCasesStore((s) => s.runs);
   // Each of the three "who/what" filters holds a list, not one id: a user can
@@ -243,13 +235,8 @@ function CasesList() {
   const togglePin = useCasesStore((s) => s.togglePin);
   const [query, setQuery] = useState("");
   const [activeStage, setActiveStage] = useState<LifecycleStage | "all">("all");
-  // Market filter: narrows to the cases authored for one market's standards
-  // (Playbook.region). Held in the store beside company, role and discipline,
-  // and persisted like them. It was local state, which meant it silently
-  // dropped on every return to the hub while the other three came back - read
-  // by a user as the market selector being broken, not as a statement that a
-  // market describes only this visit.
-  const activeRegion = useCasesStore((s) => s.region);
+  // Retire the country selection saved by older versions of the catalogue.
+  const savedRegion = useCasesStore((s) => s.region);
   const setRegion = useCasesStore((s) => s.setRegion);
   const [showOnlyPinned, setShowOnlyPinned] = useState(false);
 
@@ -352,9 +339,8 @@ function CasesList() {
       activeCategories.length === 0 || activeCategories.includes(p.category),
     [activeCategories],
   );
-  // The market row only exists when at least one case carries a region, so a
-  // catalogue without market-specific cases keeps exactly the layout it had.
-  const regions = useMemo(
+  // Resolve any per-case pack metadata without offering country navigation.
+  const caseRegions = useMemo(
     () =>
       [
         ...new Set(
@@ -365,31 +351,7 @@ function CasesList() {
       ].sort(),
     [allPlaybooks],
   );
-  const inRegion = useCallback(
-    (p: Playbook) => activeRegion === "all" || p.region === activeRegion,
-    [activeRegion],
-  );
-
-  // The market is the one filter a link has to carry. Persisting it in the
-  // store answers the reader who comes back; it says nothing to the reader
-  // who is SENT here - a colleague pasting the address, the dashboard card,
-  // a pack's onboarding - because the address bar of a filtered hub read
-  // `/cases` and the receiver saw their own stored market, or none.
-  //
-  // So `?market=DE` is read from the address and written back to it. Two
-  // directions, one effect, and a ref that remembers the last value this
-  // component saw in the address decides which way is newer: an address the
-  // ref has not seen came from navigation and wins over the store; an
-  // unchanged address with a changed store is a chip click, and the address
-  // follows. Without that memory a chip click would be undone at once by
-  // the stale parameter still sitting in the bar. Writes replace the history
-  // entry so filtering never stacks the back button, `all` or an unknown
-  // code clears the filter, and a lower-case code is accepted and rewritten
-  // upper case, the way the cases spell it. Nothing here guards against the
-  // case page: `CasesPage` returns the runner before this component is
-  // reached, so the hub is the only address this effect ever writes to.
   const [searchParams, setSearchParams] = useSearchParams();
-  const seenMarketParam = useRef<string | null | undefined>(undefined);
   // The path ("Start here") the reader picked, read straight from the address
   // so a link to `/cases?track=cost-control` opens the same short list for
   // whoever receives it. It is not persisted: a path is a way in, and someone
@@ -406,41 +368,22 @@ function CasesList() {
     );
   }, [setSearchParams]);
   useEffect(() => {
-    const raw = searchParams.get("market");
-    if (raw !== seenMarketParam.current) {
-      seenMarketParam.current = raw;
-      const code = raw?.trim().toUpperCase() ?? "";
-      const fromUrl =
-        code === "" ? null : code === "ALL" ? "all" : regions.includes(code) ? code : "all";
-      if (fromUrl !== null && fromUrl !== activeRegion) {
-        setRegion(fromUrl);
-        return;
-      }
-    }
-    // Older installations remembered a country filter. If its examples are
-    // no longer offered, recover the neutral catalogue instead of an empty grid.
-    if (activeRegion !== "all" && !regions.includes(activeRegion)) {
-      setRegion("all");
-      return;
-    }
-    const wanted = activeRegion === "all" ? null : activeRegion;
-    if (raw !== wanted) {
-      seenMarketParam.current = wanted;
+    if (savedRegion !== "all") setRegion("all");
+    if (searchParams.has("market")) {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (wanted) next.set("market", wanted);
-          else next.delete("market");
+          next.delete("market");
           return next;
         },
         { replace: true },
       );
     }
-  }, [searchParams, activeRegion, regions, setRegion, setSearchParams]);
+  }, [searchParams, savedRegion, setRegion, setSearchParams]);
   // The pack that serves each of those markets, resolved once for the whole
   // grid rather than per card: twelve cards mount per batch and every one of
   // them would otherwise run the same match over the same list of packs.
-  const packOffers = useMarketPackOffers(regions);
+  const packOffers = useMarketPackOffers(caseRegions);
   // Applying a pack is admin-only in the backend (`RequireRole("admin")` on
   // /apply and /full-install-stream), so the card says so rather than offering
   // a button that would come back 403.
@@ -452,94 +395,38 @@ function CasesList() {
   const [packToInstall, setPackToInstall] = useState<CasePackOffer | null>(
     null,
   );
-  // The market the reader's UI language speaks for, when the catalogue has
-  // cases for it. Five of the forty-two languages reach one; the rest reach
-  // null, and null is the whole behaviour for them - the catalogue keeps the
-  // order it always had.
-  //
-  // This ORDERS the grid, it does not narrow it: the market stays a shelf, and
-  // the reasoning above the shelf still holds, because a language default that
-  // preselected a country would hide the 140 universal cases from exactly the
-  // readers whose language names a market. Nor does it write anything: the
-  // hub's market pick is persisted (`oe_cases_region`), and a stored pick this
-  // never touches is a stored pick this can never overwrite.
-  const homeMarket = useMemo(
-    () => homeMarketForLanguage(i18n.language, regions),
-    [i18n.language, regions],
-  );
-  // The shelf in reading order: the reader's own market first, then the rest
-  // by how many cases they hold. It was sorted by ISO code, which in a German
-  // UI read Australien, Brasilien, Kanada, China, Deutschland - the reader's
-  // market fifth and unmarked, in an order that is alphabetical in no
-  // language. `orderMarkets` is the dashboard card's own helper
-  // (./marketCases), so the two surfaces can never rank the same markets
-  // differently. Ranked by the TOTAL count, not the count under the current
-  // filters, so picking a company type never reshuffles the tiles under the
-  // reader's cursor; the number printed on a tile is still the filtered one.
-  const shelf = useMemo(
-    () => orderMarkets(countCasesByMarket(allPlaybooks), homeMarket),
-    [allPlaybooks, homeMarket],
-  );
-  // Whether the pack list has answered. `packOffers` is empty both while the
-  // request is in flight and for a market with no pack, and only the second is
-  // an absence worth printing on a tile.
-  const packsKnown = useInstalledPacks().data !== undefined;
-  // What each market is called, for the search box: the reader's language,
-  // the English name and the ISO code. "Deutschland", "Germany" and "DE" all
-  // have to find the thirteen German cases, and none of the three appears in
-  // a title or a description.
-  const marketTerms = useMemo(() => {
-    const terms = new Map<string, string>();
-    for (const r of regions) {
-      terms.set(
-        r,
-        `${regionDisplayName(r, i18n.language)} ${regionDisplayName(r, "en")} ${r}`,
-      );
-    }
-    return terms;
-  }, [regions, i18n.language]);
-
   // Only surface a selector option that actually has a matching case, and scope
   // each option's availability + count by the OTHER two active filters, so a
   // count always describes what clicking it would really show.
   const byCategoryRole = useMemo(
     () =>
       allPlaybooks.filter(
-        (p) => inCategory(p) && inRole(p) && inStage(p) && inRegion(p),
+        (p) => inCategory(p) && inRole(p) && inStage(p),
       ),
-    [allPlaybooks, inCategory, inRole, inStage, inRegion],
+    [allPlaybooks, inCategory, inRole, inStage],
   );
   const byCompanyRole = useMemo(
     () =>
       allPlaybooks.filter(
-        (p) => inCompany(p) && inRole(p) && inStage(p) && inRegion(p),
+        (p) => inCompany(p) && inRole(p) && inStage(p),
       ),
-    [allPlaybooks, inCompany, inRole, inStage, inRegion],
+    [allPlaybooks, inCompany, inRole, inStage],
   );
   const byCompanyCategory = useMemo(
     () =>
       allPlaybooks.filter(
-        (p) => inCompany(p) && inCategory(p) && inStage(p) && inRegion(p),
+        (p) => inCompany(p) && inCategory(p) && inStage(p),
       ),
-    [allPlaybooks, inCompany, inCategory, inStage, inRegion],
+    [allPlaybooks, inCompany, inCategory, inStage],
   );
   // Stage availability + counts are scoped by the who/discipline filters but
   // NOT by the active stage itself (so every reachable stage stays clickable).
   const byCompanyRoleCategory = useMemo(
     () =>
       allPlaybooks.filter(
-        (p) => inCompany(p) && inRole(p) && inCategory(p) && inRegion(p),
+        (p) => inCompany(p) && inRole(p) && inCategory(p),
       ),
-    [allPlaybooks, inCompany, inRole, inCategory, inRegion],
-  );
-  // Market counts mirror the stage rule: scoped by every other filter, never
-  // by the market itself, so a picked market can always be unpicked.
-  const byAllButRegion = useMemo(
-    () =>
-      allPlaybooks.filter(
-        (p) => inCompany(p) && inRole(p) && inCategory(p) && inStage(p),
-      ),
-    [allPlaybooks, inCompany, inRole, inCategory, inStage],
+    [allPlaybooks, inCompany, inRole, inCategory],
   );
   // An option the user has picked stays in its own row even when the other
   // filters leave it with no matching case. Dropping it would take away the
@@ -564,13 +451,6 @@ function CasesList() {
   }, [byCompanyCategory, rolesByPlaybook, roles]);
   // One entry per active pick, ordered the way the selector rows are ordered
   // on screen, each carrying the control that takes itself off.
-  //
-  // The market and the stage were both missing from this list, and the cost
-  // was larger than a missing chip. This same list gates the summary strip AND
-  // the "Reset filters" link, so a market-only pick narrowed 202 cases to 13
-  // with nothing on screen naming the market and no control to undo it short
-  // of reopening a panel that had folded itself away. Market comes first
-  // because its shelf now sits above everything else on the page.
   const activeFilterChips = useMemo(
     () => [
       ...(activeTrack
@@ -582,16 +462,6 @@ function CasesList() {
                 defaultValue: activeTrack.titleDefault,
               }),
               remove: leaveTrack,
-            },
-          ]
-        : []),
-      ...(activeRegion !== "all"
-        ? [
-            {
-              kind: "market" as const,
-              id: activeRegion,
-              label: regionDisplayName(activeRegion, i18n.language),
-              remove: () => setRegion("all"),
             },
           ]
         : []),
@@ -635,10 +505,7 @@ function CasesList() {
     [
       activeTrack,
       leaveTrack,
-      activeRegion,
       activeStage,
-      setRegion,
-      i18n.language,
       companyTypes,
       roles,
       activeCategories,
@@ -666,29 +533,19 @@ function CasesList() {
       if (activeStage !== "all" && stageByPlaybook.get(pb.id) !== activeStage)
         return false;
       if (!inCategory(pb)) return false;
-      if (!inRegion(pb)) return false;
       if (showOnlyPinned && !pinnedIds.includes(pb.id)) return false;
       if (!q) return true;
-      // Title, description and the market's names. A reader who types the
-      // country they work in is asking the most natural question this page
-      // can be asked, and it used to answer with "No matching cases".
       const haystack = `${t(pb.titleKey, { defaultValue: pb.titleDefault })} ${t(
         pb.descKey,
         { defaultValue: pb.descDefault },
-      )} ${(pb.region && marketTerms.get(pb.region)) || ""}`.toLowerCase();
+      )}`.toLowerCase();
       return haystack.includes(q);
     });
     // A path replaces the catalogue order with its own: its cases only, in
     // the order they are meant to be run, so case 1 is the place to start.
     if (activeTrack) return orderByTrack(matched, activeTrack);
-    // Then order it: the reader's own market in front, the rest of the
-    // catalogue behind it in the lifecycle order it always had. Not when the
-    // shortlist is showing - that list is the set this reader curated for this
-    // job, and re-ordering somebody's own shelf by their language is noise.
-    return homeMarketFirst(
-      matched,
-      showOnlyPinned ? null : homeMarket,
-      (pb) => caseNumbers.get(pb.id) ?? 0,
+    return matched.sort(
+      (a, b) => (caseNumbers.get(a.id) ?? 0) - (caseNumbers.get(b.id) ?? 0),
     );
   }, [
     allPlaybooks,
@@ -698,12 +555,9 @@ function CasesList() {
     inCompany,
     inRole,
     inCategory,
-    inRegion,
     showOnlyPinned,
     pinnedIds,
     caseNumbers,
-    homeMarket,
-    marketTerms,
     activeTrack,
     t,
   ]);
@@ -763,50 +617,15 @@ function CasesList() {
     setActiveStage(activeStage === id ? "all" : id);
   };
 
-  // The store clears what it owns - company, role, discipline and now the
-  // market. The stage is view-local, so it is cleared here. Both "Clear"
-  // controls call this: a chip the user can see next to a Clear button that
-  // leaves it standing is worse than no Clear button at all.
+  // Clear the stored filters, the local stage and any selected path together.
   const clearAllFilters = useCallback(() => {
-    if (!activeTrack) {
-      clearFilters();
-      setActiveStage("all");
-      return;
-    }
-    // With a path in the address there are two places to clear, and the
-    // market effect above writes the address too. Clearing the market in the
-    // store here would let that effect write back an address read before
-    // this click, with the path still in it, so the market goes through the
-    // address (`market=all`, which the effect turns into the store value and
-    // then drops) and the path leaves in the same write.
-    setCompanyTypes([]);
-    setRoles([]);
-    setCategories([]);
+    clearFilters();
     setActiveStage("all");
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete("track");
-        if (activeRegion !== "all") next.set("market", "all");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [
-    activeTrack,
-    activeRegion,
-    clearFilters,
-    setCompanyTypes,
-    setRoles,
-    setCategories,
-    setSearchParams,
-  ]);
+    if (activeTrack) leaveTrack();
+  }, [activeTrack, clearFilters, leaveTrack]);
 
-  // Picking a path starts from the whole catalogue: a company or market pick
-  // left over from an earlier visit would otherwise silently drop cases from
-  // the path and leave the reader with a list that starts at case 3. Picking
-  // the active path again leaves it. The market is cleared through the
-  // address for the reason `clearAllFilters` gives.
+  // A path starts with its full list, unaffected by earlier catalogue filters.
+  // Picking the active path again returns to the whole catalogue.
   const pickTrack = useCallback(
     (track: CaseTrack) => {
       if (activeTrack?.id === track.id) {
@@ -822,13 +641,12 @@ function CasesList() {
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.set("track", track.id);
-        if (activeRegion !== "all") next.set("market", "all");
+        next.delete("market");
         return next;
       });
     },
     [
       activeTrack,
-      activeRegion,
       leaveTrack,
       setCompanyTypes,
       setRoles,
@@ -954,41 +772,12 @@ function CasesList() {
 
       {allPlaybooks.length > 0 && (
         <>
-          {/* ── Market ───────────────────────────────────────────────────────
-              The country a case is written for is not one more facet like a
-              discipline. A discipline narrows what a case is ABOUT; a market
-              decides whether the case is legal where you work. It used to sit
-              inside the folding panel below as a row of pill chips identical
-              to the discipline chips, two type sizes under the lifecycle cards
-              beside it, and it folded itself away entirely for anyone who had
-              already picked a persona - so the one axis nobody can substitute
-              for was the one hardest to see.
-
-              Country is a SHELF, not the catalogue's spine. Grouping the whole
-              list by market was considered and rejected on the count: 140 of
-              220 cases carry no region, so a country grouping yields fifteen
-              small labelled sections and one bucket holding 64% of the
-              catalogue under "everything else". (Counted from ./data; the
-              catalogue grows, so re-count before leaning on the figures. The
-              denominator read 202 for a while after eighteen cases landed,
-              every one of them carrying a market, which is why the numerator
-              did not move and the staleness did not show.)
-              Those cases are universal on
-              purpose (see the `region` doc in ./types.ts), so that bucket is
-              the product rather than a backlog to be worked off.
-
-              A market with a single case still gets a card. A shelf that shows
-              the big markets and quietly drops the small one is invisible
-              exactly to the reader who came looking for it, and it decays: the
-              day a second case lands the market appears from nowhere and
-              nobody remembers why. ──────────────────────────────────────────*/}
           {/* ── Start here: paths by goal ─────────────────────────────────────
               The filters below answer who the reader is and where they work.
               This answers what they came to do, which is the question a new
               reader actually has, and it answers it with a short ordered list
               rather than a narrower grid: case 1 of the path is the obvious
-              first click. Kept compact so the market shelf and the finder
-              stay on the first screen. ────────────────────────────────────── */}
+              first click. Kept compact so the finder stays on the first screen. ────────────────────────────────────── */}
           {trackSummaries.length > 0 && (
             <section
               className="rounded-2xl border border-border-light bg-surface-primary p-3.5"
@@ -1077,193 +866,6 @@ function CasesList() {
                     </button>
                   );
                 })}
-              </div>
-            </section>
-          )}
-
-          {regions.length > 0 && (
-            <section className="relative overflow-hidden rounded-2xl border border-border-light bg-surface-primary p-3.5">
-              {/* The founder's own visual language for "this surface is scoped
-                  to a country", already carrying /costs and /catalog.
-                  Composition contract: this block owns the `relative`, this is
-                  its FIRST child, and there is no `isolate` or z-index on a
-                  page root - that traps fixed modals under the sticky header
-                  and the symptom appears nowhere near the cause. */}
-              <CountryFlagBackdrop
-                code={activeRegion !== "all" ? activeRegion : null}
-                variant="panel"
-              />
-              <div className="relative">
-                <div className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <Globe
-                    size={15}
-                    className="shrink-0 text-content-tertiary"
-                    aria-hidden="true"
-                  />
-                  <h2 className="text-xs font-semibold uppercase tracking-wide text-content-secondary">
-                    {t("cases.region_selector.heading", {
-                      defaultValue: "Market",
-                    })}
-                  </h2>
-                  <span className="text-2xs text-content-tertiary">
-                    {t("cases.region_selector.subtitle", {
-                      defaultValue:
-                        "Cases written for one country's standards, forms and payment law.",
-                    })}
-                  </span>
-                  {activeRegion !== "all" && (
-                    <button
-                      type="button"
-                      onClick={() => setRegion("all")}
-                      className="text-2xs font-medium text-oe-blue hover:underline"
-                    >
-                      {t("cases.region_selector.all", {
-                        defaultValue: "All markets",
-                      })}
-                    </button>
-                  )}
-                </div>
-                {/* Five across at `xl`: fifteen markets in four columns were
-                    four rows of tiles between the header and the first case;
-                    three rows leave room for the pack line each tile now
-                    carries without the shelf growing. */}
-                <div
-                  className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                  role="group"
-                  aria-label={t("cases.region_selector.heading", {
-                    defaultValue: "Market",
-                  })}
-                >
-                  {shelf.map(({ market: r }) => {
-                    const active = activeRegion === r;
-                    const isHome = r === homeMarket;
-                    const count = byAllButRegion.filter(
-                      (p) => p.region === r,
-                    ).length;
-                    // Three answers about the pack, told on the tile rather
-                    // than two clicks away: applied, on disk and switched
-                    // off, or none in this build. Nothing while the list is
-                    // in flight, for the reason `CasePackStrip` gives: "no
-                    // pack" is wrong for every market that has one and would
-                    // flip a moment later.
-                    const offer = packOffers.get(r);
-                    const packState = !packsKnown
-                      ? null
-                      : offer
-                        ? offer.applied
-                          ? "installed"
-                          : "install"
-                        : "none";
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        data-testid="market-tile"
-                        data-market={r}
-                        data-home={isHome || undefined}
-                        data-pack-state={packState ?? undefined}
-                        onClick={() => setRegion(active ? "all" : r)}
-                        aria-pressed={active}
-                        className={clsx(
-                          "flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue/40 motion-reduce:transition-none",
-                          active
-                            ? "border-oe-blue bg-oe-blue/10 text-oe-blue shadow-sm"
-                            : isHome
-                              ? // The reader's own market wears a firmer
-                                // border at rest, so it is found by eye before
-                                // it is read; the badge below says why.
-                                "border-oe-blue/40 bg-surface-primary text-content-primary hover:border-oe-blue/60"
-                              : "border-border-light bg-surface-primary text-content-primary hover:border-oe-blue/30",
-                        )}
-                      >
-                        <CountryFlag
-                          code={r.toLowerCase()}
-                          size={44}
-                          className="shrink-0 shadow-sm ring-1 ring-inset ring-black/10"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                            <span className="break-words text-sm font-semibold leading-tight">
-                              {regionDisplayName(r, i18n.language)}
-                            </span>
-                            {/* Says that the catalogue below already leads
-                                with this market, and why this tile is the
-                                one to look at. Text in the button, not a
-                                tooltip, so a screen reader hears it too. */}
-                            {isHome && (
-                              <Badge variant="blue" size="sm">
-                                {t("cases.region_selector.home", {
-                                  defaultValue: "Your market",
-                                })}
-                              </Badge>
-                            )}
-                          </span>
-                          <span
-                            className={clsx(
-                              "mt-0.5 block text-2xs tabular-nums",
-                              active ? "opacity-80" : "text-content-tertiary",
-                            )}
-                          >
-                            {t("cases.selector.count", {
-                              defaultValue: "{{count}} cases",
-                              count,
-                            })}
-                          </span>
-                          {/* The pack, in the words the card strip and the
-                              market panel already use, so a reader meets one
-                              sentence in three places rather than three. */}
-                          {offer && offer.applied && (
-                            <span className="mt-0.5 flex items-center gap-1 text-2xs font-medium text-semantic-success">
-                              <Check
-                                size={11}
-                                aria-hidden="true"
-                                className="shrink-0"
-                              />
-                              <span className="truncate">{offer.name}</span>
-                              <span className="shrink-0 font-semibold">
-                                {t("modules.active", {
-                                  defaultValue: "Active",
-                                })}
-                              </span>
-                            </span>
-                          )}
-                          {offer && !offer.applied && (
-                            <span
-                              className={clsx(
-                                "mt-0.5 flex items-center gap-1 text-2xs",
-                                active ? "opacity-80" : "text-content-secondary",
-                              )}
-                            >
-                              <Package
-                                size={11}
-                                aria-hidden="true"
-                                className="shrink-0"
-                              />
-                              <span className="truncate">
-                                {t("cases.regional_pack_needed", {
-                                  defaultValue: "Needs {{name}}",
-                                  name: offer.name,
-                                })}
-                              </span>
-                            </span>
-                          )}
-                          {packState === "none" && (
-                            <span
-                              className={clsx(
-                                "mt-0.5 block truncate text-2xs",
-                                active ? "opacity-70" : "text-content-tertiary",
-                              )}
-                            >
-                              {t("modules.pack_chip_none", {
-                                defaultValue: "No regional pack",
-                              })}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
             </section>
           )}
@@ -1864,64 +1466,6 @@ function CasesList() {
         </div>
       )}
 
-      {/* ── Market hero: the picked market gets a surface, not a highlight ──
-          NOT a featured strip beside the grid. `activeRegion` has already
-          narrowed `visible`, so this band labels the list that follows and no
-          case is ever rendered twice. Keep it that way: a strip alongside a
-          full grid draws the same card in two places, which breaks the
-          catalogue suites' `getAllByText(...)[0]` lookup and the single-pin
-          assertion, and it does that silently - both suites stay green until
-          the day they do not. ────────────────────────────────────────────── */}
-      {activeRegion !== "all" && (
-        <section className="relative overflow-hidden rounded-2xl border border-border-light bg-surface-primary p-5">
-          <CountryFlagBackdrop code={activeRegion} variant="panel" />
-          <div className="relative flex flex-wrap items-start gap-4">
-            <CountryFlag
-              code={activeRegion.toLowerCase()}
-              size={72}
-              className="shrink-0 shadow-md ring-1 ring-inset ring-black/10"
-            />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold tracking-tight text-content-primary">
-                {regionDisplayName(activeRegion, i18n.language)}
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-content-secondary">
-                {t("cases.region_hero.body", {
-                  defaultValue:
-                    "These cases follow this market's own standards, forms and payment rules, so the numbers and the paperwork match what a client there expects.",
-                })}
-              </p>
-              <span className="mt-1.5 inline-block text-2xs font-medium tabular-nums text-content-tertiary">
-                {t("cases.selector.count", {
-                  defaultValue: "{{count}} cases",
-                  count: visible.length,
-                })}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setRegion("all")}
-              className="shrink-0 rounded-lg border border-border-light px-2.5 py-1 text-2xs font-semibold text-content-secondary transition-colors hover:border-oe-blue/30 hover:text-content-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue/40"
-            >
-              {t("cases.region_selector.all", { defaultValue: "All markets" })}
-            </button>
-          </div>
-          {/* The pack that carries the standards the band above just promised.
-              The cards below each carry a one-line version of the same offer,
-              and this is the full one: what the pack sets, in which currency,
-              against which reference standards. It belongs on the market band
-              rather than only on the cards because the pack is a property of
-              the MARKET - thirteen German cases need one German pack between
-              them, not thirteen. Where the market has no pack in this build,
-              the panel says so here once instead of thirteen cards each saying
-              nothing: the German and Canadian packs are in the source tree and
-              in no wheel, and no pack declares ES at all. "On disk" was the
-              wrong test and reading it as one is how the German market came to
-              show no install control anywhere. */}
-          <MarketPackPanel region={activeRegion} className="relative mt-4" />
-        </section>
-      )}
-
       {/* ── Path hero: the picked path, its promise and its first case ───── */}
       {activeTrackSummary && ActiveTrackIcon && (
         <section
@@ -2013,24 +1557,7 @@ function CasesList() {
       ) : (
         <>
           <div
-            className={clsx(
-              "grid grid-cols-2 gap-2.5 sm:grid-cols-3",
-              // A market band above the grid is a promise that these cases are
-              // worth a closer look, and eight columns underneath it reads as
-              // the same dense list with a banner stuck on top. The largest
-              // market holds 13 cases, so five across still fills the row.
-              //
-              // Unfiltered, eight across arrives one step later than it did.
-              // The breakpoints are viewport-wide and the sidebar takes 250px
-              // of it, so at 1280 wide eight columns were 112px cards: every
-              // title clamped mid-word on its second line and every module
-              // line cut after one name, measured on the released build.
-              // Six at `xl` gives the same card its third word back; eight
-              // returns at `2xl`, where the card is as wide as six were.
-              activeRegion === "all"
-                ? "md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8"
-                : "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-            )}
+            className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8"
           >
             {windowed.map((pb) => {
               const stageId = stageByPlaybook.get(pb.id);
