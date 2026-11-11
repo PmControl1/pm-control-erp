@@ -1,23 +1,16 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// The market filter of the cases hub is addressable: `/cases?market=DE`.
-//
-// The filter was persisted in the store and nowhere else, so a filtered hub
-// read `/cases` in the address bar, and whoever was sent that address saw
-// their own stored market, or none. The dashboard card had to write the
-// store and then navigate, which works inside one browser and cannot be
-// pasted into a message. These tests pin the two directions the page now
-// keeps in step: an address names a market and the hub filters to it; a
-// chip moves the filter and the address follows, so the bar is always the
-// link to what the reader is looking at.
+// Old market links and saved filters must recover to the neutral catalogue
+// after country-specific cases have been removed from the product.
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import React from "react";
 import { useCasesStore } from "./useCasesStore";
 import { CasesPage } from "./CasesPage";
+import { PLAYBOOKS } from "./playbooks";
 
 /* ── Real routing ────────────────────────────────────────────────────────
    The shared setup (src/test/setup.ts) stubs useSearchParams to a permanently
@@ -165,55 +158,36 @@ beforeEach(() => {
 
 /* ── Tests ────────────────────────────────────────────────────────────── */
 
-describe("the cases hub market filter is addressable", () => {
-  it("an address naming a market filters the hub to it and keeps the address", () => {
-    const address = renderHubAt("/cases?market=DE");
-
-    expect(region()).toBe("DE");
-    expect(address()).toBe("/cases?market=DE");
+describe("obsolete market filters recover to the neutral catalogue", () => {
+  it.each(["DE", "de", "GB", "ZZ", "all"])("removes ?market=%s without hiding cases", (market) => {
+    const address = renderHubAt(`/cases?market=${market}`);
+    expect(region()).toBe("all");
+    expect(address()).toBe("/cases");
+    expect(document.querySelectorAll('[role="button"]')).toHaveLength(PLAYBOOKS.length);
+    expect(screen.queryByTestId("market-tile")).toBeNull();
   });
 
-  it("a market the reader stored is written into the address, so the bar is the link", () => {
-    useCasesStore.getState().setRegion("GB");
-
+  it("clears a previously saved market and its persisted value", () => {
+    useCasesStore.getState().setRegion("DE");
+    expect(localStorage.getItem("oe_cases_region")).toBe("DE");
     const address = renderHubAt("/cases");
-
-    expect(address()).toBe("/cases?market=GB");
-    expect(region()).toBe("GB");
-  });
-
-  it("a chip click moves the address instead of being undone by it", () => {
-    const address = renderHubAt("/cases?market=DE");
-
-    act(() => useCasesStore.getState().setRegion("IN"));
-    expect(region()).toBe("IN");
-    expect(address()).toBe("/cases?market=IN");
-
-    act(() => useCasesStore.getState().setRegion("all"));
     expect(region()).toBe("all");
+    expect(localStorage.getItem("oe_cases_region")).toBeNull();
     expect(address()).toBe("/cases");
+    expect(document.querySelectorAll('[role="button"]')).toHaveLength(PLAYBOOKS.length);
   });
 
-  it("a lower-case code is accepted and spelled the way the cases spell it", () => {
-    const address = renderHubAt("/cases?market=de");
-
-    expect(region()).toBe("DE");
-    expect(address()).toBe("/cases?market=DE");
-  });
-
-  it("a code no case carries is dropped rather than filtering the hub to nothing", () => {
-    const address = renderHubAt("/cases?market=ZZ");
-
-    expect(region()).toBe("all");
-    expect(address()).toBe("/cases");
-  });
-
-  it("`all` in the address clears a stored market", () => {
+  it("clears both a saved market and a different market in an old link", () => {
     useCasesStore.getState().setRegion("GB");
-
-    const address = renderHubAt("/cases?market=all");
-
+    const address = renderHubAt("/cases?market=DE");
     expect(region()).toBe("all");
+    expect(localStorage.getItem("oe_cases_region")).toBeNull();
     expect(address()).toBe("/cases");
+  });
+
+  it("preserves unrelated URL parameters while dropping the old country", () => {
+    const address = renderHubAt("/cases?market=DE&source=bookmark");
+    expect(address()).toBe("/cases?source=bookmark");
+    expect(region()).toBe("all");
   });
 });

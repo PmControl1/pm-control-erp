@@ -1,16 +1,8 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// Cases - the dashboard's market resolution and shelf order.
-//
-// Written against the REAL language registry and the REAL catalogue for the
-// same reason `homeMarket.test.ts` is: the claims are about what a shipped
-// reader is shown. Where a claim depends on a market having cases (Brazil,
-// Mexico, Hungary each carry exactly one at the time of writing) the test
-// says so and derives the expectation from the catalogue rather than
-// hard-coding a market that a data change could empty.
-//
-// Run: npx vitest run src/features/cases/marketCases.test.ts
+// Cases - shared market resolution and ordering helpers tested with explicit
+// regional fixtures; the shipped product catalogue remains country-neutral.
 
 import { describe, expect, it } from 'vitest';
 
@@ -22,11 +14,17 @@ import {
   orderMarkets,
   resolveHomeMarket,
 } from './marketCases';
-import { PLAYBOOKS } from './playbooks';
+import { PLAYBOOKS as PRODUCT_PLAYBOOKS } from './playbooks';
 import { buildCaseNumbers } from './stages';
 
-/** The markets the catalogue actually carries, read the way the card reads
- *  them, so the suite tracks shipped data rather than a copy of it. */
+const PLAYBOOKS = [
+  ...['DE', 'ES', 'MX', 'BR', 'CN', 'IN', 'RU', 'SA', 'HU', 'CA', 'GB', 'US', 'AU', 'NZ', 'ZA'].map(
+    (region, i) => ({ ...PRODUCT_PLAYBOOKS[0]!, id: `fixture-${region}`, order: i, region }),
+  ),
+  { ...PRODUCT_PLAYBOOKS[0]!, id: 'fixture-de-second', order: 100, region: 'DE' },
+  { ...PRODUCT_PLAYBOOKS[0]!, id: 'fixture-universal', order: 101, region: undefined },
+];
+
 const COUNTS = countCasesByMarket(PLAYBOOKS);
 const MARKETS = [...COUNTS.keys()].sort();
 

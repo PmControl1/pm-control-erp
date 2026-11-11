@@ -54,7 +54,14 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { PLAYBOOKS } from './playbooks';
+import { PLAYBOOKS as PRODUCT_PLAYBOOKS } from './playbooks';
+import type { Playbook } from './types';
+
+// Audit retained source examples too, even though regional examples are no
+// longer published by the product catalogue.
+const caseModules = import.meta.glob<{ default?: Playbook; playbook?: Playbook }>('./data/*.playbook.ts', { eager: true });
+const PLAYBOOKS = Object.values(caseModules).map((mod) => mod.default ?? mod.playbook)
+  .filter((pb): pb is Playbook => Boolean(pb && Array.isArray(pb.steps)));
 
 /**
  * Routes already carrying more than one key when this gate landed, with the
@@ -300,6 +307,9 @@ describe('module chips name one route one way', () => {
       `${onDisk.length} case files on disk but ${PLAYBOOKS.length} registered playbooks: ` +
         'a file is failing to load, and the checks below would pass by not looking at it',
     ).toBe(onDisk.length);
+    expect(PRODUCT_PLAYBOOKS.map((pb) => pb.id).sort()).toEqual(
+      PLAYBOOKS.filter((pb) => !pb.region).map((pb) => pb.id).sort(),
+    );
   });
 
   it('never sends two cases to the same screen under two different keys', () => {

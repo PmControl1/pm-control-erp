@@ -197,7 +197,7 @@ describe('playbook auto-discovery (import.meta.glob)', () => {
   it('discovers the shipped case files', () => {
     expect(Array.isArray(PLAYBOOKS)).toBe(true);
     expect(PLAYBOOKS.length).toBeGreaterThan(0);
-    expect(PLAYBOOKS.some((p) => p.id === 'takeoff-quantities-from-a-pdf-plan')).toBe(true);
+    expect(PLAYBOOKS.some((p) => p.id === 'set-up-a-new-project')).toBe(true);
   });
 
   it('is sorted by order ascending', () => {
@@ -240,9 +240,16 @@ describe('playbook auto-discovery (import.meta.glob)', () => {
     }
   });
 
+  it('publishes only country-neutral cases and rejects old national links', () => {
+    expect(PLAYBOOKS.every((pb) => !pb.region)).toBe(true);
+    expect(getPlaybook('win-a-gaeb-tender-from-lv-to-angebot')).toBeUndefined();
+    expect(getPlaybook('takeoff-quantities-from-a-pdf-plan')).toBeUndefined();
+    expect(getPlaybook('administer-a-variation-under-nzs-3910')).toBeUndefined();
+  });
+
   it('getPlaybook resolves a known id and rejects unknown', () => {
-    expect(getPlaybook('takeoff-quantities-from-a-pdf-plan')?.id).toBe(
-      'takeoff-quantities-from-a-pdf-plan',
+    expect(getPlaybook('set-up-a-new-project')?.id).toBe(
+      'set-up-a-new-project',
     );
     expect(getPlaybook('does-not-exist')).toBeUndefined();
     expect(getPlaybook(undefined)).toBeUndefined();
@@ -417,17 +424,15 @@ describe('moreCasesFor - the "Other cases" strip on the detail page', () => {
   });
 
   it('puts every same-market case ahead of every other case', () => {
-    // Behaviour-class assertion over the real catalogue: whichever markets
-    // ship, a market-specific case must lead with its own market whole.
-    const regional = PLAYBOOKS.find((p) => p.region);
-    expect(regional, 'catalogue carries at least one market-specific case').toBeDefined();
-    const pb = regional!;
-    const out = moreCasesFor(pb, PLAYBOOKS, new Set(), PLAYBOOKS.length);
-    const sameCount = PLAYBOOKS.filter(
-      (c) => c.region === pb.region && c.id !== pb.id,
-    ).length;
-    expect(out.slice(0, sameCount).every((c) => c.region === pb.region)).toBe(true);
-    expect(out.slice(sameCount).some((c) => c.region === pb.region)).toBe(false);
+    // Preserve the shared relatedness helper's market grouping contract with
+    // explicit fixtures; no national example belongs in the product registry.
+    const pb = { ...PLAYBOOKS[0]!, id: 'fixture-current', region: 'DE' };
+    const same = { ...PLAYBOOKS[1]!, id: 'fixture-same', region: 'DE' };
+    const other = { ...PLAYBOOKS[2]!, id: 'fixture-other', region: 'GB' };
+    const fixture = [other, pb, PLAYBOOKS[3]!, same];
+    const out = moreCasesFor(pb, fixture, new Set(), fixture.length);
+    expect(out[0]?.id).toBe(same.id);
+    expect(out.slice(1).some((c) => c.region === pb.region)).toBe(false);
   });
 
   it('keeps catalogue order inside each group and respects the limit', () => {

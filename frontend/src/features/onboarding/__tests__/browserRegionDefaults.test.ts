@@ -1,16 +1,8 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// The browser's region decides the defaults a first run is offered: the country
-// preset and cost database in the setup wizard, and the market the dashboard's
-// cases card leads with. Keyed on the UI language alone, every English reader
-// was offered the United States base and the first English preset, and an
-// en-CA dashboard, whose plain `en` names no country, opened its cases on the
-// largest market, Germany, with the rest of the shelf (Russia among it) beside.
-//
-// Everything here reads shipped data (the curated presets, the cost database
-// catalogue, the case catalogue), so a market that gains or loses data moves
-// the answers without an edit here.
+// Browser-region detection stays available, while this product consistently
+// offers Bulgarian setup and country-neutral learning examples.
 //
 // Run:  npx vitest run src/features/onboarding/__tests__/browserRegionDefaults.test.ts
 import { afterEach, describe, expect, it } from 'vitest';
@@ -112,47 +104,21 @@ describe('the Bulgarian setup wizard defaults', () => {
   });
 });
 
-describe("the dashboard's home market", () => {
-  function homeMarketFor(tag: string) {
+describe('country-neutral cases across browser regions', () => {
+  it.each(Object.keys(UI_LANGUAGE))('does not select a foreign case market for %s', (tag) => {
     browser(tag);
-    const ui = UI_LANGUAGE[tag]!;
-    return resolveHomeMarket({ language: ui, browserRegion: browserRegionForLanguage(ui), markets: MARKETS });
-  }
-
-  it('leads an en-CA dashboard with Canada, not with the largest market', () => {
-    expect(MARKETS).toContain('CA');
-    expect(homeMarketFor('en-CA')).toEqual({ market: 'CA', source: 'region' });
+    const language = UI_LANGUAGE[tag]!;
+    expect(MARKETS).toEqual([]);
+    expect(resolveHomeMarket({
+      language,
+      browserRegion: browserRegionForLanguage(language),
+      markets: MARKETS,
+    })).toEqual({ market: null, source: null });
   });
 
-  it('leads a fr-CA dashboard with Canada', () => {
-    expect(homeMarketFor('fr-CA')).toEqual({ market: 'CA', source: 'region' });
-  });
-
-  it('leads en-US with the United States and de-DE with Germany', () => {
-    expect(homeMarketFor('en-US').market).toBe('US');
-    expect(homeMarketFor('de-DE').market).toBe('DE');
-  });
-
-  it('leads pt-BR with Brazil', () => {
-    expect(homeMarketFor('pt-BR').market).toBe('BR');
-  });
-
-  it('falls back to the language for a region with no cases', () => {
-    // Austria has no cases: the German-language market answers, labelled as
-    // the language's, never as the reader's region.
-    expect(MARKETS).not.toContain('AT');
-    expect(homeMarketFor('de-AT')).toEqual({ market: 'DE', source: 'language' });
-  });
-
-  it('claims no market for a region and language that reach none', () => {
-    expect(MARKETS).not.toContain('IS');
-    expect(homeMarketFor('is-IS')).toEqual({ market: null, source: null });
-  });
-
-  it('lets an applied pack outrank the browser region', () => {
-    browser('en-CA');
-    expect(
-      resolveHomeMarket({ language: 'en', packCountry: 'us', browserRegion: 'ca', markets: MARKETS }),
-    ).toEqual({ market: 'US', source: 'pack' });
+  it('does not restore foreign examples from an old applied pack', () => {
+    expect(resolveHomeMarket({
+      language: 'en', packCountry: 'us', browserRegion: 'ca', markets: MARKETS,
+    })).toEqual({ market: null, source: null });
   });
 });

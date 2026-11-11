@@ -500,9 +500,16 @@ describe('closed set - every path the module can ever return exists on disk', ()
   // buy art by filename: prf-<lowercase country>- then the pooled stem,
   // unchanged.
   it('asks for the country file exactly when the market has been photographed', () => {
-    const faces = dealCaseFaces(PLAYBOOKS);
+    // Country art is shared infrastructure. Test its regional branch with
+    // fixtures while the public catalogue contains only neutral examples.
+    const fixture = [
+      ...PLAYBOOKS,
+      { ...PLAYBOOKS[0]!, id: 'fixture-country-de', region: 'DE' },
+      { ...PLAYBOOKS[0]!, id: 'fixture-country-gb', region: 'GB' },
+    ];
+    const faces = dealCaseFaces(fixture);
     let regioned = 0;
-    for (const pb of PLAYBOOKS) {
+    for (const pb of fixture) {
       const face = faces.get(pb.id)!;
       if (!pb.region || face.pooled.includes('/pbk-')) {
         expect(face.src, `${pb.id} has no market, so it asks for the pooled photo`).toBe(
@@ -520,11 +527,7 @@ describe('closed set - every path the module can ever return exists on disk', ()
       // server is not as forgiving about it as the developer's filesystem.
       expect(wanted).toBe(wanted.toLowerCase());
     }
-    // A floor, so this cannot be satisfied by a catalogue that lost its
-    // market-specific cases: sixty-two of them carried a region when the
-    // country axis was added, sixty-one of those with a pooled portrait
-    // underneath rather than a bespoke photo.
-    expect(regioned, 'cases carrying a region').toBeGreaterThan(50);
+    expect(regioned, 'regional fixture cases exercise country art').toBe(2);
   });
 });
 

@@ -135,9 +135,6 @@ const PunchListQualityCard = lazy(() =>
 const RegionalPackCard = lazy(() =>
   import('./RegionalPackCard').then((m) => ({ default: m.RegionalPackCard })),
 );
-const DashboardMarketCasesCard = lazy(() =>
-  import('./DashboardMarketCasesCard').then((m) => ({ default: m.DashboardMarketCasesCard })),
-);
 const ValidationPortfolioCard = lazy(() =>
   import('./ValidationPortfolioCard').then((m) => ({ default: m.ValidationPortfolioCard })),
 );
@@ -2114,9 +2111,6 @@ function DashboardPageInner() {
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [customizing, setCustomizing] = useState(false);
   const [showUpdateWelcome, setShowUpdateWelcome] = useState(false);
-  const [marketCasesExpanded, setMarketCasesExpanded] = useState(() =>
-    localStorage.getItem('oe_dashboard_cases_collapsed') !== 'true',
-  );
 
   // Single rollup-context read - every widget on this page shares this one
   // fetch via the provider mounted above. Replaces the per-project fan-out
@@ -2687,38 +2681,6 @@ function DashboardPageInner() {
     // case it most needs to speak up in, so a self-hiding version would go
     // silent exactly where it is needed.
     regional_pack: <RegionalPackCard />,
-    // Same rule: never in WIDGET_NULL_FALLBACK. It waits for the pack answer
-    // so the market it leads with is decided once, and the grid's skeleton
-    // stands in meanwhile rather than a card that flips.
-    // Wrapped in a collapsible shell with localStorage persistence so users
-    // can fold the card when it takes too much vertical space on the dashboard.
-    cases_market: (
-      <div className="rounded-xl border border-border-light bg-surface-primary/70 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => {
-            setMarketCasesExpanded((prev) => {
-              const next = !prev;
-              try {
-                localStorage.setItem('oe_dashboard_cases_collapsed', next ? 'false' : 'true');
-              } catch { /* storage unavailable */ }
-              return next;
-            });
-          }}
-          className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-surface-secondary/50 transition-colors"
-        >
-          <MapPin size={16} className="text-oe-blue shrink-0" />
-          <span className="text-sm font-semibold text-content-primary">
-            {t('dashboard.market_cases.title', { defaultValue: 'Cases for your market' })}
-          </span>
-          <ChevronDown
-            size={16}
-            className={`ml-auto text-content-tertiary transition-transform duration-200 ${marketCasesExpanded ? '' : '-rotate-90'}`}
-          />
-        </button>
-        {marketCasesExpanded && <DashboardMarketCasesCard />}
-      </div>
-    ),
 
     weather_site: <WeatherSiteWidget projects={projects} />,
     labour_cost: <LabourCostWidget />,

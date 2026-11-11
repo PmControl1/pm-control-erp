@@ -169,10 +169,6 @@ function renderCards(language: string): HTMLElement[] {
 const textsOf = (cards: HTMLElement[]): string[] =>
   cards.map((card) => card.textContent ?? "");
 
-/** True when some card in `texts` prints this case's title. */
-const shows = (texts: string[], titleDefault: string): boolean =>
-  texts.some((text) => text.includes(titleDefault));
-
 beforeEach(() => {
   localStorage.clear();
   // The store reads its persisted filters once, when the module is evaluated,
@@ -203,36 +199,13 @@ describe("catalogue order follows the reader's language", () => {
     });
   });
 
-  it("puts the British cases first for a reader of English (UK), and keeps the rest", () => {
-    const texts = textsOf(renderCards("en-GB"));
-    const british = PLAYBOOKS.filter((pb) => pb.region === "GB");
-    expect(british.length).toBeGreaterThan(0);
-
-    const front = texts.slice(0, british.length);
-    for (const pb of british) expect(shows(front, pb.titleDefault), pb.id).toBe(true);
-
-    // Nothing was filtered away to achieve that: the 140 universal cases and
-    // the five other markets are all still on the page, behind the front.
-    for (const pb of PLAYBOOKS) expect(shows(texts, pb.titleDefault), pb.id).toBe(true);
-    const german = PLAYBOOKS.find((pb) => pb.region === "DE")!;
-    expect(shows(front, german.titleDefault)).toBe(false);
-  });
-
-  it("puts the German cases first for a German reader", () => {
-    // The control that has to come out the other way. Same catalogue, same
-    // page, one changed language: if the front of the list does not move, the
-    // page is not reading the language at all and the English case above
-    // proved nothing.
-    const texts = textsOf(renderCards("de"));
-    const german = PLAYBOOKS.filter((pb) => pb.region === "DE");
-    expect(german.length).toBeGreaterThan(0);
-
-    const front = texts.slice(0, german.length);
-    for (const pb of german) expect(shows(front, pb.titleDefault), pb.id).toBe(true);
-
-    const british = PLAYBOOKS.find((pb) => pb.region === "GB")!;
-    expect(shows(front, british.titleDefault)).toBe(false);
-    expect(shows(texts, british.titleDefault)).toBe(true);
+  it.each(["bg", "en-GB", "de"])("keeps the neutral catalogue in its own order for %s", (language) => {
+    const texts = textsOf(renderCards(language));
+    expect(texts).toHaveLength(PLAYBOOKS.length);
+    expect(PLAYBOOKS.every((pb) => !pb.region)).toBe(true);
+    catalogueOrder.forEach((pb, i) => {
+      expect(texts[i]?.includes(pb.titleDefault), `${pb.id} at ${i}`).toBe(true);
+    });
   });
 
   it("leaves the catalogue in its own order for a language that names no market", () => {
@@ -254,12 +227,11 @@ describe("catalogue order follows the reader's language", () => {
     expect(useCasesStore.getState().region).toBe("all");
   });
 
-  it("honours a market the reader picked themselves over their language", () => {
+  it("clears an obsolete saved country rather than hiding the neutral cases", () => {
     useCasesStore.getState().setRegion("ES");
-    const cards = renderCards("de");
-    const spanish = PLAYBOOKS.filter((pb) => pb.region === "ES");
-    expect(spanish.length).toBeGreaterThan(0);
-    expect(cards).toHaveLength(spanish.length);
-    expect(localStorage.getItem("oe_cases_region")).toBe("ES");
+    const cards = renderCards("bg");
+    expect(cards).toHaveLength(PLAYBOOKS.length);
+    expect(useCasesStore.getState().region).toBe("all");
+    expect(localStorage.getItem("oe_cases_region")).toBeNull();
   });
 });

@@ -41,8 +41,6 @@ import {
   Package,
   // Learn-by-example cases card, folded into the registry 2026-07-21
   GraduationCap,
-  // Cases for the reader's own market (2026-09-06)
-  MapPin,
   // Validation across projects (2026-10-04)
   ShieldCheck,
 } from 'lucide-react';
@@ -92,22 +90,7 @@ export const DASHBOARD_WIDGETS: readonly DashboardWidgetMeta[] = [
     descKey: 'dashboard.layout.w_regional_pack_desc',
     descDefault: 'Which market pack is active and what it sets up for you',
     icon: Globe,
-    // Full width by default: a one-row strip of facts above the market
-    // cases. Side by side at a third, the pair never matched in height (a
-    // short fact card beside a tall list) whatever either card did.
-    defaultSpan: 6,
-  },
-  // The cases written for the reader's own market, with every other market
-  // one click away. Sits under the regional pack card on purpose: that card
-  // says which market the product is set up for, this one shows the worked
-  // examples for it, three across at full width. labelKey is the card's own heading key, for the reason given above.
-  {
-    id: 'cases_market',
-    labelKey: 'dashboard.market_cases.title',
-    labelDefault: 'Cases for your market',
-    descKey: 'dashboard.layout.w_cases_market_desc',
-    descDefault: 'Worked cases for the country you work in, with every other market one click away',
-    icon: MapPin,
+    // Full width by default: a one-row strip of setup facts.
     defaultSpan: 6,
   },
   // ── Core (existing 12) ────────────────────────────────────────────────
