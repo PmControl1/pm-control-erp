@@ -216,6 +216,22 @@ async def create_project(
         )
 
 
+# Explicit Bulgarian example; available without enabling the legacy demo estate.
+@router.post(
+    "/demo/bulgaria",
+    dependencies=[Depends(RequireRole("admin"))],
+    summary="Install or open the Bulgarian demonstration project",
+)
+async def install_bulgarian_demo_project(
+    user_id: CurrentUserId,
+    session: SessionDep,
+) -> dict:
+    from app.core.bulgarian_demo import install_bulgarian_demo
+
+    result = await install_bulgarian_demo(session, uuid.UUID(user_id))
+    return result.model_dump(mode="json")
+
+
 # ── List ──────────────────────────────────────────────────────────────────
 
 

@@ -158,6 +158,16 @@ jobs:
           tests/unit/test_workspace_chat_agent_privacy.py -q -ra
           --timeout=300 --timeout-method=signal --log-cli-level=INFO
 
+      - name: Bulgarian demo project PostgreSQL regressions
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.shard == 1 }}
+        env:
+          DATABASE_URL: postgresql+asyncpg://oe:oe@localhost:5432/openconstructionerp_test
+          DATABASE_SYNC_URL: postgresql+psycopg2://oe:oe@localhost:5432/openconstructionerp_test
+          OE_TEST_DB: pg
+        run: >-
+          pytest tests/pg/test_bulgarian_demo.py tests/pg/test_bulgarian_demo_reads.py
+          -q -ra --timeout=300 --timeout-method=signal
+
   backend-result:
     # One check name for branch protection, whatever the shard count.
     name: Backend
