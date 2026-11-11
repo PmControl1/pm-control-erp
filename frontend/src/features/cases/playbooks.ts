@@ -25,12 +25,15 @@ interface PlaybookModule {
 }
 
 /**
- * All discovered playbooks, sorted by `order` ascending (ties broken by id).
+ * Country-neutral playbooks, sorted by `order` ascending (ties broken by id).
+ * One registry serves the hub, dashboard, recommendations and direct links,
+ * so market-specific examples cannot surface through another entry point.
  * Files that export nothing usable are skipped rather than crashing the list.
  */
 export const PLAYBOOKS: Playbook[] = Object.values(modules)
   .map((mod) => mod.default ?? mod.playbook)
   .filter((pb): pb is Playbook => Boolean(pb && Array.isArray(pb.steps)))
+  .filter((pb) => !pb.region)
   .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 
 /** Look up a single playbook by id (`undefined` when not found). */

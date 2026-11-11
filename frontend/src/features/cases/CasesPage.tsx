@@ -411,11 +411,17 @@ function CasesList() {
       seenMarketParam.current = raw;
       const code = raw?.trim().toUpperCase() ?? "";
       const fromUrl =
-        code === "" ? null : code === "ALL" ? "all" : regions.includes(code) ? code : null;
+        code === "" ? null : code === "ALL" ? "all" : regions.includes(code) ? code : "all";
       if (fromUrl !== null && fromUrl !== activeRegion) {
         setRegion(fromUrl);
         return;
       }
+    }
+    // Older installations remembered a country filter. If its examples are
+    // no longer offered, recover the neutral catalogue instead of an empty grid.
+    if (activeRegion !== "all" && !regions.includes(activeRegion)) {
+      setRegion("all");
+      return;
     }
     const wanted = activeRegion === "all" ? null : activeRegion;
     if (raw !== wanted) {

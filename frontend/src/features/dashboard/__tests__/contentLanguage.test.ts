@@ -85,9 +85,9 @@ describe('validationSummary', () => {
   });
 });
 
-describe('dashboard layout of the pack and the market cases', () => {
-  it('stacks both cards at full width so neither is stretched beside the other', () => {
+describe('dashboard layout of the Bulgarian pack', () => {
+  it('keeps the pack full width without offering country-specific cases', () => {
     expect(DASHBOARD_WIDGET_BY_ID.regional_pack?.defaultSpan).toBe(6);
-    expect(DASHBOARD_WIDGET_BY_ID.cases_market?.defaultSpan).toBe(6);
+    expect(DASHBOARD_WIDGET_BY_ID.cases_market).toBeUndefined();
   });
 });

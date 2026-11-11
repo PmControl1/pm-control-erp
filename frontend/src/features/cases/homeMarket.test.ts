@@ -1,36 +1,25 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// Cases - the language-to-market default.
-//
-// Written against the REAL language registry and the REAL catalogue, not a
-// fixture, because the claim being made is about them: that `es-MX` is never
-// led with Spanish cases naming Spanish law. A fixture would let that claim
-// stay true about the fixture while the shipped registry says something else.
-//
-// The assertions below are properties rather than an inventory of which
-// languages currently reach a market. Italy gaining its first case would break
-// an inventory and would not break a property, and the property is what has to
-// hold. Mexico and Brazil are the worked demonstration: both gained a case
-// after this suite was written, `es-MX` and `pt-BR` began reaching them with
-// no edit here or in the module under test, and nothing below had to change.
+// Cases - shared language-to-market helpers. Regional fixtures preserve their
+// ordering contract even though the product catalogue is country-neutral.
 
 import { describe, expect, it } from 'vitest';
 import { SUPPORTED_LANGUAGES } from '@/app/i18n';
-import { PLAYBOOKS } from './playbooks';
+import { PLAYBOOKS as PRODUCT_PLAYBOOKS } from './playbooks';
 import { buildCaseNumbers } from './stages';
 import { homeMarketFirst, homeMarketForLanguage } from './homeMarket';
 
-/** The markets the catalogue actually carries, read the way the hub reads
- *  them, so this suite tracks the shipped data rather than a copy of it. */
-const MARKETS = [
-  ...new Set(PLAYBOOKS.map((p) => p.region).filter((r): r is string => Boolean(r))),
-].sort();
+const MARKETS = ['DE', 'ES', 'MX', 'BR', 'CN', 'IN', 'RU', 'SA', 'HU', 'CA', 'GB', 'US'];
+const PLAYBOOKS = [
+  ...MARKETS.map((region, i) => ({ ...PRODUCT_PLAYBOOKS[0]!, id: `fixture-${region}`, order: i, region })),
+  { ...PRODUCT_PLAYBOOKS[0]!, id: 'fixture-universal', order: 100, region: undefined },
+];
 
 describe('homeMarketForLanguage', () => {
-  it('the catalogue carries market-specific cases at all', () => {
-    // Everything below is vacuous if it does not.
-    expect(MARKETS.length).toBeGreaterThan(0);
+  it('the product catalogue has no market-specific cases', () => {
+    expect(PRODUCT_PLAYBOOKS.length).toBeGreaterThan(0);
+    expect(PRODUCT_PLAYBOOKS.every((pb) => !pb.region)).toBe(true);
   });
 
   it('answers with the country the language registry itself declares', () => {

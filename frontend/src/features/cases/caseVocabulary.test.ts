@@ -123,6 +123,6 @@ describe('the vocabularies a case declares about itself', () => {
     // "checked nothing", and it has to be asserted rather than assumed.
     expect(PLAYBOOKS.length).toBeGreaterThan(100);
     expect(PLAYBOOKS.some((p) => p.roles?.length)).toBe(true);
-    expect(PLAYBOOKS.some((p) => p.region)).toBe(true);
+    expect(PLAYBOOKS.some((p) => p.region)).toBe(false);
   });
 });

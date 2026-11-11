@@ -126,7 +126,6 @@ export const CASE_TRACKS: CaseTrack[] = [
       chip: 'border-violet-500/40 bg-violet-500/10 text-violet-700 dark:text-violet-300',
     },
     caseIds: [
-      'takeoff-quantities-from-a-pdf-plan',
       'quantities-from-bim',
       'estimate-from-cost-database',
       'validate-estimate',
@@ -168,7 +167,6 @@ export const CASE_TRACKS: CaseTrack[] = [
       'prepare-an-interim-payment-application',
       'change-to-paid-variation',
       'payment-application-and-reconciliation',
-      'get-paid-on-time-on-a-private-job',
     ],
   },
   {

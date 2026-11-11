@@ -1,32 +1,8 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 //
-// The market shelf of the hub, walked the way four readers walked it in a
-// browser: a German site manager, a Mexican estimator, an Indian quantity
-// surveyor and an English reader with no pack applied. Each defect below was
-// measured on the released build before it was fixed, and each test here was
-// red on that build:
-//
-//   - the shelf was sorted by ISO code, so a German UI read Australien,
-//     Brasilien, Kanada, China, Deutschland, with nothing marking the fifth
-//     tile as the reader's own market;
-//   - typing "Deutschland" into the search found nothing, because only titles
-//     and descriptions were searched and no title names its country;
-//   - a tile said how many cases a market had and nothing about its pack, so
-//     "is the pack for my market on" took a click and a scroll to answer;
-//   - the header row could not wrap, so on a phone the actions column took the
-//     whole width and the title fell into a sliver, one word per line;
-//   - long German labels (Generalunternehmer) could not break and were drawn
-//     under the next tile;
-//   - eight card columns at 1280 wide, with the sidebar open, were 112px cards
-//     with every title clamped mid-word.
-//
-// The last three are layout, which JSDOM does not compute, so they are
-// asserted as the class contract that produces the layout. That is weaker than
-// a browser measurement and it is what a unit suite can hold; the browser walk
-// is recorded beside the change.
-//
-// Run:  TZ=UTC npx vitest run src/features/cases/casesMarketShelf.test.tsx --pool=threads
+// The product catalogue retains the neutral examples and their search/layout
+// while omitting every country shelf and its regional-pack offers.
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within, fireEvent, cleanup } from "@testing-library/react";
@@ -188,13 +164,6 @@ function packsInFlight() {
   packMock.useInstalledPacks.mockReturnValue({ isLoading: true, data: undefined });
 }
 
-/** Cases per market, read from the shipped catalogue so the suite tracks the
- *  data rather than a copy of it. */
-const COUNTS = new Map<string, number>();
-for (const pb of PLAYBOOKS) {
-  if (pb.region) COUNTS.set(pb.region, (COUNTS.get(pb.region) ?? 0) + 1);
-}
-
 function renderHub(language: string) {
   uiLanguage.current = language;
   return render(
@@ -203,9 +172,6 @@ function renderHub(language: string) {
     </MemoryRouter>,
   );
 }
-
-const tiles = () => screen.getAllByTestId("market-tile");
-const marketOf = (tile: HTMLElement) => tile.getAttribute("data-market") ?? "";
 
 /** The case cards, in document order. `role="button"` is written in exactly
  *  one place in CasesPage.tsx, the card root; the shelf tiles are real
@@ -222,104 +188,37 @@ beforeEach(() => {
   packsAnswered();
 });
 
-describe("market shelf order", () => {
-  it("leads with the reader's own market, marks it, and keeps every other market", () => {
-    renderHub("de");
-    const shelf = tiles();
-    expect(marketOf(shelf[0]!)).toBe("DE");
-    expect(shelf[0]!.getAttribute("data-home")).toBe("true");
-    expect(shelf[0]!.textContent).toContain("Your market");
-    // One home market, not one per language the reader might also speak.
-    expect(shelf.filter((t) => t.hasAttribute("data-home"))).toHaveLength(1);
-    // Nothing dropped: a market with one case is still a tile.
-    expect(new Set(shelf.map(marketOf))).toEqual(new Set(COUNTS.keys()));
-    // Behind the home market the rest run by size, so the eight one-case
-    // markets sit at the end rather than sprinkled through by ISO code.
-    const rest = shelf.slice(1).map((t) => COUNTS.get(marketOf(t)) ?? 0);
-    expect(rest).toEqual([...rest].sort((a, b) => b - a));
+describe("country-neutral case catalogue", () => {
+  it.each(["bg", "en", "de"])("has no market shelf for a %s reader", (language) => {
+    const { container } = renderHub(language);
+    expect(PLAYBOOKS.length).toBeGreaterThan(0);
+    expect(PLAYBOOKS.every((pb) => !pb.region)).toBe(true);
+    expect(cards(container)).toHaveLength(PLAYBOOKS.length);
+    expect(screen.queryAllByTestId("market-tile")).toHaveLength(0);
+    expect(screen.queryByRole("group", { name: "Market" })).toBeNull();
   });
 
-  it("runs the whole shelf by size and marks nothing for a language that names no market", () => {
-    // Japanese declares Japan, the catalogue has no Japanese cases, and a
-    // badge saying "your market" on the largest market would be a claim about
-    // the reader that nothing supports.
-    renderHub("ja");
-    const shelf = tiles();
-    expect(shelf.some((t) => t.hasAttribute("data-home"))).toBe(false);
-    const counts = shelf.map((t) => COUNTS.get(marketOf(t)) ?? 0);
-    expect(counts).toEqual([...counts].sort((a, b) => b - a));
-  });
-
-  it("does not reshuffle the shelf when a company filter changes the counts", () => {
-    // The tile order is ranked by the whole catalogue; the number on the tile
-    // is the filtered one. A shelf that re-sorted itself under the reader's
-    // cursor on every filter click would be the same tiles in a new place.
-    renderHub("de");
-    const before = tiles().map(marketOf);
+  it("keeps the ordinary company and role filters", () => {
+    renderHub("bg");
     const company = screen.getByRole("group", { name: "My company" });
     fireEvent.click(within(company).getAllByRole("button")[0]!);
-    expect(tiles().map(marketOf)).toEqual(before);
+    expect(screen.getByRole("group", { name: "Your role" })).toBeTruthy();
+    expect(screen.queryAllByTestId("market-tile")).toHaveLength(0);
   });
-});
 
-describe("search by country", () => {
-  it("finds a market's cases by the country's name in the reader's language", () => {
-    const { container } = renderHub("de");
-    const german = PLAYBOOKS.filter((pb) => pb.region === "DE");
-    expect(german.length).toBeGreaterThan(0);
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Deutschland" } });
+  it("finds neutral cases by their title", () => {
+    const { container } = renderHub("en");
+    const target = PLAYBOOKS[0]!;
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: target.titleDefault } });
     const found = cards(container);
-    expect(found).toHaveLength(german.length);
-    const titles = new Set(german.map((pb) => pb.titleDefault));
-    for (const card of found) {
-      expect(titles.has(card.querySelector("h3")?.textContent ?? "")).toBe(true);
-    }
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.some((card) => card.textContent?.includes(target.titleDefault))).toBe(true);
   });
 
-  it("finds the same cases by the English name and by the ISO code", () => {
-    // A German reader may well type the English word, and a search that only
-    // spoke the UI language would answer them with "No matching cases".
-    const { container } = renderHub("de");
-    const german = PLAYBOOKS.filter((pb) => pb.region === "DE").length;
-    const box = screen.getByRole("searchbox");
-    fireEvent.change(box, { target: { value: "germany" } });
-    expect(cards(container)).toHaveLength(german);
-    fireEvent.change(box, { target: { value: "Japan" } });
-    // The control: a country with no cases finds none, so the market terms
-    // are matched and not merely appended to every card.
-    expect(cards(container)).toHaveLength(0);
-  });
-});
-
-describe("pack state on the tile", () => {
-  it("tells apart a pack switched off, a pack in use and no pack at all", () => {
-    renderHub("en");
-    const byMarket = new Map(tiles().map((t) => [marketOf(t), t]));
-    const gb = byMarket.get("GB")!;
-    expect(gb.getAttribute("data-pack-state")).toBe("install");
-    expect(gb.textContent).toContain("Needs UK JCT");
-    // No German pack ships in any build, and thirteen German cards saying
-    // nothing about it is how a reader concluded the install was broken.
-    const de = byMarket.get("DE")!;
-    expect(de.getAttribute("data-pack-state")).toBe("none");
-    expect(de.textContent).toContain("No regional pack");
-
-    cleanup();
-    packsAnswered("uk-jct");
-    renderHub("en");
-    const applied = tiles().find((t) => marketOf(t) === "GB")!;
-    expect(applied.getAttribute("data-pack-state")).toBe("installed");
-    expect(applied.textContent).toContain("UK JCT");
-    expect(applied.textContent).toContain("Active");
-    expect(applied.textContent).not.toContain("Needs");
-  });
-
-  it("claims nothing about packs before the list has answered", () => {
-    // "No regional pack" on every tile for as long as the request takes, then
-    // a flip, would be a shelf that changes its mind in front of the reader.
+  it("does not show a country shelf while regional packs load", () => {
     packsInFlight();
     renderHub("en");
-    expect(tiles().some((t) => t.hasAttribute("data-pack-state"))).toBe(false);
+    expect(screen.queryAllByTestId("market-tile")).toHaveLength(0);
   });
 });
 
