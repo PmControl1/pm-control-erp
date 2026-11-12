@@ -83,6 +83,7 @@ import { importFailureFromBody } from '@/features/boq/importFailureText';
 import clsx from 'clsx';
 import { projectsApi, type Project } from './api';
 import { PhotosTab } from './PhotosTab';
+import { BulgarianDemoGuide } from './BulgarianDemo';
 import { CompliancePage } from '@/features/compliance-docs/CompliancePage';
 import { TeamStrip } from './components/TeamStrip';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
@@ -1848,6 +1849,7 @@ export function ProjectDetailPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
+      <BulgarianDemoGuide project={project} />
       {/* Breadcrumb + Customize toggle */}
       <div className="flex items-start justify-between gap-3">
         <Breadcrumb

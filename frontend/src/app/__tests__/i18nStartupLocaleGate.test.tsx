@@ -52,6 +52,13 @@ const FIXTURES = vi.hoisted(() => ({
 vi.mock('../locales/en', () => ({ default: { translation: FIXTURES.EN } }));
 vi.mock('../locales/bg.ts', () => ({ default: { translation: FIXTURES.BG } }));
 vi.mock('@/modules/_registry', () => ({ getModuleTranslations: () => ({}) }));
+// i18n.ts also merges feature-owned translations at import time, into the
+// bundled English object in place and into a fresh `bg` bundle. Left real,
+// they would add keys to FIXTURES.EN that FIXTURES.BG does not define, and
+// make `hasResourceBundle('bg')` true before the Bulgarian chunk has loaded.
+vi.mock('@/features/projects/bulgarianDemoTranslations', () => ({
+  bulgarianDemoTranslations: {},
+}));
 
 type I18nModule = typeof import('../i18n');
 let i18nMod: I18nModule;

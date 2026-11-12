@@ -655,4 +655,9 @@ for (const [lng, keys] of Object.entries(moduleTrans)) {
   }
 }
 
+// The Bulgarian product supports Bulgarian and English; keep its small demo
+// walkthrough alongside the feature instead of enlarging the legacy bundles.
+import { bulgarianDemoTranslations } from '@/features/projects/bulgarianDemoTranslations';
+applyModuleTranslations('bulgarian-demo', bulgarianDemoTranslations);
+
 export default i18n;

@@ -4,7 +4,7 @@
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
@@ -495,6 +495,13 @@ class ProjectCreate(BaseModel):
     def _validate_contingency(cls, v: str | None) -> str | None:
         # A-PROJ-03: contingency is a 0–100 percentage.
         return _validate_percentage(v, "contingency_pct")
+
+
+class BulgarianDemoInstallRequest(BaseModel):
+    """Choose one of the curated Bulgarian examples; omission keeps the original."""
+
+    model_config = ConfigDict(extra="forbid")
+    template_id: Literal["residential", "office-renovation", "logistics-warehouse"] = "residential"
 
 
 class BulgariaProjectCreate(ProjectCreate):
