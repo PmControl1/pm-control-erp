@@ -120,6 +120,59 @@ def test_the_contingency_comes_in_as_a_lump_sum_with_its_amount() -> None:
     assert reserve.unit_rate == pytest.approx(round(work_total * 0.1, 2))
 
 
+def test_sections_are_numbered_by_the_numeral_in_their_heading() -> None:
+    # The № column is blank on a КСС section heading; the heading used to take
+    # the next free line number, so I, II and III showed as 7, 10 and 13.
+    result = _parse(_kss())
+    assert [p.ordinal for p in result.positions if p.is_section] == ["I", "II", "III"]
+    assert [p.ordinal for p in _work(result)] == ["1", "2", "3", "4", "5", "6"]
+
+
+def test_restarted_line_numbers_are_qualified_by_their_section_numeral() -> None:
+    from app.modules.boq.importers.bulgaria_kss import normalise_section_ordinals
+
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["№ по ред", "Наименование на видовете СМР", "Ед. мярка", "Количество", "Ед. цена (лв.)"])
+    ws.append([None, "I. ЗЕМНИ РАБОТИ"])
+    ws.append([1, "Изкоп", "м3", 10, 5])
+    ws.append([None, "II. БЕТОНОВИ РАБОТИ"])
+    ws.append([1, "Бетон", "м3", 4, 150])
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    result = _parse(buffer.getvalue())
+    normalise_section_ordinals(result)
+    assert [p.ordinal for p in result.positions] == ["I", "I.1", "II", "II.1"]
+
+
+@pytest.mark.parametrize(
+    ("heading", "numeral"),
+    [
+        ("I. ЗЕМНИ РАБОТИ", "I"),
+        ("Раздел IV - Ел. инсталации", "IV"),
+        ("раздел III: ВиК", "III"),
+        ("ІІ. Бетонови работи", "II"),  # Cyrillic І
+        ("XIV) Покриви", "XIV"),
+        ("Хидроизолация", ""),  # Cyrillic Х opening a word
+        ("Част Архитектура", ""),
+        ("X-ray", ""),
+        ("IIII. Не е число", ""),
+    ],
+)
+def test_section_numeral(heading: str, numeral: str) -> None:
+    from app.modules.boq.importers.bulgaria_kss import section_numeral
+
+    assert section_numeral(heading) == numeral
+
+
+def test_the_contingency_is_a_lump_sum_in_the_bill_s_own_unit() -> None:
+    from app.modules.boq.units import is_lump_sum_unit
+
+    (reserve,) = [p for p in _parse(_kss()).positions if (p.metadata or {}).get("contingency")]
+    assert reserve.unit == "сума"
+    assert is_lump_sum_unit("сума")
+
+
 def test_units_are_folded_to_the_form_a_kss_prints() -> None:
     result = _parse(_kss())
     assert [p.unit for p in _work(result)] == ["м3", "м3", "м2", "кг", "м", "бр."]
