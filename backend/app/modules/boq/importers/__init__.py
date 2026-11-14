@@ -70,6 +70,15 @@ def _register_default_importers() -> None:
         importers.append(XpweImporter)
     except ImportError:
         pass
+    # PDF with ruled cells (a bill printed from Excel or an estimating
+    # program), read through the spreadsheet reader. A PDF without one is
+    # refused with ``pdf_no_table`` and the route hands it to the AI.
+    try:
+        from app.modules.boq.importers.pdf_table import PdfTableImporter
+
+        importers.append(PdfTableImporter)
+    except ImportError:
+        pass
     # Excel/CSV - generic catch-all before LLM fallback.
     try:
         from app.modules.boq.importers.excel import ExcelImporter

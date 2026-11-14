@@ -17,6 +17,14 @@ from app.modules.boq.importers.excel import ExcelImporter
 from app.modules.boq.router import _persist_imported_boq
 
 
+class _NoSavepoint:
+    async def __aenter__(self) -> None:
+        return None
+
+    async def __aexit__(self, *_exc: Any) -> bool:
+        return False
+
+
 class _RecordingService:
     """Preserve the real service's unique-ordinal invariant without a database."""
 
@@ -43,6 +51,15 @@ class _RecordingService:
 
     async def list_markups(self, _boq_id: Any) -> list[Any]:
         return []
+
+    # The batch writer is the real service's; refusing it here, as it refuses
+    # rows it cannot take, sends the import down the per-row path above.
+    session = SimpleNamespace(begin_nested=lambda: _NoSavepoint())
+
+    async def add_positions_in_document_order(self, _boq_id: Any, _items: Any) -> Any:
+        from app.modules.boq.service import BulkCreateNotApplicable
+
+        raise BulkCreateNotApplicable("per-row in this test")
 
 
 def _workbook(*, priced: bool, omit: tuple[int, int] | None = None, numbered_sections: bool = True) -> bytes:

@@ -39,7 +39,17 @@ export interface ImportProgress {
 }
 
 /** Raised when the job ended without importing; ``message`` is ready to show. */
-export class ImportJobFailedError extends Error {}
+export class ImportJobFailedError extends Error {
+  /** The server's code for why the file was refused, when it gave one. */
+  code: string | null;
+  params: Record<string, unknown>;
+
+  constructor(message: string, code: string | null = null, params: Record<string, unknown> | null = null) {
+    super(message);
+    this.code = code;
+    this.params = params ?? {};
+  }
+}
 
 const FINISHED = new Set(['success', 'failed', 'cancelled']);
 
@@ -139,6 +149,8 @@ export async function waitForImportJob<T = unknown>({
           view.error || view.error_code
             ? importFailureText({ code: view.error_code, params: view.error_params, message: view.error }, t, stopped)
             : stopped,
+          view.error_code ?? null,
+          view.error_params ?? null,
         );
       }
     }

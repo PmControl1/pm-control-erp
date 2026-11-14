@@ -12,13 +12,14 @@ import {
   ChevronDown,
   ChevronRight,
   FileSpreadsheet,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { activeLanguageTag, extractErrorMessageFromBody } from '@/shared/lib/api';
 import { fmtFixed } from '@/shared/lib/formatters';
 import { importIssueText, type ImportIssue } from './importIssueText';
-import { alreadyImported, importFailureFromBody, importFailureText } from './importFailureText';
+import { alreadyImported, asImportFailure, importFailureFromBody, importFailureText } from './importFailureText';
 import { chooseColumn, columnMappingField, type ColumnMapping } from './columnMappingOverride';
 import {
   ImportJobFailedError,
@@ -80,7 +81,26 @@ interface ImportPreviewDialogProps {
   open: boolean;
   onClose: () => void;
   boqId: string;
+  /** The bill's project, where "Import into a new bill" creates the new one. */
+  projectId?: string;
   onImported: () => void;
+  /** Open another bill (the new one a file was imported into). */
+  onOpenBill?: (boqId: string) => void;
+}
+
+/** The bill already has lines whose numbers the file takes; the person picks what to do. */
+interface BillHasLines {
+  text: string;
+  lines: number;
+  /** The import to run again once they chose: the previewed one, or the AI reading. */
+  viaAi: boolean;
+}
+
+/** How to run the import again after the bill turned out to have lines. */
+interface ImportTarget {
+  replace?: boolean;
+  /** Import into this bill instead (a new one), then open it. */
+  boqId?: string;
 }
 
 type Step = 'upload' | 'preview' | 'confirm';
@@ -110,6 +130,10 @@ const SUPPORTED_FORMATS = ['GAEB', 'Excel', 'PDF', 'CSV', 'XPWE'] as const;
 
 const MAX_PREVIEW_ROWS = 500;
 
+// An AI reading of a long PDF bill is one model call per few pages; the
+// server answers when the last one has.
+const AI_READ_TIMEOUT_MS = 15 * 60_000;
+
 // Rates and totals arrive as decimal strings: read them as numbers first, or
 // formatting the first priced row throws and takes the whole bill editor down.
 function fmtNumber(v: number | string | null | undefined): string {
@@ -120,8 +144,19 @@ function fmtNumber(v: number | string | null | undefined): string {
 
 /* ── Component ──────────────────────────────────────────────────────── */
 
-export function ImportPreviewDialog({ open, onClose, boqId, onImported }: ImportPreviewDialogProps) {
+export function ImportPreviewDialog({
+  open,
+  onClose,
+  boqId,
+  projectId,
+  onImported,
+  onOpenBill,
+}: ImportPreviewDialogProps) {
   const { t } = useTranslation();
+  const openBill = useCallback(
+    (id: string) => (onOpenBill ? onOpenBill(id) : window.location.assign(`/boq/${id}`)),
+    [onOpenBill],
+  );
   const addToast = useToastStore((s) => s.addToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,6 +188,11 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
   // the counts the user confirms are the bill that lands.
   const [previewedMapping, setPreviewedMapping] = useState<string | null>(null);
   const [mappingExpanded, setMappingExpanded] = useState(false);
+  // A PDF the table reader could not read: offered to the workspace AI.
+  const [aiOffer, setAiOffer] = useState(false);
+  const [readingWithAi, setReadingWithAi] = useState(false);
+  const [billHasLines, setBillHasLines] = useState<BillHasLines | null>(null);
+  const [creatingBill, setCreatingBill] = useState(false);
 
   // Reset state when the dialog closes
   useEffect(() => {
@@ -172,6 +212,10 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
       setColumnMapping({});
       setPreviewedMapping(null);
       setMappingExpanded(false);
+      setAiOffer(false);
+      setReadingWithAi(false);
+      setBillHasLines(null);
+      setCreatingBill(false);
     }
   }, [open]);
 
@@ -196,6 +240,7 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
         setFile(f);
         setFileFormat(detectFormat(f.name));
         setStep('upload'); // Stay on upload step while parsing
+        setAiOffer(false);
       }
       setError(null);
       setAlreadyDone(null);
@@ -220,11 +265,16 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({ detail: res.statusText }));
+          // A PDF with no ruled table: the AI can still read it.
+          if ((body as { detail?: { code?: string } })?.detail?.code === 'pdf_no_table') setAiOffer(true);
           const failed = t('boq.import_failed', { defaultValue: 'Import failed' });
           throw new Error(importFailureFromBody(body, t, failed) ?? extractErrorMessageFromBody(body) ?? failed);
         }
 
         const data: PreviewResponse = await res.json();
+        // A PDF table read but no line of work found in it (a header the
+        // reader did not know): the columns can be mapped, or the AI asked.
+        if (detectFormat(f.name) === 'PDF' && data.total_positions - data.total_sections <= 0) setAiOffer(true);
         setPreview(data);
         setPreviewedMapping(mapping);
         if (!again) {
@@ -257,12 +307,14 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
 
   /* ── Step 3: Confirm import ─────────────────────────────────────── */
 
-  const handleImport = useCallback(async (force = false) => {
+  const handleImport = useCallback(async (force = false, target: ImportTarget = {}) => {
     if (!file) return;
+    const intoBoq = target.boqId ?? boqId;
     setImporting(true);
     setJobProgress(null);
     setError(null);
     setAlreadyDone(null);
+    setBillHasLines(null);
 
     const token = useAuthStore.getState().accessToken;
     const form = new FormData();
@@ -286,8 +338,8 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
       // instead of importing the bill a second time. A file imported before
       // is answered 409 and imports again only on ``force``. The 90 s limit
       // is for this answer.
-      const query = force ? '?background=true&force=true' : '?background=true';
-      const res = await fetch(`/api/v1/boq/boqs/${boqId}/import/auto/${query}`, {
+      const query = `?background=true${force ? '&force=true' : ''}${target.replace ? '&replace=true' : ''}`;
+      const res = await fetch(`/api/v1/boq/boqs/${intoBoq}/import/auto/${query}`, {
         method: 'POST',
         headers,
         body: form,
@@ -313,7 +365,7 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
         jobWaitRef.current = wait;
         setJobProgress({ percent: answer.progress_percent, phase: null });
         body = await waitForImportJob({
-          boqId,
+          boqId: intoBoq,
           jobId: answer.job_id,
           headers,
           t,
@@ -346,10 +398,16 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
 
       onImported();
       onClose();
+      if (target.boqId) openBill(target.boqId);
     } catch (err) {
       clearTimeout(timeoutId);
       if (err instanceof DOMException && err.name === 'AbortError' && jobWaitRef.current?.signal.aborted) {
         // The editor went away while the job ran; nothing to tell.
+        return;
+      }
+      if (err instanceof ImportJobFailedError && err.code === 'import_bill_has_lines') {
+        // Nothing was written: say why and offer the two ways on.
+        setBillHasLines({ text: err.message, lines: Number(err.params.lines ?? 0), viaAi: false });
         return;
       }
       if (err instanceof ImportJobFailedError) {
@@ -375,7 +433,115 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
       setJobProgress(null);
       jobWaitRef.current = null;
     }
-  }, [file, boqId, addToast, t, onImported, onClose, previewedMapping]);
+  }, [file, boqId, addToast, t, onImported, onClose, previewedMapping, openBill]);
+
+  /* ── A PDF read by the workspace AI ─────────────────────────────── */
+
+  // The auto route reads a PDF without a ruled table with the workspace AI
+  // and imports its rows like a spreadsheet's. There is no preview: the AI
+  // is asked once, and the import says the bill was read by it.
+  const handleReadWithAi = useCallback(async (target: ImportTarget = {}) => {
+    if (!file) return;
+    const intoBoq = target.boqId ?? boqId;
+    setReadingWithAi(true);
+    setError(null);
+    setBillHasLines(null);
+    const token = useAuthStore.getState().accessToken;
+    const form = new FormData();
+    form.append('file', file);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), AI_READ_TIMEOUT_MS);
+    try {
+      const lang = activeLanguageTag();
+      const res = await fetch(`/api/v1/boq/boqs/${intoBoq}/import/auto/${target.replace ? '?replace=true' : ''}`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(lang ? { 'Accept-Language': lang } : {}),
+        },
+        body: form,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      const refusal = asImportFailure((body as { detail?: unknown }).detail);
+      if (res.status === 409 && refusal?.code === 'import_bill_has_lines') {
+        const failed = t('boq.import_failed', { defaultValue: 'Import failed' });
+        setBillHasLines({ text: importFailureText(refusal, t, failed), lines: Number(refusal.params?.lines ?? 0), viaAi: true });
+        return;
+      }
+      if (!res.ok) {
+        const failed = t('boq.import_failed', { defaultValue: 'Import failed' });
+        throw new Error(importFailureFromBody(body, t, failed) ?? extractErrorMessageFromBody(body) ?? failed);
+      }
+      const result = body as { imported?: number; updated?: number; warnings?: ImportIssue[] };
+      const imported = (result.imported ?? 0) + (result.updated ?? 0);
+      const notes = (result.warnings ?? []).filter((w) => w.code === 'read_by_ai' || w.code === 'currency_converted_to_euro');
+      addToast({
+        type: imported > 0 ? 'success' : 'warning',
+        title: t('boq.import_preview.import_success', { defaultValue: 'Imported {{count}} positions', count: imported }),
+        message: notes.length > 0 ? notes.map((w) => importIssueText(w, t, fmtNumber)).join('\n') : undefined,
+      });
+      onImported();
+      onClose();
+      if (target.boqId) openBill(target.boqId);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const isTimeout = err instanceof DOMException && err.name === 'AbortError';
+      setError(
+        isTimeout
+          ? t('boq.import_preview.ai_timeout', { defaultValue: 'The AI did not finish reading the PDF within 15 minutes.' })
+          : err instanceof Error
+            ? err.message
+            : 'Unknown error',
+      );
+    } finally {
+      setReadingWithAi(false);
+    }
+  }, [file, boqId, addToast, t, onImported, onClose, openBill]);
+
+  /* ── The bill already has lines: replace them, or a new bill ────── */
+
+  const runAgain = useCallback(
+    (target: ImportTarget) => {
+      if (billHasLines?.viaAi) void handleReadWithAi(target);
+      else void handleImport(false, target);
+    },
+    [billHasLines, handleImport, handleReadWithAi],
+  );
+
+  // A new bill in the same project, named after the file, then the same
+  // import into it. Nothing in the current bill changes.
+  const handleIntoNewBill = useCallback(async () => {
+    if (!file) return;
+    setCreatingBill(true);
+    setError(null);
+    try {
+      const token = useAuthStore.getState().accessToken;
+      const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      let project = projectId;
+      if (!project) {
+        const res = await fetch(`/api/v1/boq/boqs/${boqId}`, { headers });
+        project = res.ok ? ((await res.json()) as { project_id?: string }).project_id : undefined;
+      }
+      const name = file.name.replace(/\.[^.]+$/, '') || file.name;
+      const res = await fetch('/api/v1/boq/boqs/', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ project_id: project, name }),
+      });
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      if (!res.ok || !(body as { id?: string }).id) {
+        const failed = t('boq.import_preview.new_bill_failed', { defaultValue: 'The new bill could not be created' });
+        throw new Error(importFailureFromBody(body, t, failed) ?? extractErrorMessageFromBody(body) ?? failed);
+      }
+      runAgain({ boqId: (body as { id: string }).id });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setCreatingBill(false);
+    }
+  }, [file, projectId, boqId, t, runAgain]);
 
   /* ── Drag & drop handlers ───────────────────────────────────────── */
 
@@ -751,6 +917,66 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
                 )}
               </div>
             </>
+          )}
+
+          {/* A PDF the table reader could not read: offer the workspace AI */}
+          {aiOffer && file && (step === 'upload' || step === 'preview') && !parsing && (
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-oe-blue/30 bg-oe-blue/5" data-testid="import-preview-ai-offer">
+              <Sparkles size={16} className="shrink-0 mt-0.5 text-oe-blue" />
+              <div className="flex-1 space-y-2">
+                <p className="text-xs text-content-secondary">
+                  {readingWithAi
+                    ? t('boq.import_preview.reading_with_ai', {
+                        defaultValue: 'Reading the PDF with AI… a long bill can take a few minutes.',
+                      })
+                    : t('boq.import_preview.read_with_ai_hint', {
+                        defaultValue:
+                          'The workspace AI copies the bill out of the PDF text. Nothing is estimated: quantities and rates are taken only from the PDF. Check them against it after the import.',
+                      })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleReadWithAi()}
+                  disabled={readingWithAi}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-oe-blue text-white hover:bg-oe-blue/90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {readingWithAi ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  {t('boq.import_preview.read_with_ai', { defaultValue: 'Read with AI' })}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* The bill already has lines with the file's numbers */}
+          {billHasLines && (
+            <div className="space-y-2 p-3 rounded-lg border border-semantic-warning/40 bg-semantic-warning/10 text-xs text-content-primary" role="alert" data-testid="import-preview-bill-has-lines">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5 text-semantic-warning" />
+                <p>{billHasLines.text}</p>
+              </div>
+              <div className="flex flex-wrap gap-2 pl-6">
+                <button
+                  type="button"
+                  onClick={() => void handleIntoNewBill()}
+                  disabled={importing || readingWithAi || creatingBill}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-oe-blue text-white hover:bg-oe-blue/90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {creatingBill && <Loader2 size={12} className="animate-spin" />}
+                  {t('boq.import_preview.into_new_bill', { defaultValue: 'Import into a new bill' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runAgain({ replace: true })}
+                  disabled={importing || readingWithAi || creatingBill}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-semantic-error/50 text-semantic-error hover:bg-semantic-error/10 disabled:opacity-50"
+                >
+                  {t('boq.import_preview.replace_lines', {
+                    defaultValue: "Replace the bill's {{lines}} lines",
+                    lines: billHasLines.lines,
+                  })}
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Step 3: Confirm */}

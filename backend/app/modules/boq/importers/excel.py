@@ -54,7 +54,7 @@ from app.modules.boq.importers.bulgaria_kss import section_numeral as bg_section
 from app.modules.boq.importers.bulgaria_kss import workbook_currency as bg_workbook_currency
 from app.modules.boq.importers.hungary_workbook import parse_hungarian_workbook
 from app.modules.boq.roundtrip import ID_COLUMN_ALIASES, normalise_id
-from app.modules.boq.units import is_lump_sum_unit
+from app.modules.boq.units import is_approved_unit, is_lump_sum_unit
 
 logger = logging.getLogger(__name__)
 
@@ -435,7 +435,10 @@ _HEADERS_BY_LANGUAGE: dict[str, dict[str, tuple[str, ...]]] = {
             "м-ка",
             "ед. изм.",
         ),
-        "quantity": ("количество", "к-во", "кол.", "кол-во"),
+        # "К-ВО ОБЩО" is the bill's quantity in a КСС that tracks progress;
+        # "К-ВО АКТУВАНО", "К-ВО ОСТАНАЛО" and "К-ВО ЕТАП 1" are its parts and
+        # are deliberately not listed.
+        "quantity": ("количество", "к-во", "кол.", "кол-во", "к-во общо", "количество общо", "общо количество"),
         "unit_rate": ("ед. цена", "единична цена", "цена за единица", "единична стойност", "ед. ст-ст"),
         "total": ("стойност", "обща стойност", "общо", "обща цена", "сума", "стойност общо"),
         "classification": ("шифър", "шифър по усн", "шифър на работата", "код", "код на работата"),
@@ -798,8 +801,10 @@ _STRIP_MARKS_BELOW = 0x0590
 
 # Round, square and curly brackets, after NFKC has folded their full-width
 # forms ("（元）" -> "(元)"), and the CJK lenticular and tortoise-shell brackets,
-# which have no ASCII twin: "金额【元】", "单价〔元〕".
-_BRACKETED = re.compile(r"\([^)]*\)|\[[^\]]*\]|\{[^}]*\}|【[^】]*】|〔[^〕]*〕|〖[^〗]*〗")
+# which have no ASCII twin: "金额【元】", "单价〔元〕". A bracket left open at
+# the end goes too: a PDF clips a heading at its cell edge, so "Ед. цена (лв.
+# без ДДС)" arrives as "Ед. цена (лв. без Д" and matched no column.
+_BRACKETED = re.compile(r"\([^)]*\)|\[[^\]]*\]|\{[^}]*\}|【[^】]*】|〔[^〕]*〕|〖[^〗]*〗|[(\[{][^)\]}]*$")
 
 
 def _currency_codes() -> frozenset[str]:
@@ -874,19 +879,32 @@ def _build_normalised_index(aliases: dict[str, frozenset[str]]) -> dict[str, str
 _NORMALISED_COLUMN_INDEX: dict[str, str] = _build_normalised_index(_COLUMN_ALIASES)
 
 
+# The money a Bulgarian heading names in words rather than in brackets: "ЕД.
+# ЦЕНА В ЛЕВА БЕЗ ДДС", "СТОЙНОСТ ОБЩО /лв без ДДС/". Read with it, neither
+# heading named a column and every line of the bill came in at zero.
+# Only "без ДДС": a figure with ДДС in it is not the bill's rate or value.
+_MONEY_QUALIFIER = re.compile(r"(?:\s+(?:в|във))?\s+(?:лв|лева|лев|евро|bgn|eur|euro)(?:\s+без\s+ддс)?$|\s+без\s+ддс$")
+
+
 def _match_column(header: str) -> str | None:
     """Match a header string to a canonical column name using the alias map.
 
     The exact lowercased spelling is tried first, so a symbol-only header such
     as ``#`` (which normalises to nothing) still matches, then the normalised
-    key, which is what reads "Jed. mj." and "KOLICINA (m3)".
+    key, which is what reads "Jed. mj." and "KOLICINA (m3)", then that key
+    without a currency or ДДС written out in words at its end.
     """
     lowered = header.strip().lower()
     for canonical, aliases in _COLUMN_ALIASES.items():
         if lowered in aliases:
             return canonical
     key = _label_key(header)
-    return _NORMALISED_COLUMN_INDEX.get(key) if key else None
+    found = _NORMALISED_COLUMN_INDEX.get(key) if key else None
+    if found is None and key:
+        bare = _MONEY_QUALIFIER.sub("", normalise_label(header)).replace(" ", "")
+        if bare and bare != key:
+            found = _NORMALISED_COLUMN_INDEX.get(bare)
+    return found
 
 
 # ── Split rates, header language, two-row headers ──────────────────────────
@@ -1026,13 +1044,29 @@ def _compose_two_row_header(header: tuple[Any, ...], below: tuple[Any, ...]) -> 
 
 
 def _map_columns(header: tuple[Any, ...]) -> dict[int, str]:
-    """Column index -> canonical column for every header cell the table knows."""
+    """Column index -> canonical column for every header cell the table knows.
+
+    Where several columns name one field and exactly one of them says it is
+    the overall figure ("СТОЙНОСТ ОБЩО" beside the "СТОЙНОСТ" of the work
+    certified and of the work remaining), that one is the field: a row takes
+    the last column it has a value in, which was whichever progress column
+    came last.
+    """
     column_map: dict[int, str] = {}
     for index, cell in enumerate(header):
         text = _cell_text(cell)
         canonical = _match_column(text) if text else None
         if canonical:
             column_map[index] = canonical
+    for canonical in set(column_map.values()):
+        columns = [index for index, target in column_map.items() if target == canonical]
+        if len(columns) < 2:
+            continue
+        overall = [index for index in columns if "общо" in normalise_label(_cell_text(header[index])).split()]
+        if len(overall) == 1:
+            for index in columns:
+                if index != overall[0]:
+                    del column_map[index]
     return column_map
 
 
@@ -2204,6 +2238,29 @@ def _is_blank_cell(value: Any) -> bool:
     return value in (0, 0.0)
 
 
+def _storable_unit(unit: str) -> str:
+    """``unit`` reduced to a shape the bill stores: its letters, digits and unit marks, at most 30."""
+    kept = re.sub(r"[^\w\s.\-/²³%]", " ", unit)
+    kept = re.sub(r"\s+", " ", kept).strip(" .-/")[:30].strip()
+    return kept if kept and is_approved_unit(kept) else "pcs"
+
+
+def _priced_amount(row: dict[str, Any], *, dot_thousands: bool = False, comma_thousands: bool = False) -> float:
+    """Quantity times unit price of a row, when both read as positive numbers; else 0."""
+    quantity, q_err = parse_numeric_cell(
+        row.get("quantity"), dot_thousands=dot_thousands, comma_thousands=comma_thousands
+    )
+    rate, r_err = parse_numeric_cell(row.get("unit_rate"), dot_thousands=dot_thousands, comma_thousands=comma_thousands)
+    if q_err or r_err or not quantity or not rate or quantity <= 0 or rate <= 0:
+        return 0.0
+    return round(quantity * rate, 2)
+
+
+def _no_number(value: Any) -> bool:
+    """A blank cell, or one holding words and no digit."""
+    return _is_blank_cell(value) or (isinstance(value, str) and not any(ch.isdigit() for ch in value))
+
+
 def partition_summary_rows(
     rows: list[dict[str, Any]],
     *,
@@ -2246,10 +2303,13 @@ def partition_summary_rows(
     for index, row in enumerate(rows):
         number = numbers[index] if numbers is not None else first_row_number + index
         description = str(row.get("description", "") or "").strip()
+        # A label written into a number column ("ОБЩО ПО ДОГОВОР" under the
+        # unit price, as a КСС footer does) is no price: the row stays a
+        # candidate summary line instead of an "invalid unit rate" error.
         unpriced = (
             not str(row.get("unit", "") or "").strip()
-            and _is_blank_cell(row.get("quantity"))
-            and _is_blank_cell(row.get("unit_rate"))
+            and _no_number(row.get("quantity"))
+            and _no_number(row.get("unit_rate"))
         )
         if not description or not unpriced:
             if not unpriced:
@@ -2630,12 +2690,30 @@ def _rows_to_positions(
     # Section numbers a Bulgarian bill writes in the heading ("I. ЗЕМНИ
     # РАБОТИ"), so each is used once even when two sheets both start at I.
     numeral_ordinals: set[str] = set()
+    highest_line = 0
 
     for row_idx, row in _naming_the_sheet(kept_rows, result):
         try:
             description = str(row.get("description", "")).strip()
             if not description:
                 result.skipped += 1
+                amount = _priced_amount(row, dot_thousands=dot_thousands, comma_thousands=comma_thousands)
+                if amount:
+                    # A priced line whose description cell is empty: left out,
+                    # but said, so the bill's total is not short without a word.
+                    result.warnings.append(
+                        {
+                            "row": row_idx,
+                            "code": "priced_row_without_description",
+                            "params": {"row": row_idx, "amount": amount},
+                            "value": amount,
+                            "severity": "warning",
+                            "message": (
+                                f"Row {row_idx} has a quantity and a unit price ({amount:.2f}) but no description, "
+                                "so it was not imported. Check the file."
+                            ),
+                        }
+                    )
                 continue
 
             desc_lower = description.lower()
@@ -2650,7 +2728,14 @@ def _rows_to_positions(
             # the same as its ASCII twin; see :func:`fold_width`.
             ordinal = fold_width(str(row.get("ordinal", ""))).strip()
             generated = not ordinal
-            if generated:
+            if generated and header_language == "bg":
+                # The line after the highest so far: an unnumbered contingency
+                # after line 6 is 7, where the counter below made it 13.
+                candidate = highest_line + 1
+                while str(candidate) in explicit_ordinals:
+                    candidate += 1
+                ordinal = str(candidate)
+            elif generated:
                 while str(auto_ordinal) in explicit_ordinals:
                     auto_ordinal += 1
                 ordinal = str(auto_ordinal)
@@ -2717,8 +2802,9 @@ def _rows_to_positions(
                     numeral = bg_section_numeral(description)
                     if numeral and numeral not in explicit_ordinals and numeral not in numeral_ordinals:
                         numeral_ordinals.add(numeral)
-                        auto_ordinal = int(ordinal)  # hand the unused number to the next line
                         ordinal = numeral
+                if ordinal.isdigit():
+                    highest_line = max(highest_line, int(ordinal))
                 result.positions.append(
                     ImportedPosition(
                         description=description,
@@ -2748,6 +2834,23 @@ def _rows_to_positions(
                 # "кв.м", "м²" and "m2" are one unit; see bulgaria_kss.
                 unit_raw = bg_canonical_unit(unit_raw)
             unit = unit_raw or "pcs"
+            if not is_approved_unit(unit):
+                # A unit the bill cannot store ("кв.м/см", "(компл.)", a long
+                # note in the unit column) refused the whole line when it was
+                # saved. The line comes in with the unit cleaned, and says so.
+                cleaned = _storable_unit(unit)
+                result.warnings.append(
+                    {
+                        "row": row_idx,
+                        "ordinal": ordinal,
+                        "code": "unit_cleaned",
+                        "params": {"row": row_idx, "unit": unit, "used": cleaned},
+                        "text": unit,
+                        "severity": "warning",
+                        "message": f"Row {row_idx}: the unit {unit!r} cannot be stored as written; {cleaned!r} was used.",
+                    }
+                )
+                unit = cleaned
 
             # Range guards - reject obvious tamper / typo errors.
             if not (0 <= quantity <= _IMPORT_MAX_QUANTITY):
@@ -2830,6 +2933,8 @@ def _rows_to_positions(
             if split:
                 metadata.update(split)
 
+            if ordinal.isdigit():
+                highest_line = max(highest_line, int(ordinal))
             result.positions.append(
                 ImportedPosition(
                     description=description,
@@ -2985,4 +3090,10 @@ class ExcelImporter:
             from app.modules.boq.importers.bulgaria_totals import SOURCE_TOTALS_KEY, source_totals_snapshot
 
             result.metadata[SOURCE_TOTALS_KEY] = source_totals_snapshot(result)
+        # A sheet lists its sections before the lines under them, so a new
+        # bill is written in one batch (the route falls back to one row at a
+        # time when the batch cannot take the rows, and never batches a sheet
+        # carrying Position IDs). Written row by row, every row re-read the
+        # whole bill: a КСС of thousands of lines took many minutes.
+        result.document_order = True
         return result

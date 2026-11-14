@@ -45,7 +45,13 @@ function wordingValues(params: Record<string, unknown>): Record<string, unknown>
 export function importFailureText(failure: ImportFailure, t: Translate, fallback: string): string {
   const message = failure.message || fallback;
   if (!failure.code) return message;
-  return t(`boq.import_error.${failure.code}`, { defaultValue: message, ...wordingValues(failure.params ?? {}) });
+  const text = t(`boq.import_error.${failure.code}`, { defaultValue: message, ...wordingValues(failure.params ?? {}) });
+  // A refusal that carries the underlying reason ("nothing could be saved")
+  // says it, so the reader is not left with the bare sentence.
+  const reason = failure.params?.error;
+  return typeof reason === 'string' && reason.trim() && !text.includes(reason)
+    ? `${text} ${t('boq.import_error.reason', { defaultValue: 'Reason: {{reason}}', reason })}`
+    : text;
 }
 
 /** The wording for an error response body whose ``detail`` is coded, or null to let the caller word it. */

@@ -6564,7 +6564,9 @@ export function BOQEditorPage() {
         open={showImportPreview && !!boqId}
         onClose={() => setShowImportPreview(false)}
         boqId={boqId!}
+        projectId={boq?.project_id}
         onImported={invalidateAll}
+        onOpenBill={(id) => navigate(`/boq/${id}`)}
       />
       {boqId && gaebSiteOpen && (
         <GaebSiteExchangeDialog

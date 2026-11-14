@@ -233,6 +233,7 @@ async def enqueue_boq_import(
     delete_missing: bool,
     column_mapping: str | None,
     force: bool = False,
+    replace: bool = False,
 ) -> dict[str, Any]:
     """Start the import of ``content`` into the bill, or hand back the job already importing it.
 
@@ -247,7 +248,7 @@ async def enqueue_boq_import(
     key, holder, imported = await _attempt(session, base_key)
     if holder is not None:
         return _job_view(holder, reused=True)
-    if imported is not None and not force:
+    if imported is not None and not (force or replace):
         raise _already_imported(imported)
 
     upload = await asyncio.to_thread(_write_upload, content)
@@ -261,6 +262,7 @@ async def enqueue_boq_import(
         "delete_missing": delete_missing,
         "column_mapping": column_mapping,
         "force": force,
+        "replace": replace,
     }
     try:
         row = await submit_job(JOB_KIND, payload, idempotency_key=key)
@@ -337,6 +339,7 @@ async def run_boq_import_job(job_run: JobRun, payload: dict[str, Any]) -> dict[s
                     service=service,
                     on_phase=lambda phase: _report_phase(job_run.id, phase),
                     append_on_collision=bool(payload.get("force")),
+                    replace=bool(payload.get("replace")),
                 )
             except HTTPException as exc:
                 await session.rollback()

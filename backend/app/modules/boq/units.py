@@ -208,6 +208,13 @@ _RUNNING_METRE_PRIME_FORMS: Final[frozenset[str]] = frozenset(
         "m′",  # prime
         "mʼ",  # modifier letter apostrophe
         "m´",  # acute accent, a common keyboard stand-in
+        # The same in Cyrillic, as a Bulgarian КСС types it. (A backtick stays
+        # an unsafe shape here; the КСС reader folds "m`" to "м" before this.)
+        "м'",
+        "м’",
+        "м′",
+        "мʼ",
+        "м´",
     }
 )
 

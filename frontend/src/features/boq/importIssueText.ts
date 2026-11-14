@@ -54,6 +54,8 @@ export interface ImportIssue {
   first?: string;
   /** The signed sum of the lines an XPWE import moved into the bill's deductions line. */
   amount?: number;
+  /** The values a coded note is worded with. */
+  params?: Record<string, unknown>;
 }
 
 function prefixOf(issue: ImportIssue, t: Translate): string {
@@ -263,6 +265,23 @@ export function importIssueText(
         'The bill is priced in leva: {{count}} rates were converted to euro at the fixed rate {{rate}}. Each line keeps its lev rate',
       count: issue.count ?? 0,
       rate: issue.text ?? '1.95583',
+    });
+  } else if (issue.code === 'unit_cleaned' && issue.params) {
+    // The row comes first, from ``prefixOf``.
+    body = t('boq.import_issue.unit_cleaned', {
+      defaultValue: 'the unit "{{unit}}" cannot be stored as written; "{{used}}" was used',
+      unit: String(issue.params.unit ?? ''),
+      used: String(issue.params.used ?? ''),
+    });
+  } else if (issue.code === 'priced_row_without_description' && issue.value != null) {
+    body = t('boq.import_issue.priced_row_without_description', {
+      defaultValue: 'a quantity and a unit price ({{amount}}) but no description, so it was not imported. Check the file',
+      amount: formatNumber(issue.value),
+    });
+  } else if (issue.code === 'read_by_ai') {
+    // A PDF with no ruled table, copied out by the workspace AI.
+    body = t('boq.import_issue.read_by_ai', {
+      defaultValue: 'The workspace AI read this bill from the PDF. Check the quantities and rates against the PDF',
     });
   } else if (issue.code === 'currency_not_stated') {
     body = t('boq.import_issue.currency_not_stated', {
