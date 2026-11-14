@@ -356,6 +356,8 @@ LUMP_SUM_UNITS: Final[frozenset[str]] = frozenset(
         "cpl",
         "компл",
         "комплект",
+        # Bulgarian "сума" (a lump sum, as a КСС prints it)
+        "сума",
         # Hungarian "komplett" and "átalány" (lump sum)
         "klt",
         "atalany",

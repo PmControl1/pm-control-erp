@@ -50,6 +50,7 @@ from app.modules.boq.importers._encoding import (
 )
 from app.modules.boq.importers._workbook import open_workbook
 from app.modules.boq.importers.bulgaria_kss import canonical_unit as bg_canonical_unit
+from app.modules.boq.importers.bulgaria_kss import section_numeral as bg_section_numeral
 from app.modules.boq.importers.bulgaria_kss import workbook_currency as bg_workbook_currency
 from app.modules.boq.importers.hungary_workbook import parse_hungarian_workbook
 from app.modules.boq.roundtrip import ID_COLUMN_ALIASES, normalise_id
@@ -2626,6 +2627,9 @@ def _rows_to_positions(
         kept_rows = kept_rows[1:]
         result.skipped += 1
     explicit_ordinals = {fold_width(str(row.get("ordinal", ""))).strip() for _, row in kept_rows} - {""}
+    # Section numbers a Bulgarian bill writes in the heading ("I. ЗЕМНИ
+    # РАБОТИ"), so each is used once even when two sheets both start at I.
+    numeral_ordinals: set[str] = set()
 
     for row_idx, row in _naming_the_sheet(kept_rows, result):
         try:
@@ -2645,7 +2649,8 @@ def _rows_to_positions(
             # A number, a code or a unit typed full width ("１．２", "㎡") is
             # the same as its ASCII twin; see :func:`fold_width`.
             ordinal = fold_width(str(row.get("ordinal", ""))).strip()
-            if not ordinal:
+            generated = not ordinal
+            if generated:
                 while str(auto_ordinal) in explicit_ordinals:
                     auto_ordinal += 1
                 ordinal = str(auto_ordinal)
@@ -2664,7 +2669,10 @@ def _rows_to_positions(
                 row, description, dot_thousands=dot_thousands, comma_thousands=comma_thousands
             )
             if contingency is not None:
-                unit_raw, quantity_raw, unit_rate_raw = "lsum", 1.0, contingency
+                # A Bulgarian bill prints a lump sum as "сума"; "lsum" is the
+                # code other markets' bills use for the same thing.
+                lump_sum = "сума" if header_language == "bg" else "lsum"
+                unit_raw, quantity_raw, unit_rate_raw = lump_sum, 1.0, contingency
             quantity, q_err = parse_numeric_cell(
                 quantity_raw, dot_thousands=dot_thousands, comma_thousands=comma_thousands
             )
@@ -2702,6 +2710,15 @@ def _rows_to_positions(
                 not unit_raw and (quantity_raw in (None, "", 0, 0.0)) and (unit_rate_raw in (None, "", 0, 0.0))
             )
             if is_section_row:
+                if generated and header_language == "bg":
+                    # A КСС leaves the № column blank on a section heading and
+                    # numbers it in the text. Without this the heading took the
+                    # next free line number and "I. ЗЕМНИ РАБОТИ" showed as 7.
+                    numeral = bg_section_numeral(description)
+                    if numeral and numeral not in explicit_ordinals and numeral not in numeral_ordinals:
+                        numeral_ordinals.add(numeral)
+                        auto_ordinal = int(ordinal)  # hand the unused number to the next line
+                        ordinal = numeral
                 result.positions.append(
                     ImportedPosition(
                         description=description,

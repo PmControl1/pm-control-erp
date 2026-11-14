@@ -115,6 +115,39 @@ def canonical_unit(unit: str) -> str:
     return _UNIT_FORMS.get(_unit_key(text), text)
 
 
+# ── Section numbers ─────────────────────────────────────────────────────────
+
+# A КСС numbers its sections in the heading itself: "I. ЗЕМНИ РАБОТИ",
+# "Раздел II - Бетонови работи", "IV) Ел. инсталации", with the № column left
+# blank. Typed on a Bulgarian keyboard the "I" and "X" are often the Cyrillic
+# look-alikes "І" and "Х", so those are read as the Latin letters.
+_CYRILLIC_NUMERAL_LETTERS = str.maketrans({"І": "I", "Х": "X"})
+_SECTION_NUMERAL = re.compile(
+    r"^\s*(?:(?i:раздел|част)\s+)?(?P<numeral>[IVXL]+)(?:\s*[.):]\s*|\s+[-–—]\s+|\s+)(?=\S)",
+)
+_ROMAN = re.compile(r"^(?=[IVXL])(L?X{0,3}|XL)?(IX|IV|V?I{0,3})$")
+
+
+def section_numeral(description: str) -> str:
+    """The Roman numeral a section heading opens with, or ``""``.
+
+    >>> section_numeral("I. ЗЕМНИ РАБОТИ")
+    'I'
+    >>> section_numeral("Раздел IV - Ел. инсталации")
+    'IV'
+    >>> section_numeral("ІІ. Бетонови работи")  # Cyrillic І
+    'II'
+    >>> section_numeral("Изкопни работи")
+    ''
+    """
+    text = unicodedata.normalize("NFKC", description or "").translate(_CYRILLIC_NUMERAL_LETTERS)
+    match = _SECTION_NUMERAL.match(text)
+    if not match:
+        return ""
+    numeral = match.group("numeral").upper()
+    return numeral if _ROMAN.match(numeral) else ""
+
+
 def normalise_section_ordinals(imported: Any) -> None:
     """Give restarted item numbers unique storage ordinals, preserving the source.
 

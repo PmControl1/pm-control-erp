@@ -35,9 +35,10 @@ interface PreviewPosition {
   code: string;
   description: string;
   unit: string;
-  quantity: number | null;
-  unit_rate: number | null;
-  total: number | null;
+  quantity: number | string | null;
+  // Money comes as a decimal string ("12.5"), like every rate the API sends.
+  unit_rate: number | string | null;
+  total: number | string | null;
   is_section: boolean;
 }
 
@@ -109,9 +110,12 @@ const SUPPORTED_FORMATS = ['GAEB', 'Excel', 'PDF', 'CSV', 'XPWE'] as const;
 
 const MAX_PREVIEW_ROWS = 500;
 
-function fmtNumber(v: number | null | undefined): string {
-  if (v == null) return '';
-  return fmtFixed(v, 2);
+// Rates and totals arrive as decimal strings: read them as numbers first, or
+// formatting the first priced row throws and takes the whole bill editor down.
+function fmtNumber(v: number | string | null | undefined): string {
+  if (v == null || v === '') return '';
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? fmtFixed(n, 2) : String(v);
 }
 
 /* ── Component ──────────────────────────────────────────────────────── */
