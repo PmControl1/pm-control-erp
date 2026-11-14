@@ -244,7 +244,7 @@ async def test_smart_import_hides_workspace_model_and_provider_errors(
     # A PDF with no ruled table: the AI reads its text (see ai_bill_reader).
     monkeypatch.setattr(boq_router, "_native_pdf_import", AsyncMock(return_value=None))
     monkeypatch.setattr(ai_bill_reader, "pdf_page_texts", lambda _: ["Concrete 10 m3"])
-    persisted = AsyncMock(side_effect=lambda boq_id, imported, *a: {"imported": len(imported.positions)})
+    persisted = AsyncMock(side_effect=lambda boq_id, imported, *a, **k: {"imported": len(imported.positions)})
     monkeypatch.setattr(boq_router, "_smart_native_result", persisted)
     monkeypatch.setattr(ProjectRepository, "get_by_id", AsyncMock(return_value=SimpleNamespace(currency="EUR")))
     monkeypatch.setattr(AISettingsRepository, "get_by_user_id", AsyncMock(return_value=None))

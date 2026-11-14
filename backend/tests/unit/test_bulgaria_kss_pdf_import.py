@@ -258,7 +258,7 @@ def test_the_route_imports_an_ai_reading_like_a_spreadsheet(monkeypatch: pytest.
 
     saved: list[ImportedBOQ] = []
 
-    async def smart_native_result(boq_id: Any, imported: ImportedBOQ, *args: Any) -> dict[str, Any]:
+    async def smart_native_result(boq_id: Any, imported: ImportedBOQ, *args: Any, **kwargs: Any) -> dict[str, Any]:
         saved.append(imported)
         return {"imported": len(imported.positions), "warnings": imported.warnings}
 
