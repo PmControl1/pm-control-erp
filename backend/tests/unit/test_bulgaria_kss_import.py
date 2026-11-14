@@ -460,3 +460,122 @@ def test_a_file_the_spreadsheet_reader_cannot_open_still_falls_through() -> None
     from app.modules.boq import router
 
     assert asyncio.run(router._native_spreadsheet_import(b"not a workbook")) is None
+
+
+# -- a КСС that tracks progress (certified / remaining / stages / overall) --------
+
+
+def _progress_kss() -> bytes:
+    """The layout of a contractor's running КСС: the bill's quantity is "К-ВО ОБЩО"."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "КСС"
+    ws.append(["Обект:", None, None, "Жилищна сграда, бл. В"])
+    ws.append(["КОЛИЧЕСТВЕНО - СТОЙНОСТНА СМЕТКА", None, None, None, None, None, "ИЗПЪЛНЕНО", None, "ОСТАВАЩО"])
+    ws.append(
+        [
+            "№",
+            "ЗОНА",
+            "ЧАСТ",
+            "НАИМЕНОВАНИЕ НА СМР",
+            "ЕД. МЯРКА",
+            "ЕД. ЦЕНА В ЛЕВА БЕЗ ДДС",
+            "К-ВО АКТУВАНО",
+            "СТОЙНОСТ В ЛЕВА БЕЗ ДДС",
+            "К-ВО ОСТАНАЛО",
+            "СТОЙНОСТ В ЛЕВА БЕЗ ДДС",
+            "К-ВО ЕТАП 1",
+            "СТОЙНОСТ ЕТАП 1\n/лв без ДДС/",
+            "К-ВО ОБЩО",
+            "СТОЙНОСТ ОБЩО\n/лв без ДДС/",
+        ]
+    )
+    ws.append([None, None, "ЗР", "I. ЗЕМНИ РАБОТИ"])
+    ws.append(
+        [
+            1,
+            "А",
+            "ЗР",
+            "Подравняване и уплътняване на основа",
+            "m2",
+            6.85,
+            120,
+            822.0,
+            290,
+            1986.5,
+            410,
+            2808.5,
+            410,
+            2808.5,
+        ]
+    )
+    ws.append([2, "А", "ЗР", "Дренажна тръба Ø110", "m`", 14.2, 0, 0, 75, 1065.0, 75, 1065.0, 75, 1065.0])
+    ws.append([None, None, None, None, None, 8.4, 0, 0, 140, 1176.0, 140, 1176.0, 140, 1176.0])
+    ws.append([3, "А", "ЗР", "Ревизионна шахта", "бр. (компл.)", 310.5, 4, 1242.0, 0, 0, 4, 1242.0, 4, 1242.0])
+    ws.append(
+        [
+            None,
+            None,
+            None,
+            "ОБЩО ПО КСС БЕЗ ДДС",
+            None,
+            "ОБЩО ПО КСС",
+            "ИЗПЪЛНЕНИ",
+            2064.0,
+            None,
+            4227.5,
+            None,
+            6291.5,
+            None,
+            6291.5,
+        ]
+    )
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
+
+
+def test_a_progress_kss_takes_its_price_and_its_overall_quantity() -> None:
+    result = _parse(_progress_kss())
+    assert result.metadata["column_mapping"] == {
+        "0": "ordinal",
+        "3": "description",
+        "4": "unit",
+        "5": "unit_rate",
+        "12": "quantity",
+        "13": "total",
+    }
+    assert result.currency == "BGN"
+    assert [(p.ordinal, p.quantity, p.unit_rate) for p in _work(result)] == [
+        ("1", 410.0, 6.85),
+        ("2", 75.0, 14.2),
+        ("3", 4.0, 310.5),
+    ]
+
+
+def test_a_footer_whose_label_sits_in_the_price_column_is_a_total_not_an_error() -> None:
+    result = _parse(_progress_kss())
+    assert result.errors == []
+    assert [row["row"] for row in result.metadata["summary_rows"]] == [9]
+
+
+def test_a_priced_row_without_a_description_is_reported_not_dropped_silently() -> None:
+    result = _parse(_progress_kss())
+    (note,) = [w for w in result.warnings if w.get("code") == "priced_row_without_description"]
+    assert (note["row"], note["value"]) == (7, 1176.0)
+
+
+def test_a_unit_the_bill_cannot_store_is_cleaned_and_said() -> None:
+    from app.modules.boq.units import is_approved_unit
+
+    result = _parse(_progress_kss())
+    units = [p.unit for p in _work(result)]
+    # "m`" is a running metre; "бр. (компл.)" keeps its words.
+    assert units[:2] == ["м2", "м"]
+    assert all(is_approved_unit(unit) for unit in units)
+    (note,) = [w for w in result.warnings if w.get("code") == "unit_cleaned"]
+    assert note["params"]["unit"] == "бр. (компл.)"
+
+
+def test_a_spreadsheet_is_written_in_one_batch() -> None:
+    assert _parse(_kss()).document_order is True

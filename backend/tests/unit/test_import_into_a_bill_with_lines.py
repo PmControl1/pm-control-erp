@@ -23,6 +23,14 @@ from app.modules.boq.importers import ImportedBOQ, ImportedPosition
 from app.modules.boq.router import _persist_imported_boq
 
 
+class _NoSavepoint:
+    async def __aenter__(self) -> None:
+        return None
+
+    async def __aexit__(self, *_exc: Any) -> bool:
+        return False
+
+
 class _Bill:
     """The service calls an import makes, over a list, with the unique-number guard."""
 
@@ -52,6 +60,15 @@ class _Bill:
 
     async def list_markups(self, _boq_id: Any) -> list[Any]:
         return []
+
+    # The batch writer is the real service's; refusing it here, as it refuses
+    # rows it cannot take, sends the import down the per-row path above.
+    session = SimpleNamespace(begin_nested=lambda: _NoSavepoint())
+
+    async def add_positions_in_document_order(self, _boq_id: Any, _items: Any) -> Any:
+        from app.modules.boq.service import BulkCreateNotApplicable
+
+        raise BulkCreateNotApplicable("per-row in this test")
 
 
 def _kss() -> ImportedBOQ:

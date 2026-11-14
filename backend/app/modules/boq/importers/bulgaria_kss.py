@@ -91,12 +91,14 @@ _UNIT_FORMS: dict[str, str] = {
 }
 
 _SUPERSCRIPTS = str.maketrans({"²": "2", "³": "3"})
+# A running metre is often typed "м'" or "m`": the mark carries no other unit.
+_PRIMES = re.compile(r"[`'’′ʼ´]")
 
 
 def _unit_key(unit: str) -> str:
     folded = unicodedata.normalize("NFKC", unit).translate(_SUPERSCRIPTS).casefold()
     # Keep the hyphen of "к-т" out of the key too: "кт" carries the same reading.
-    return re.sub(r"[\s.\-]+", "", folded)
+    return re.sub(r"[\s.\-]+", "", _PRIMES.sub("", folded))
 
 
 def canonical_unit(unit: str) -> str:

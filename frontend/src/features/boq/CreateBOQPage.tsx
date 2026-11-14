@@ -178,11 +178,17 @@ export function CreateBOQModal({ open, onClose, defaultProjectId }: CreateBOQMod
         // The auto dispatcher sniffs the file and routes it to the native
         // GAEB / FIEBDC-3 / Excel parser, or to the AI path for drawings, so
         // every supported country standard lands on a real parser rather than
-        // a generic guess. 90s ceiling so a hung upload cannot freeze the UI.
+        // a generic guess. A file a native reader takes is imported as a
+        // background job, followed below for as long as it runs: posted
+        // without ``background`` a large КСС was still being written when the
+        // 90 s ceiling gave up and deleted the bill under it. The ceiling now
+        // covers the answer to the post; an AI reading (a PDF without a ruled
+        // table) is that answer, so it gets the AI's time.
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 90_000);
+        const ceiling = /\.pdf$/i.test(file.name) ? 15 * 60_000 : 90_000;
+        const timeoutId = setTimeout(() => controller.abort(), ceiling);
         try {
-          const res = await fetch(`/api/v1/boq/boqs/${boq.id}/import/auto/`, {
+          const res = await fetch(`/api/v1/boq/boqs/${boq.id}/import/auto/?background=true`, {
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             body: form,

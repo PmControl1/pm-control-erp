@@ -78,6 +78,9 @@ describe('New estimate import', () => {
     const call = fetchSpy.mock.calls.find(([url]) => String(url).includes('/import/auto/'));
     const body = (call?.[1] as RequestInit | undefined)?.body as FormData;
     expect((body.get('file') as File).name).toBe('koltsegvetes.xls');
+    // A large bill is written as a background job the page follows; posted
+    // without it, a КСС of thousands of lines outlived the page's 90 s and its bill.
+    expect(String(call?.[0])).toBe('/api/v1/boq/boqs/boq-1/import/auto/?background=true');
   });
 
   it('does not flag an .xlsx workbook', async () => {
