@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileSpreadsheet,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
@@ -110,6 +111,10 @@ const SUPPORTED_FORMATS = ['GAEB', 'Excel', 'PDF', 'CSV', 'XPWE'] as const;
 
 const MAX_PREVIEW_ROWS = 500;
 
+// An AI reading of a long PDF bill is one model call per few pages; the
+// server answers when the last one has.
+const AI_READ_TIMEOUT_MS = 15 * 60_000;
+
 // Rates and totals arrive as decimal strings: read them as numbers first, or
 // formatting the first priced row throws and takes the whole bill editor down.
 function fmtNumber(v: number | string | null | undefined): string {
@@ -153,6 +158,9 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
   // the counts the user confirms are the bill that lands.
   const [previewedMapping, setPreviewedMapping] = useState<string | null>(null);
   const [mappingExpanded, setMappingExpanded] = useState(false);
+  // A PDF the table reader could not read: offered to the workspace AI.
+  const [aiOffer, setAiOffer] = useState(false);
+  const [readingWithAi, setReadingWithAi] = useState(false);
 
   // Reset state when the dialog closes
   useEffect(() => {
@@ -172,6 +180,8 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
       setColumnMapping({});
       setPreviewedMapping(null);
       setMappingExpanded(false);
+      setAiOffer(false);
+      setReadingWithAi(false);
     }
   }, [open]);
 
@@ -196,6 +206,7 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
         setFile(f);
         setFileFormat(detectFormat(f.name));
         setStep('upload'); // Stay on upload step while parsing
+        setAiOffer(false);
       }
       setError(null);
       setAlreadyDone(null);
@@ -220,11 +231,16 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({ detail: res.statusText }));
+          // A PDF with no ruled table: the AI can still read it.
+          if ((body as { detail?: { code?: string } })?.detail?.code === 'pdf_no_table') setAiOffer(true);
           const failed = t('boq.import_failed', { defaultValue: 'Import failed' });
           throw new Error(importFailureFromBody(body, t, failed) ?? extractErrorMessageFromBody(body) ?? failed);
         }
 
         const data: PreviewResponse = await res.json();
+        // A PDF table read but no line of work found in it (a header the
+        // reader did not know): the columns can be mapped, or the AI asked.
+        if (detectFormat(f.name) === 'PDF' && data.total_positions - data.total_sections <= 0) setAiOffer(true);
         setPreview(data);
         setPreviewedMapping(mapping);
         if (!again) {
@@ -376,6 +392,62 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
       jobWaitRef.current = null;
     }
   }, [file, boqId, addToast, t, onImported, onClose, previewedMapping]);
+
+  /* ── A PDF read by the workspace AI ─────────────────────────────── */
+
+  // The auto route reads a PDF without a ruled table with the workspace AI
+  // and imports its rows like a spreadsheet's. There is no preview: the AI
+  // is asked once, and the import says the bill was read by it.
+  const handleReadWithAi = useCallback(async () => {
+    if (!file) return;
+    setReadingWithAi(true);
+    setError(null);
+    const token = useAuthStore.getState().accessToken;
+    const form = new FormData();
+    form.append('file', file);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), AI_READ_TIMEOUT_MS);
+    try {
+      const lang = activeLanguageTag();
+      const res = await fetch(`/api/v1/boq/boqs/${boqId}/import/auto/`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(lang ? { 'Accept-Language': lang } : {}),
+        },
+        body: form,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      if (!res.ok) {
+        const failed = t('boq.import_failed', { defaultValue: 'Import failed' });
+        throw new Error(importFailureFromBody(body, t, failed) ?? extractErrorMessageFromBody(body) ?? failed);
+      }
+      const result = body as { imported?: number; updated?: number; warnings?: ImportIssue[] };
+      const imported = (result.imported ?? 0) + (result.updated ?? 0);
+      const notes = (result.warnings ?? []).filter((w) => w.code === 'read_by_ai' || w.code === 'currency_converted_to_euro');
+      addToast({
+        type: imported > 0 ? 'success' : 'warning',
+        title: t('boq.import_preview.import_success', { defaultValue: 'Imported {{count}} positions', count: imported }),
+        message: notes.length > 0 ? notes.map((w) => importIssueText(w, t, fmtNumber)).join('\n') : undefined,
+      });
+      onImported();
+      onClose();
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const isTimeout = err instanceof DOMException && err.name === 'AbortError';
+      setError(
+        isTimeout
+          ? t('boq.import_preview.ai_timeout', { defaultValue: 'The AI did not finish reading the PDF within 15 minutes.' })
+          : err instanceof Error
+            ? err.message
+            : 'Unknown error',
+      );
+    } finally {
+      setReadingWithAi(false);
+    }
+  }, [file, boqId, addToast, t, onImported, onClose]);
 
   /* ── Drag & drop handlers ───────────────────────────────────────── */
 
@@ -751,6 +823,34 @@ export function ImportPreviewDialog({ open, onClose, boqId, onImported }: Import
                 )}
               </div>
             </>
+          )}
+
+          {/* A PDF the table reader could not read: offer the workspace AI */}
+          {aiOffer && file && (step === 'upload' || step === 'preview') && !parsing && (
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-oe-blue/30 bg-oe-blue/5" data-testid="import-preview-ai-offer">
+              <Sparkles size={16} className="shrink-0 mt-0.5 text-oe-blue" />
+              <div className="flex-1 space-y-2">
+                <p className="text-xs text-content-secondary">
+                  {readingWithAi
+                    ? t('boq.import_preview.reading_with_ai', {
+                        defaultValue: 'Reading the PDF with AI… a long bill can take a few minutes.',
+                      })
+                    : t('boq.import_preview.read_with_ai_hint', {
+                        defaultValue:
+                          'The workspace AI copies the bill out of the PDF text. Nothing is estimated: quantities and rates are taken only from the PDF. Check them against it after the import.',
+                      })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleReadWithAi()}
+                  disabled={readingWithAi}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-oe-blue text-white hover:bg-oe-blue/90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {readingWithAi ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  {t('boq.import_preview.read_with_ai', { defaultValue: 'Read with AI' })}
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Step 3: Confirm */}

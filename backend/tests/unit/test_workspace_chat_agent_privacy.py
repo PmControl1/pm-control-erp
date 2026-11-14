@@ -238,8 +238,14 @@ async def test_smart_import_hides_workspace_model_and_provider_errors(
         get_boq=AsyncMock(return_value=SimpleNamespace(project_id=uuid4())),
         add_position=AsyncMock(),
     )
+    from app.modules.boq import ai_bill_reader
+
     monkeypatch.setattr(boq_router, "_verify_boq_owner", AsyncMock())
-    monkeypatch.setattr(boq_router, "_extract_from_pdf", lambda _: {"text": "Concrete 10 m3", "structured": False})
+    # A PDF with no ruled table: the AI reads its text (see ai_bill_reader).
+    monkeypatch.setattr(boq_router, "_native_pdf_import", AsyncMock(return_value=None))
+    monkeypatch.setattr(ai_bill_reader, "pdf_page_texts", lambda _: ["Concrete 10 m3"])
+    persisted = AsyncMock(side_effect=lambda boq_id, imported, *a: {"imported": len(imported.positions)})
+    monkeypatch.setattr(boq_router, "_smart_native_result", persisted)
     monkeypatch.setattr(ProjectRepository, "get_by_id", AsyncMock(return_value=SimpleNamespace(currency="EUR")))
     monkeypatch.setattr(AISettingsRepository, "get_by_user_id", AsyncMock(return_value=None))
     monkeypatch.setattr(
@@ -272,12 +278,12 @@ async def test_smart_import_hides_workspace_model_and_provider_errors(
             await boq_router.smart_import(**kwargs)
         assert raised.value.status_code == 502
         assert raised.value.detail == workspace.PUBLIC_AI_ERROR
-        service.add_position.assert_not_awaited()
+        persisted.assert_not_awaited()
     else:
         result = await boq_router.smart_import(**kwargs)
         assert result["imported"] == 1
         assert result["model_used"] is None
-        service.add_position.assert_awaited_once()
-        assert service.add_position.await_args.args[0].description == "Concrete"
-        assert service.add_position.await_args.args[0].quantity == 10
+        persisted.assert_awaited_once()
+        (line,) = persisted.await_args.args[1].positions
+        assert (line.description, line.quantity) == ("Concrete", 10)
     provider.assert_awaited_once()

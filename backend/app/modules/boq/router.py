@@ -7815,6 +7815,12 @@ async def import_boq_auto(
             )
             continue
 
+    if chosen is not None and chosen.format_id == "pdf_table" and not await _pdf_has_table_bill(content, overrides):
+        # A PDF without a ruled table the spreadsheet reader can read (scanned,
+        # printed without borders, a header it does not know) is read by the
+        # workspace AI, below, like any other file no native reader takes.
+        chosen = None
+
     if chosen is None:
         # No native importer claimed the file - fall back to smart_import
         # (LLM). Reset the upload buffer's position so smart_import can
@@ -8239,6 +8245,17 @@ def _read_column_mapping(raw: str | None) -> dict[int, str] | None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
 
 
+async def _pdf_has_table_bill(content: bytes, overrides: dict[int, str] | None) -> bool:
+    """Whether the ruled-table reader finds lines of work in a PDF."""
+    from app.modules.boq.importers import ImporterParseError
+    from app.modules.boq.importers.pdf_table import PdfTableImporter, has_bill
+
+    try:
+        return has_bill(await PdfTableImporter.parse(content, locale=get_locale(), column_mapping=overrides))
+    except ImporterParseError:
+        return False
+
+
 async def _parse_with_mapping(
     chosen: type,
     content: bytes,
@@ -8250,9 +8267,11 @@ async def _parse_with_mapping(
     used rather than dropped without a word.
     """
     from app.modules.boq.importers.excel import ExcelImporter, column_mapping_warning
+    from app.modules.boq.importers.pdf_table import PdfTableImporter
 
-    if chosen is ExcelImporter:
-        return await ExcelImporter.parse(content, locale=get_locale(), column_mapping=overrides)
+    if chosen in (ExcelImporter, PdfTableImporter):
+        # A ruled PDF is read through the spreadsheet reader, columns and all.
+        return await chosen.parse(content, locale=get_locale(), column_mapping=overrides)
     imported = await chosen.parse(content, locale=get_locale())
     if overrides:
         imported.warnings.append(column_mapping_warning("format"))
@@ -8693,7 +8712,10 @@ async def smart_import(
             {"structured": False} if native is not None and native.positions else _extract_from_csv_for_smart(content)
         )
     elif ext == "pdf":
-        extracted = _extract_from_pdf(content)
+        # A ruled table is read like the workbook it was printed from; only a
+        # PDF without one goes to the AI below.
+        native = await _native_pdf_import(content)
+        extracted = {"structured": False} if native is not None and has_pdf_bill(native) else {"text": "", "pdf": True}
     elif ext in _SMART_IMPORT_IMAGE_EXTS:
         extracted = _extract_from_image(content, ext)
     elif ext in _SMART_IMPORT_CAD_EXTS:
@@ -8718,7 +8740,7 @@ async def smart_import(
     # Import button posts to, and it read the item sheet on its own, so a
     # Hungarian chapter workbook lost its item codes and its sections and was
     # never validated.
-    if native is not None and native.positions:
+    if native is not None and (has_pdf_bill(native) if ext == "pdf" else native.positions):
         return await _smart_native_result(boq_id, native, file.filename or "upload", service, user_id)
 
     # ── 2. Direct import for structured Excel/CSV ──────────────────────
@@ -8798,6 +8820,19 @@ async def smart_import(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=workspace.PUBLIC_AI_ERROR if workspace_managed else workspace.public_error(str(exc)),
         ) from exc
+
+    if extracted.get("pdf"):
+        return await _ai_pdf_import(
+            boq_id,
+            content,
+            file_name=file.filename or "document.pdf",
+            provider=provider,
+            api_key=api_key,
+            model=model_override,
+            workspace_managed=workspace_managed,
+            service=service,
+            user_id=user_id,
+        )
 
     # Build prompt
     image_b64: str | None = None
@@ -8940,6 +8975,140 @@ async def smart_import(
     if is_cad_import:
         result["cad_format"] = extracted.get("cad_format")
         result["cad_elements"] = extracted.get("cad_elements", 0)
+    return result
+
+
+def has_pdf_bill(imported: "ImportedBOQ") -> bool:
+    from app.modules.boq.importers.pdf_table import has_bill
+
+    return has_bill(imported)
+
+
+async def _native_pdf_import(content: bytes) -> "ImportedBOQ | None":
+    """The ruled-table reading of a PDF, or ``None`` when it has no such table."""
+    from app.modules.boq.importers import ImporterParseError
+    from app.modules.boq.importers.pdf_table import PdfTableImporter
+
+    try:
+        return await PdfTableImporter.parse(content, locale=get_locale())
+    except ImporterParseError as exc:
+        if exc.code == "spreadsheet_currency_ambiguous":
+            # A real refusal about the bill, not a missing table: say it.
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.as_detail()) from exc
+        return None
+
+
+async def _ai_pdf_import(
+    boq_id: uuid.UUID,
+    content: bytes,
+    *,
+    file_name: str,
+    provider: str,
+    api_key: str,
+    model: str | None,
+    workspace_managed: bool,
+    service: BOQService,
+    user_id: str,
+) -> dict[str, Any]:
+    """Copy a PDF bill out with the workspace AI and import it like a spreadsheet.
+
+    See :mod:`app.modules.boq.ai_bill_reader`. The rows go through the same
+    row reader, currency conversion, persistence and validation as a native
+    reading, so an AI-read КСС has its sections, leaves its totals out and
+    comes into a euro project in euro.
+    """
+    from app.modules.ai import workspace
+    from app.modules.ai.ai_client import call_ai, extract_json
+    from app.modules.boq.ai_bill_reader import BILL_EXTRACTION_SYSTEM, PdfHasNoText, UnreadableAnswer, read_pdf_bill
+    from app.modules.boq.importers.bulgaria_kss import normalise_section_ordinals
+
+    async def ask(prompt: str) -> str:
+        raw, _tokens = await call_ai(
+            provider=provider,
+            api_key=api_key,
+            system=BILL_EXTRACTION_SYSTEM,
+            prompt=prompt,
+            max_tokens=8000,
+            model=model,
+        )
+        return raw
+
+    try:
+        rows, currency, facts = await read_pdf_bill(content, filename=file_name, ask=ask, parse_json=extract_json)
+    except PdfHasNoText as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "import_pdf_no_text",
+                "params": {"pages": exc.pages},
+                "message": (
+                    "The PDF has no text, it is probably a scan. Export the КСС from Excel or the "
+                    "estimating program as PDF, or import the Excel file itself."
+                ),
+            },
+        ) from exc
+    except UnreadableAnswer as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "import_ai_unreadable_answer", "params": {"pages": exc.pages}, "message": str(exc)},
+        ) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # The provider's own failure. Its wording can name the owner's model
+        # or endpoint, so a workspace AI answers with the public sentence.
+        logger.exception("AI reading of PDF bill failed for BOQ %s: %s", boq_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=workspace.PUBLIC_AI_ERROR
+            if workspace_managed
+            else workspace.public_error(f"AI service error: {exc}"),
+        ) from exc
+
+    if len(facts["currencies"]) > 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "spreadsheet_currency_ambiguous",
+                "params": {},
+                "message": "The bill has mixed or ambiguous currencies. No rates were imported.",
+            },
+        )
+
+    language = facts["language"]
+    imported = _rows_to_positions(rows, source="smart_import_ai", header_language=language)
+    if language == "bg":
+        normalise_section_ordinals(imported)
+    imported.currency = currency
+    imported.source_format = "pdf"
+    imported.metadata = {
+        **(imported.metadata or {}),
+        "read_by": "ai",
+        "pdf_pages": facts["pages"],
+        "ai_calls": facts["ai_calls"],
+    }
+    imported.warnings.append(
+        {
+            "code": "read_by_ai",
+            "params": {"pages": facts["pages"]},
+            "count": facts["pages"],
+            "message": (
+                "The PDF has no table the importer reads directly, so the workspace AI copied the bill out. "
+                "Check the quantities and rates against the PDF."
+            ),
+        }
+    )
+    result = await _smart_native_result(boq_id, imported, file_name, service, user_id)
+    result["method"] = "ai"
+    result["model_used"] = None if workspace_managed else provider
+    logger.info(
+        "Smart import (AI, PDF) for BOQ %s: %d rows from %d pages in %d calls, provider=%s",
+        boq_id,
+        len(rows),
+        facts["pages"],
+        facts["ai_calls"],
+        provider,
+    )
     return result
 
 

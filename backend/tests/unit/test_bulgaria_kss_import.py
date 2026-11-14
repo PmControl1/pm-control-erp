@@ -171,6 +171,8 @@ def test_the_contingency_is_a_lump_sum_in_the_bill_s_own_unit() -> None:
     (reserve,) = [p for p in _parse(_kss()).positions if (p.metadata or {}).get("contingency")]
     assert reserve.unit == "сума"
     assert is_lump_sum_unit("сума")
+    # Unnumbered, it follows the last line (6) rather than the row counter.
+    assert reserve.ordinal == "7"
 
 
 def test_units_are_folded_to_the_form_a_kss_prints() -> None:

@@ -264,6 +264,11 @@ export function importIssueText(
       count: issue.count ?? 0,
       rate: issue.text ?? '1.95583',
     });
+  } else if (issue.code === 'read_by_ai') {
+    // A PDF with no ruled table, copied out by the workspace AI.
+    body = t('boq.import_issue.read_by_ai', {
+      defaultValue: 'The workspace AI read this bill from the PDF. Check the quantities and rates against the PDF',
+    });
   } else if (issue.code === 'currency_not_stated') {
     body = t('boq.import_issue.currency_not_stated', {
       defaultValue:

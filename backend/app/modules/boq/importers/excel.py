@@ -798,8 +798,10 @@ _STRIP_MARKS_BELOW = 0x0590
 
 # Round, square and curly brackets, after NFKC has folded their full-width
 # forms ("（元）" -> "(元)"), and the CJK lenticular and tortoise-shell brackets,
-# which have no ASCII twin: "金额【元】", "单价〔元〕".
-_BRACKETED = re.compile(r"\([^)]*\)|\[[^\]]*\]|\{[^}]*\}|【[^】]*】|〔[^〕]*〕|〖[^〗]*〗")
+# which have no ASCII twin: "金额【元】", "单价〔元〕". A bracket left open at
+# the end goes too: a PDF clips a heading at its cell edge, so "Ед. цена (лв.
+# без ДДС)" arrives as "Ед. цена (лв. без Д" and matched no column.
+_BRACKETED = re.compile(r"\([^)]*\)|\[[^\]]*\]|\{[^}]*\}|【[^】]*】|〔[^〕]*〕|〖[^〗]*〗|[(\[{][^)\]}]*$")
 
 
 def _currency_codes() -> frozenset[str]:
@@ -2630,6 +2632,7 @@ def _rows_to_positions(
     # Section numbers a Bulgarian bill writes in the heading ("I. ЗЕМНИ
     # РАБОТИ"), so each is used once even when two sheets both start at I.
     numeral_ordinals: set[str] = set()
+    highest_line = 0
 
     for row_idx, row in _naming_the_sheet(kept_rows, result):
         try:
@@ -2650,7 +2653,14 @@ def _rows_to_positions(
             # the same as its ASCII twin; see :func:`fold_width`.
             ordinal = fold_width(str(row.get("ordinal", ""))).strip()
             generated = not ordinal
-            if generated:
+            if generated and header_language == "bg":
+                # The line after the highest so far: an unnumbered contingency
+                # after line 6 is 7, where the counter below made it 13.
+                candidate = highest_line + 1
+                while str(candidate) in explicit_ordinals:
+                    candidate += 1
+                ordinal = str(candidate)
+            elif generated:
                 while str(auto_ordinal) in explicit_ordinals:
                     auto_ordinal += 1
                 ordinal = str(auto_ordinal)
@@ -2717,8 +2727,9 @@ def _rows_to_positions(
                     numeral = bg_section_numeral(description)
                     if numeral and numeral not in explicit_ordinals and numeral not in numeral_ordinals:
                         numeral_ordinals.add(numeral)
-                        auto_ordinal = int(ordinal)  # hand the unused number to the next line
                         ordinal = numeral
+                if ordinal.isdigit():
+                    highest_line = max(highest_line, int(ordinal))
                 result.positions.append(
                     ImportedPosition(
                         description=description,
@@ -2830,6 +2841,8 @@ def _rows_to_positions(
             if split:
                 metadata.update(split)
 
+            if ordinal.isdigit():
+                highest_line = max(highest_line, int(ordinal))
             result.positions.append(
                 ImportedPosition(
                     description=description,
