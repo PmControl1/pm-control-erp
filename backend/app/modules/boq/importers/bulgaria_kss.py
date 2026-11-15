@@ -101,6 +101,11 @@ def _unit_key(unit: str) -> str:
     return re.sub(r"[\s.\-]+", "", _PRIMES.sub("", folded))
 
 
+def is_unit_form(text: str) -> bool:
+    """Whether ``text`` is one of the unit forms a КСС writes (м2, кв.м, бр., к-т ...)."""
+    return bool(text) and _unit_key(text) in _UNIT_FORMS
+
+
 def canonical_unit(unit: str) -> str:
     """The Bulgarian КСС form of ``unit``, or ``unit`` unchanged when unknown.
 

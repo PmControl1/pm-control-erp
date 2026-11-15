@@ -278,6 +278,23 @@ export function importIssueText(
       defaultValue: 'a quantity and a unit price ({{amount}}) but no description, so it was not imported. Check the file',
       amount: formatNumber(issue.value),
     });
+  } else if (issue.code === 'columns_inferred' && issue.params) {
+    // A sheet with no heading row, read from what its columns hold.
+    body = t('boq.import_issue.columns_inferred', {
+      defaultValue:
+        'the sheet "{{sheet}}" has no heading row, so its columns were read from what they hold: description {{description}}, unit {{unit}}, quantity {{quantity}}. Check them against the file',
+      sheet: String(issue.params.sheet ?? ''),
+      description: String(issue.params.description ?? ''),
+      unit: String(issue.params.unit ?? ''),
+      quantity: String(issue.params.quantity ?? ''),
+    });
+  } else if (issue.code === 'repeated_numbers_kept' && issue.params) {
+    body = t('boq.import_issue.repeated_numbers_kept', {
+      defaultValue:
+        '{{count}} lines repeat a number used earlier in the file; they were imported with a suffix ({{example}})',
+      count: Number(issue.params.count ?? 0),
+      example: String(issue.params.example ?? ''),
+    });
   } else if (issue.code === 'read_by_ai') {
     // A PDF with no ruled table, copied out by the workspace AI.
     body = t('boq.import_issue.read_by_ai', {

@@ -33590,6 +33590,8 @@ const resource = {
     "boq.import_issue.currency_converted_to_euro": "The bill is priced in leva: {{count}} rates were converted to euro at the fixed rate {{rate}}. Each line keeps its lev rate",
     "boq.import_issue.unit_cleaned": "the unit \"{{unit}}\" cannot be stored as written; \"{{used}}\" was used",
     "boq.import_issue.priced_row_without_description": "a quantity and a unit price ({{amount}}) but no description, so it was not imported. Check the file",
+    "boq.import_issue.columns_inferred": "the sheet \"{{sheet}}\" has no heading row, so its columns were read from what they hold: description {{description}}, unit {{unit}}, quantity {{quantity}}. Check them against the file",
+    "boq.import_issue.repeated_numbers_kept": "{{count}} lines repeat a number used earlier in the file; they were imported with a suffix ({{example}})",
     "boq.import_issue.currency_not_stated": "The price headings do not say leva or euro, so the rates were imported as written, in the project's currency. Check them against the file",
     "boq.import_issue.comma_thousands": "{{text}} was read as {{value}}: the comma separates thousands",
     "import.nothing_imported": "Nothing was imported from this file",
