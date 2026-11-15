@@ -160,4 +160,10 @@ async def test_ambiguous_duplicate_numbers_inside_one_section_stay_invalid() -> 
     output = io.BytesIO()
     workbook.save(output)
     imported = await ExcelImporter.parse(output.getvalue(), locale="bg")
-    assert [position.ordinal for position in imported.positions] == ["I.", "1", "1"]
+    # Both lines are kept: the second is stored as "1-2" instead of being
+    # refused when the bill is saved. The number the file wrote stays "1" on
+    # both, and that is what the comparison with the tender bill reads, so
+    # the duplicate is still not resolved by the import.
+    assert [position.ordinal for position in imported.positions] == ["I.", "1", "1-2"]
+    assert [position.metadata["kss_source_ordinal"] for position in imported.positions[1:]] == ["1", "1"]
+    assert "repeated_numbers_kept" in [warning.get("code") for warning in imported.warnings]

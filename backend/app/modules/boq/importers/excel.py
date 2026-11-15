@@ -29,7 +29,7 @@ import logging
 import math
 import re
 import unicodedata
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from typing import Any, ClassVar, Literal
 
 from app.core.file_signature import detect as detect_signature
@@ -50,6 +50,7 @@ from app.modules.boq.importers._encoding import (
 )
 from app.modules.boq.importers._workbook import open_workbook
 from app.modules.boq.importers.bulgaria_kss import canonical_unit as bg_canonical_unit
+from app.modules.boq.importers.bulgaria_kss import is_unit_form as bg_is_unit_form
 from app.modules.boq.importers.bulgaria_kss import section_numeral as bg_section_numeral
 from app.modules.boq.importers.bulgaria_kss import workbook_currency as bg_workbook_currency
 from app.modules.boq.importers.hungary_workbook import parse_hungarian_workbook
@@ -1685,6 +1686,17 @@ def _pick_item_sheets(workbook: Any) -> tuple[list[Any], list[dict[str, Any]]]:
         elif _sheet_has_content(worksheet):
             notes.append({"sheet": name, "reason": "no_item_header"})
     if not sheets:
+        # No sheet names its columns: every visible sheet whose columns can
+        # be read from its cells is a bill sheet (one per floor or block),
+        # not only the active one.
+        bare = [
+            workbook[name]
+            for name in workbook.sheetnames
+            if not _sheet_is_hidden(workbook[name])
+            and _infer_columns([tuple(row) for row in workbook[name].iter_rows(values_only=True)]) is not None
+        ]
+        if bare:
+            return bare, [note for note in notes if note["sheet"] not in {sheet.title for sheet in bare}]
         return [workbook.active], []
     return sheets, notes
 
@@ -1711,6 +1723,208 @@ def _is_export_fx_appendix(raw_row: Iterable[Any]) -> bool:
     }
 
 
+# ── A sheet with no heading row ─────────────────────────────────────────────
+#
+# A working list of quantities (a КСС checked on site) is often a bare table: the
+# description in one column, the unit in the next, the quantity after it,
+# notes beside, and no row naming any of them. Read for a heading, such a
+# sheet named no column and nothing was imported. When no row names a bill's
+# columns, they are read from what the cells hold: the column of units, the
+# numbers to its right (rate and total too when the one is the quantity times
+# the other), the text to its left, and a column of line numbers before that.
+# The import says it did so (``columns_inferred``).
+
+_GENERIC_UNITS = frozenset(
+    {
+        "m",
+        "m2",
+        "m3",
+        "kg",
+        "t",
+        "pcs",
+        "nr",
+        "no",
+        "ea",
+        "each",
+        "lm",
+        "l",
+        "h",
+        "hr",
+        "ls",
+        "lsum",
+        "item",
+        "set",
+        "sqm",
+    }
+)
+_ORDINAL_TEXT = re.compile(r"^\d+(?:[.\-]\d+)*\.?$")
+_CYRILLIC_TEXT = re.compile(r"[а-яА-Я]")
+_INFERRED_HEADINGS: dict[str, dict[str, str]] = {
+    "bg": {
+        "ordinal": "№",
+        "description": "Наименование",
+        "unit": "Мярка",
+        "quantity": "Количество",
+        "unit_rate": "Ед. цена",
+        "total": "Стойност",
+    },
+    "en": {
+        "ordinal": "No.",
+        "description": "Description",
+        "unit": "Unit",
+        "quantity": "Quantity",
+        "unit_rate": "Unit rate",
+        "total": "Total",
+    },
+}
+
+
+def _cell_at(row: tuple[Any, ...], column: int) -> Any:
+    return row[column] if column < len(row) else None
+
+
+def _unit_cell(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    text = value.strip()
+    if not text or len(text) > 12:
+        return False
+    return bg_is_unit_form(text) or normalise_label(text).replace(" ", "") in _GENERIC_UNITS
+
+
+def _number_cell(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return True
+    if isinstance(value, str) and value.strip():
+        number, error = parse_numeric_cell(value)
+        return error is None and number is not None
+    return False
+
+
+def _text_cell(value: Any) -> bool:
+    return isinstance(value, str) and len(value.strip()) >= 3 and any(ch.isalpha() for ch in value)
+
+
+def _ordinal_cell(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return value > 0 and float(value).is_integer()
+    return isinstance(value, str) and bool(_ORDINAL_TEXT.match(value.strip()))
+
+
+def _is_product(lines: list[tuple[Any, ...]], quantity: int, rate: int, total: int) -> bool:
+    """Whether column ``total`` is column ``quantity`` times column ``rate`` on most priced lines."""
+    checked = agreed = 0
+    for row in lines:
+        values = [_cell_at(row, column) for column in (quantity, rate, total)]
+        if not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in values):
+            continue
+        q, r, t = (float(v) for v in values)
+        checked += 1
+        agreed += abs(q * r - t) <= max(0.02, 0.005 * abs(t))
+    return checked >= 3 and agreed >= 0.8 * checked
+
+
+def _infer_columns(rows: list[tuple[Any, ...]]) -> tuple[dict[int, str], int] | None:
+    """A headless sheet's columns read from their cells, and the sheet row its bill starts on."""
+    if not rows:
+        return None
+    width = max(len(row) for row in rows)
+    if width < 2:
+        return None
+    hits = [sum(1 for row in rows if _unit_cell(_cell_at(row, column))) for column in range(width)]
+    unit = max(range(width), key=lambda column: hits[column])
+    if hits[unit] < 3:
+        return None
+    lines = [row for row in rows if _unit_cell(_cell_at(row, unit))]
+
+    def share(column: int, test: Callable[[Any], bool]) -> float:
+        return sum(1 for row in lines if test(_cell_at(row, column))) / len(lines)
+
+    numbers = [column for column in range(unit + 1, width) if share(column, _number_cell) >= 0.6]
+    texts = [column for column in range(unit) if share(column, _text_cell) >= 0.7]
+    if not numbers or not texts:
+        return None
+    description = max(
+        texts,
+        key=lambda column: (share(column, _text_cell), sum(len(str(_cell_at(row, column) or "")) for row in lines)),
+    )
+    quantity = numbers[0]
+    mapping = {description: "description", unit: "unit", quantity: "quantity"}
+    rest = numbers[1:]
+    if len(rest) >= 2 and _is_product(lines, quantity, rest[0], rest[1]):
+        mapping[rest[0]] = "unit_rate"
+        mapping[rest[1]] = "total"
+    numbered = [column for column in range(description) if share(column, _ordinal_cell) >= 0.5]
+    if numbered:
+        mapping[numbered[-1]] = "ordinal"
+    # The bill starts where the block of filled rows holding its first line
+    # does: the headings over the first line belong to it, a legend set
+    # apart by empty rows does not.
+    start = next(index for index, row in enumerate(rows) if _unit_cell(_cell_at(row, unit)))
+    while start > 0 and any(str(value).strip() for value in rows[start - 1] if value is not None):
+        start -= 1
+    return mapping, start + 1
+
+
+def _keep_repeated_numbers(result: ImportedBOQ) -> None:
+    """Give a number the file uses twice a suffix on its later lines, so they are imported too.
+
+    A bill takes each number once, so a line repeating one ("9 Офис" beside
+    line 9) was refused when it was saved and the bill came in without it.
+    The later lines are numbered "9-2", "9-3"; the number as written stays
+    in ``source_ordinal``. A round trip (Position IDs) is left as it is.
+    """
+    if any(position.position_id for position in result.positions):
+        return
+    taken = {position.ordinal for position in result.positions}
+    seen: set[str] = set()
+    renamed: list[str] = []
+    for position in result.positions:
+        if position.ordinal not in seen:
+            seen.add(position.ordinal)
+            continue
+        suffix = 2
+        while f"{position.ordinal}-{suffix}" in taken:
+            suffix += 1
+        new = f"{position.ordinal}-{suffix}"
+        if len(new) > 50:
+            continue
+        position.metadata = {**(position.metadata or {}), "source_ordinal": position.ordinal}
+        renamed.append(f"{position.ordinal} → {new}")
+        position.ordinal = new
+        taken.add(new)
+    if renamed:
+        result.warnings.append(
+            {
+                "code": "repeated_numbers_kept",
+                "params": {"count": len(renamed), "example": renamed[0]},
+                "count": len(renamed),
+                "message": (
+                    f"{len(renamed)} lines repeat a number used earlier in the file; they were imported with a "
+                    f"suffix ({renamed[0]})."
+                ),
+            }
+        )
+
+
+def _names_a_bill(column_map: dict[int, str]) -> bool:
+    named = set(column_map.values())
+    return "description" in named and bool(named & {"quantity", "unit", "unit_rate"})
+
+
+def _column_letter(index: int) -> str:
+    letters = ""
+    index += 1
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        letters = chr(65 + remainder) + letters
+    return letters
+
+
 def _read_sheet_rows(
     worksheet: Any,
     *,
@@ -1721,16 +1935,37 @@ def _read_sheet_rows(
 
     ``header_row`` reads that row as the header instead of looking for one, and
     ``overrides`` lays the user's column mapping over the importer's reading.
+    A sheet whose rows name no bill's columns has them read from its cells
+    (see :func:`_infer_columns`).
     """
+    inferred: dict[int, str] | None = None
     if header_row is None:
         raw_headers, header_number, rows_iter = _locate_header(worksheet.iter_rows(values_only=True))
+        if overrides is None and not _names_a_bill(_map_columns(raw_headers) if raw_headers else {}):
+            every_row = [tuple(row) for row in worksheet.iter_rows(values_only=True)]
+            found = _infer_columns(every_row)
+            if found is not None:
+                inferred, start = found
+                description = next(column for column, name in inferred.items() if name == "description")
+                cyrillic = any(
+                    _CYRILLIC_TEXT.search(str(_cell_at(row, description) or "")) for row in every_row[start - 1 :]
+                )
+                headings = _INFERRED_HEADINGS["bg" if cyrillic else "en"]
+                width = max(len(row) for row in every_row)
+                raw_headers = tuple(headings.get(inferred.get(column, ""), None) for column in range(width))
+                header_number = start - 1
+                rows_iter = iter(every_row[start - 1 :])
     else:
         raw_headers, rows_iter = _header_at(worksheet.iter_rows(values_only=True), header_row)
         header_number = header_row
     if not raw_headers:
         return None
-    column_map = _map_columns(raw_headers)
-    if overrides is not None:
+    column_map = dict(inferred) if inferred is not None else _map_columns(raw_headers)
+    if inferred is not None:
+        display, display_row = tuple(raw_headers), header_number
+        display_map = column_map
+        report = header_report(display, display_map)
+    elif overrides is not None:
         column_map = _apply_column_mapping(column_map, overrides, len(raw_headers))
         display, display_row = tuple(raw_headers), header_number
         display_map = column_map
@@ -1770,6 +2005,9 @@ def _read_sheet_rows(
         "header_report": report,
         "rows": rows,
         "row_numbers": row_numbers,
+        "inferred_columns": (
+            {name: _column_letter(column) for column, name in inferred.items()} if inferred is not None else None
+        ),
     }
 
 
@@ -1911,6 +2149,11 @@ def _parse_rows_from_excel(
         "sheet_names": sheet_names,
         "item_sheet": first["title"],
         "item_sheets": [sheet["title"] for sheet in read],
+        "inferred_columns": [
+            {"sheet": sheet["title"], "columns": sheet["inferred_columns"]}
+            for sheet in read
+            if sheet.get("inferred_columns")
+        ],
         "sheet_notes": notes,
         "total_rows": len(rows),
         "row_numbers": row_numbers,
@@ -3071,7 +3314,7 @@ class ExcelImporter:
             # column match drops. A lev bill is converted to euro on import
             # into a euro project (router, bulgaria_kss.convert_to_euro).
             result.currency = import_meta["bg_currency"]
-            if not result.currency and result.positions:
+            if not result.currency and any(position.unit_rate for position in result.positions):
                 result.warnings.append(
                     {
                         "code": "currency_not_stated",
@@ -3086,6 +3329,25 @@ class ExcelImporter:
             from app.modules.boq.importers.bulgaria_kss import normalise_section_ordinals
 
             normalise_section_ordinals(result)
+        for sheet in import_meta.get("inferred_columns") or ():
+            columns = sheet["columns"]
+            result.warnings.append(
+                {
+                    "code": "columns_inferred",
+                    "params": {
+                        "sheet": sheet["sheet"],
+                        "description": columns.get("description", ""),
+                        "unit": columns.get("unit", ""),
+                        "quantity": columns.get("quantity", ""),
+                    },
+                    "message": (
+                        f"The sheet {sheet['sheet']!r} has no heading row, so its columns were read from what they "
+                        f"hold: description {columns.get('description')}, unit {columns.get('unit')}, quantity "
+                        f"{columns.get('quantity')}. Check them against the file."
+                    ),
+                }
+            )
+        _keep_repeated_numbers(result)
         if language == "bg" and result.metadata.get("summary_rows"):
             from app.modules.boq.importers.bulgaria_totals import SOURCE_TOTALS_KEY, source_totals_snapshot
 
