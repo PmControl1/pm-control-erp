@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check the tree for internal-only files
@@ -59,7 +59,7 @@ jobs:
     # the tree before anything was reading it at all.
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check every release version literal agrees
@@ -74,7 +74,7 @@ jobs:
           # Full history so the guard scans every commit reachable from HEAD,
           # not just the tip; the tree is clean today and must stay that way.
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Scan commit messages for AI attribution trailers
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check locale files for doubled escapes
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check for new i18n leaks against the declared baseline
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check for t() keys no locale file can answer
