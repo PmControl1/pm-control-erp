@@ -4,3 +4,5 @@ python-docx==1.2.0
 reportlab==5.0.1
 pillow==12.3.0
 pypdf==6.17.0
+# pypdf needs it for the AES-256 password-protected PDF.
+cryptography==50.0.1
