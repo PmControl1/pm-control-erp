@@ -25,7 +25,18 @@ test.beforeAll(async ({ request }) => {
 async function openUpload(page: Page, projectId: string, folder: keyof typeof FOLDER) {
   await page.goto(`/projects/${projectId}/files`);
   const card = page.getByRole('button').filter({ has: page.getByRole('heading', { name: FOLDER[folder], exact: true }) });
-  await card.click();
+  try {
+    await card.click({ timeout: 20_000 });
+  } catch {
+    // Say what is on the page instead, so the report shows why.
+    const headings = await page.getByRole('heading').allInnerTexts().catch(() => [] as string[]);
+    const main = await page.locator('main').first().ariaSnapshot({ timeout: 5_000 }).catch(() => '(no main region)');
+    throw new Error(
+      `No "${FOLDER[folder]}" folder card on ${new URL(page.url()).pathname}.\n` +
+        `Headings: ${headings.map((h) => h.trim()).filter(Boolean).join(' | ') || '(none)'}\n` +
+        `Main region:\n${main.split('\n').slice(0, 60).join('\n')}`,
+    );
+  }
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   return dialog.locator('input[type="file"]');
