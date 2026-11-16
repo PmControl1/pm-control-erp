@@ -72,7 +72,18 @@ for (const t of failed) {
   // screenshot.
   const context = (t.result?.attachments ?? []).find((a) => a.name === 'error-context' && a.path);
   if (context && fs.existsSync(context.path)) {
-    const lines = fs.readFileSync(context.path, 'utf8').split('\n').filter((l) => l.trim() && !l.startsWith('```'));
+    // Keep the page's content: drop hidden decoration and the app's chrome
+    // (sidebar, navigation, header), which otherwise fill the first lines.
+    const skip = /\[aria-hidden\]|^\s*- (complementary|navigation|banner)\b/;
+    const lines = [];
+    let skipDepth = -1;
+    for (const line of fs.readFileSync(context.path, 'utf8').split('\n')) {
+      if (!line.trim() || line.startsWith('```')) continue;
+      const depth = line.length - line.trimStart().length;
+      if (skipDepth >= 0 && depth > skipDepth) continue;
+      skipDepth = skip.test(line) ? depth : -1;
+      if (skipDepth < 0) lines.push(line);
+    }
     out.push('<details><summary>Page at the moment of failure</summary>');
     out.push('');
     out.push('```');

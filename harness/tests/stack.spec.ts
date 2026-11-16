@@ -42,6 +42,10 @@ test.describe('signed out', () => {
 
     const newPassword = `Nova1!${Date.now()}abc`;
     await page.goto(resetLink);
+    // A signed-out visitor is exactly who opens a reset link: the page must
+    // stay put, not hand them to the login page.
+    await page.waitForLoadState('networkidle');
+    expect(new URL(page.url()).pathname, 'the reset link should stay on the reset page').toBe('/auth/reset');
     const fields = page.locator('input[autocomplete="new-password"]');
     await expect(fields).toHaveCount(2);
     await fields.nth(0).fill(newPassword);
