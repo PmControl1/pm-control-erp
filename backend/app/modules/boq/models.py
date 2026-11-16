@@ -655,6 +655,33 @@ class QuantityLink(Base):
         )
 
 
+class BOQImportRecipe(Base):
+    """How one spreadsheet layout is read: a recipe kept for the next file of that layout.
+
+    See :mod:`app.modules.boq.importers.recipe`. ``layout_key`` names the
+    layout (the sheets read and their headings), so the next file laid out
+    the same way is read the same way, with no AI call and no guessing.
+    One row per layout; reading a layout again with another recipe replaces
+    it.
+    """
+
+    __tablename__ = "oe_boq_import_recipe"
+
+    layout_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    recipe: Mapped[dict] = mapped_column(JSON, nullable=False)  # type: ignore[assignment]
+    # The sheets the recipe reads, so a workbook is held only against the
+    # recipes it could be read with.
+    sheet_names: Mapped[list] = mapped_column(JSON, nullable=False, default=list)  # type: ignore[assignment]
+    # "ai" (the workspace AI wrote it) or "person" (columns chosen in the preview).
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="ai", server_default="ai")
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False, default="", server_default="")
+    created_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), nullable=True)
+    uses: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+    def __repr__(self) -> str:
+        return f"<BOQImportRecipe {self.layout_key[:8]} {self.source} {self.file_name!r}>"
+
+
 # Register the per-position AI copilot model on ``Base.metadata`` by importing
 # it here. Module model discovery (app.main create_all + tests._pg template +
 # conftest) imports ``app.modules.boq.models``; importing the copilot model from

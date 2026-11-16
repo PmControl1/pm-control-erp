@@ -13,6 +13,7 @@ import {
   ChevronRight,
   FileSpreadsheet,
   Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
@@ -21,6 +22,7 @@ import { fmtFixed } from '@/shared/lib/formatters';
 import { importIssueText, type ImportIssue } from './importIssueText';
 import { alreadyImported, asImportFailure, importFailureFromBody, importFailureText } from './importFailureText';
 import { chooseColumn, columnMappingField, type ColumnMapping } from './columnMappingOverride';
+import { checkNotes, columnLetter, readingOf, readingSourceText, recipeField, totalCheckText } from './importReading';
 import {
   ImportJobFailedError,
   importProgressText,
@@ -188,6 +190,10 @@ export function ImportPreviewDialog({
   // the counts the user confirms are the bill that lands.
   const [previewedMapping, setPreviewedMapping] = useState<string | null>(null);
   const [mappingExpanded, setMappingExpanded] = useState(false);
+  // The recipe of the file's first preview (which rows and columns hold the
+  // bill, see importReading.ts). Every re-preview and the import send it back
+  // with the changed columns, so the layout is not worked out again.
+  const readingRecipeRef = useRef<string | null>(null);
   // A PDF the table reader could not read: offered to the workspace AI.
   const [aiOffer, setAiOffer] = useState(false);
   const [readingWithAi, setReadingWithAi] = useState(false);
@@ -212,6 +218,7 @@ export function ImportPreviewDialog({
       setColumnMapping({});
       setPreviewedMapping(null);
       setMappingExpanded(false);
+      readingRecipeRef.current = null;
       setAiOffer(false);
       setReadingWithAi(false);
       setBillHasLines(null);
@@ -241,6 +248,7 @@ export function ImportPreviewDialog({
         setFileFormat(detectFormat(f.name));
         setStep('upload'); // Stay on upload step while parsing
         setAiOffer(false);
+        readingRecipeRef.current = null;
       }
       setError(null);
       setAlreadyDone(null);
@@ -250,6 +258,7 @@ export function ImportPreviewDialog({
       const form = new FormData();
       form.append('file', f);
       if (mapping) form.append('column_mapping', mapping);
+      if (again && readingRecipeRef.current) form.append('recipe', readingRecipeRef.current);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 90_000);
@@ -278,6 +287,7 @@ export function ImportPreviewDialog({
         setPreview(data);
         setPreviewedMapping(mapping);
         if (!again) {
+          readingRecipeRef.current = recipeField(readingOf(data.metadata));
           const read = data.metadata?.column_mapping ?? {};
           setReadMapping(read);
           setColumnMapping(read);
@@ -320,6 +330,7 @@ export function ImportPreviewDialog({
     const form = new FormData();
     form.append('file', file);
     if (previewedMapping) form.append('column_mapping', previewedMapping);
+    if (readingRecipeRef.current) form.append('recipe', readingRecipeRef.current);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90_000);
@@ -726,6 +737,8 @@ export function ImportPreviewDialog({
                 )}
               </div>
 
+              <ReadingSummary metadata={preview.metadata} />
+
               {/* Column mapping */}
               {preview.metadata?.original_columns && preview.metadata.original_columns.length > 0 && (
                 <div className="rounded-lg border border-border-light overflow-hidden">
@@ -746,7 +759,8 @@ export function ImportPreviewDialog({
                       {preview.metadata.original_columns.map((col, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-2xs text-content-tertiary truncate w-28 shrink-0" title={col}>
-                            {col || `Column ${idx + 1}`}
+                            <span className="font-mono mr-1">{columnLetter(idx)}</span>
+                            {col && col !== columnLetter(idx) ? col : ''}
                           </span>
                           <select
                             className="flex-1 h-7 rounded border border-border-light bg-surface-primary px-2 text-2xs focus:outline-none focus:border-oe-blue"
@@ -1111,6 +1125,41 @@ export function ImportPreviewDialog({
 }
 
 /* ── Internal components ────────────────────────────────────────────── */
+
+/** Who read the file, and how its values stand against the file's own total. */
+function ReadingSummary({ metadata }: { metadata: PreviewResponse['metadata'] }) {
+  const { t } = useTranslation();
+  const reading = readingOf(metadata);
+  if (!reading) return null;
+  const check = reading.check;
+  const total = check ? totalCheckText(check, t, fmtNumber) : null;
+  const notes = check ? checkNotes(check, t, fmtNumber) : [];
+  return (
+    <div
+      data-testid="import-preview-reading"
+      className="rounded-lg border border-border-light px-3 py-2 text-xs text-content-secondary space-y-1"
+    >
+      <div className="flex items-center gap-1.5">
+        {reading.source === 'ai' && <Sparkles size={12} className="text-oe-blue shrink-0" />}
+        <span>{readingSourceText(reading, t)}</span>
+      </div>
+      {total && (
+        <div
+          data-testid="import-preview-total-check"
+          className={`flex items-center gap-1.5 ${total.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}
+        >
+          {total.ok ? <CheckCircle2 size={12} className="shrink-0" /> : <AlertTriangle size={12} className="shrink-0" />}
+          <span>{total.text}</span>
+        </div>
+      )}
+      {notes.map((note) => (
+        <div key={note} className="text-content-tertiary">
+          {note}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
