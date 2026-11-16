@@ -23,7 +23,15 @@ export function owner(): Account {
   return JSON.parse(fs.readFileSync(file, 'utf8')) as Account;
 }
 
+/**
+ * Invented mail domain for every harness account. Not a reserved name such as
+ * example.com: the app refuses to send to those (core/demo_accounts.py), so a
+ * password reset to one would never reach Mailpit. Mail never leaves the test
+ * stack, which sends everything to Mailpit.
+ */
+export const MAIL_DOMAIN = 'pmcontrol-harness.eu';
+
 /** A unique, obviously synthetic email address. */
 export function syntheticEmail(label: string): string {
-  return `${label}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}@example.com`;
+  return `${label}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}@${MAIL_DOMAIN}`;
 }
