@@ -1,0 +1,16 @@
+{
+  "name": "pmpm-harness",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end harness: a real browser against a throwaway copy of the production stack.",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report results/html",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "25.7.0",
+    "typescript": "5.9.3"
+  }
+}

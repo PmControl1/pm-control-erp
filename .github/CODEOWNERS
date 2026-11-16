@@ -1,49 +1,50 @@
-# CODEOWNERS for OpenConstructionERP
+# CODEOWNERS for PM Control (fork of OpenConstructionERP)
 #
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/managing-other-settings/about-code-owners
 #
-# Scope: legal, security, compliance, and CI release paths
-# require explicit approval from the repository owner. The
-# account @datadrivenconstruction is the formal owner; branch
-# protection on main should require Code Owner review for any
-# file matched here.
+# The upstream file named the upstream maintainer, who has no access to this
+# fork; requiring their review would block every pull request. This fork's
+# owner is @PmControl1.
 
 # Default owner for everything
-*                                       @datadrivenconstruction
+*                                       @PmControl1
 
 # Root-level legal and policy files
-/LICENSE                                @datadrivenconstruction
-/NOTICE                                 @datadrivenconstruction
-/docs/legal/CLA.md                      @datadrivenconstruction
-/docs/legal/COMMERCIAL-LICENSE.md       @datadrivenconstruction
-/SECURITY.md                            @datadrivenconstruction
-/docs/legal/PRIVACY.md                  @datadrivenconstruction
-/docs/legal/TERMS.md                    @datadrivenconstruction
-/docs/legal/COOKIES.md                  @datadrivenconstruction
-/CODE_OF_CONDUCT.md                     @datadrivenconstruction
-/CONTRIBUTING.md                        @datadrivenconstruction
-/README.md                              @datadrivenconstruction
-/docs/legal/PATENTS.md                  @datadrivenconstruction
-/docs/legal/TRADEMARK.md                @datadrivenconstruction
-/docs/legal/ACCESSIBILITY.md            @datadrivenconstruction
-/docs/legal/THIRD_PARTY_LICENSES.md     @datadrivenconstruction
+/LICENSE                                @PmControl1
+/NOTICE                                 @PmControl1
+/docs/legal/CLA.md                      @PmControl1
+/docs/legal/COMMERCIAL-LICENSE.md       @PmControl1
+/SECURITY.md                            @PmControl1
+/docs/legal/PRIVACY.md                  @PmControl1
+/docs/legal/TERMS.md                    @PmControl1
+/docs/legal/COOKIES.md                  @PmControl1
+/CODE_OF_CONDUCT.md                     @PmControl1
+/CONTRIBUTING.md                        @PmControl1
+/README.md                              @PmControl1
+/docs/legal/PATENTS.md                  @PmControl1
+/docs/legal/TRADEMARK.md                @PmControl1
+/docs/legal/ACCESSIBILITY.md            @PmControl1
+/docs/legal/THIRD_PARTY_LICENSES.md     @PmControl1
 
 # Source trees
-/backend/                               @datadrivenconstruction
-/frontend/                              @datadrivenconstruction
-/desktop/                               @datadrivenconstruction
-/modules/                               @datadrivenconstruction
+/backend/                               @PmControl1
+/frontend/                              @PmControl1
+/desktop/                               @PmControl1
+/modules/                               @PmControl1
 
 # GitHub configuration - workflows touch signing, release,
 # and CLA enforcement, so gate them.
-/.github/                               @datadrivenconstruction
+/.github/                               @PmControl1
+
+# End-to-end harness: the checks that decide whether the app works
+/harness/                               @PmControl1
 
 # Infrastructure
-/deploy/                                @datadrivenconstruction
-docker-compose*.yml                     @datadrivenconstruction
+/deploy/                                @PmControl1
+docker-compose*.yml                     @PmControl1
 
 # Compliance documentation (RoPA template, SOC 2 readiness, etc.)
-/docs/compliance/                       @datadrivenconstruction
+/docs/compliance/                       @PmControl1
 
 # Release signatures
-/signatures/                            @datadrivenconstruction
+/signatures/                            @PmControl1
