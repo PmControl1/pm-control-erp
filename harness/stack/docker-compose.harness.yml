@@ -24,9 +24,20 @@ services:
       SMTP_TLS: "false"
       OE_DEEPSEEK_URL: http://fake-ai:8000/chat/completions
 
-  caddy:
-    # Only localhost, on a port that cannot clash with a real install's 80/443.
-    ports: !override
+  # The production Caddyfile, served over plain HTTP on a localhost port that
+  # cannot clash with a real installation's 80/443. stack.sh starts this
+  # instead of the production caddy service, whose host ports Compose
+  # overrides cannot take away.
+  harness-proxy:
+    image: caddy:2-alpine
+    depends_on:
+      - app
+    environment:
+      PMPM_DOMAIN: ":80"
+      PMPM_ACME_EMAIL: harness@example.com
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
       - "127.0.0.1:${HARNESS_PORT:-18080}:80"
 
   mailpit:

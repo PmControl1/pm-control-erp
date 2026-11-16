@@ -46,10 +46,12 @@ JSON_SUFFIX = ".json"
 # the stripper rather than on the file. They already have a stronger reader:
 # npm run typecheck:e2e runs tsc -p over tsconfig.e2e.json, tsconfig.e2e-root.json
 # and tsconfig.configs.json. npm run typecheck also checks tsconfig.locales.json
-# before the application project, and TypeScript checks far more than syntax. So they are skipped by
-# name and counted out loud.
+# before the application project, and TypeScript checks far more than syntax.
+# harness/tsconfig.json is read by the harness's own npm run typecheck, which
+# the Docker image job in .github/workflows/pmpm-ci.yml runs before the
+# harness. So they are skipped by name and counted out loud.
 JSONC_PREFIX = "tsconfig"
-EXPECTED_JSONC = 5
+EXPECTED_JSONC = 6
 
 # Anchored to this file rather than to the caller's working directory. git
 # ls-files answers about the directory it is run in, so from backend/ it lists

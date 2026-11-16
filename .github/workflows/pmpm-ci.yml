@@ -365,6 +365,7 @@ jobs:
         working-directory: harness
         run: |
           npm ci --no-audit --no-fund
+          npm run typecheck
           npx playwright install --with-deps chromium
 
       - name: Harness - start the test stack

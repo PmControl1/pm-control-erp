@@ -26,6 +26,9 @@ case "$project" in
   *) echo "HARNESS_PROJECT must start with pmpm-harness; got '$project'." >&2; exit 2 ;;
 esac
 
+# The production caddy service publishes 80/443; harness-proxy replaces it.
+services=(postgres app mailpit fake-ai harness-proxy)
+
 compose() {
   docker compose --project-name "$project" --env-file "$envfile" \
     -f "$repo/deploy/pmpm/docker-compose.yml" -f "$here/docker-compose.harness.yml" "$@"
@@ -88,7 +91,7 @@ EOF
   local base="http://127.0.0.1:$port"
 
   compose config --quiet
-  compose up -d --wait --wait-timeout 300
+  compose up -d --wait --wait-timeout 300 "${services[@]}"
   python3 -I "$here/bootstrap.py" wait "$base"
 
   # The first account becomes the admin. Workspace AI belongs to accounts
@@ -113,7 +116,7 @@ logs() {
   load_env
   mkdir -p "$dir"
   local service
-  for service in app postgres caddy mailpit fake-ai; do
+  for service in "${services[@]}"; do
     compose logs --no-color --timestamps "$service" > "$dir/$service.log" 2>&1 || true
   done
   compose ps --all > "$dir/containers.txt" 2>&1 || true
