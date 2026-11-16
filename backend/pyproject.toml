@@ -83,7 +83,7 @@ dependencies = [
     "python-dateutil>=2.9.0",
     "hijridate>=2.5.0",
     "structlog>=24.4.0",
-    "pyyaml>=6.0",
+    "pyyaml>=6.0.3",
     "defusedxml>=0.7.1",
     # Capped below 3.0: pandas 3.0 changed string-column type inference (a
     # numeric-looking string column now infers as "string" not "numeric"),
