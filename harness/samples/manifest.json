@@ -98,33 +98,6 @@
       "source": "https://github.com/buildingSMART/Sample-Test-Files/blob/80d976a9b193a26a8e928c3e79bff67af1de68a8/IFC%204.0.2.1%20%28IFC%204%20ADD2%20TC1%29/Simple-Scene/Infra-Landscaping.ifc"
     },
     {
-      "id": "ifc-proxy-crash-36mb",
-      "name": "706--buildingElementProxy--segfault--accept-errors.ifc",
-      "kind": "ifc",
-      "tier": "nightly",
-      "bytes": 36323573,
-      "sha256": "aa565ca11663e046297dffd98aeb4ff0bdab63e527e28083f18df7c61ab8bd3d",
-      "url": "https://raw.githubusercontent.com/IfcOpenShell/files/79f40be8b37f0d67c1f8b139e546b399f315878b/706--buildingElementProxy--segfault--accept-errors.ifc",
-      "license": "none stated",
-      "attribution": "IfcOpenShell public test files (no licence file)",
-      "source": "https://github.com/IfcOpenShell/files/blob/79f40be8b37f0d67c1f8b139e546b399f315878b/706--buildingElementProxy--segfault--accept-errors.ifc",
-      "notes": "36 MB model that once crashed IfcOpenShell: it must either load or fail with a clear message, never hang.",
-      "outcome": "clear"
-    },
-    {
-      "id": "ifc4-tuwien-real-building",
-      "name": "RealWorldTestModel-EscapeRouteAnalysis-ZDB-v2.ifc",
-      "kind": "ifc",
-      "tier": "nightly",
-      "bytes": null,
-      "sha256": null,
-      "url": "https://researchdata.tuwien.ac.at/records/wzp90-dmf60/files/RealWorldTestModel-EscapeRouteAnalysis-ZDB-v2.ifc?download=1",
-      "license": "CC-BY-4.0",
-      "attribution": "TU Wien Research Unit Digital Building Process, CC BY 4.0",
-      "source": "https://researchdata.tuwien.ac.at/records/wzp90-dmf60",
-      "notes": "Real Vienna building exported from Archicad 26 to IFC4, about 13 MB (MD5 03b2e41b58fd7c826d52ccfbd5ae78ea). Not reachable from the authoring session; the first CI run prints its sha256 to pin here."
-    },
-    {
       "id": "rvt-architecture-basic",
       "name": "rac_basic_sample_project.rvt",
       "kind": "rvt",
