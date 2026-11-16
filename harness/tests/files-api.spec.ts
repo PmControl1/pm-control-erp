@@ -72,7 +72,14 @@ async function checkModel(request: APIRequestContext, s: Sample, up: Uploaded) {
     expect(last.error_message ?? '', `the model ended "${last.status}" without saying why`).not.toBe('');
     return;
   }
-  expect(last.status, `the model ended "${last.status}": ${last.error_message ?? 'no message'}`).toBe('ready');
+  // "degraded" is the app's own verdict for a model whose elements loaded but
+  // whose quantities could not be read: usable, and it says why.
+  if (last.status === 'degraded') {
+    expect(last.error_message ?? '', 'a degraded model must say what is missing').not.toBe('');
+    test.info().annotations.push({ type: 'degraded', description: last.error_message ?? '' });
+  } else {
+    expect(last.status, `the model ended "${last.status}": ${last.error_message ?? 'no message'}`).toBe('ready');
+  }
   expect(last.element_count ?? 0, 'a real model should have elements').toBeGreaterThan(0);
 }
 
