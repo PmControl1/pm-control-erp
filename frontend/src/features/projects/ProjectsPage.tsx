@@ -31,6 +31,7 @@ import { BIMConverterStatusBanner } from '../bim/BIMConverterStatusBanner';
 import { getNumberLocale } from '@/stores/usePreferencesStore';
 import { invalidateProjectLists } from './invalidateProjectLists';
 import { DemoSeedingHint } from '@/features/processes/DemoSeedingHint';
+import { BulgarianDemoCard } from './BulgarianDemo';
 
 const LIVE_DEFAULT_MIGRATED_KEY = 'oe_projects_filters_live_default';
 
@@ -640,6 +641,8 @@ export function ProjectsPage() {
             'Every project you create lands here as a card carrying its BOQ count, total value in its own currency, region and uploaded file types, so you see the whole portfolio at a glance without opening each one. Open a card to reach the project hub, or pin and filter to keep daily work on top. Totals feed Analytics and the role dashboards in Reporting.',
         })}
       </DismissibleInfo>
+
+      <BulgarianDemoCard />
 
       {/* Demo-data notice: admins see how to clear the seeded showcase
           projects right where those cards live. */}

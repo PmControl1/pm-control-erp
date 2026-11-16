@@ -41,6 +41,7 @@ import { getRouteIcon } from './routeIcons';
 import { useIconOverridesVersion } from './menuIcons';
 import { resolveStaleProject } from './staleProject';
 import { isModuleI18nKey } from '@/modules/_i18n';
+import { BulgarianDemoLauncher } from '@/features/projects/BulgarianDemo';
 
 /**
  * Map the English page titles passed from App.tsx routes to i18n keys.
@@ -418,6 +419,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         {/* Active project switcher (rendered first so the breadcrumb
             reads left-to-right as ProjectName › PageTitle). */}
         <ProjectSwitcher />
+        <BulgarianDemoLauncher compact className="sm:hidden shrink-0" />
 
         {translatedTitle && (
           <>
@@ -1681,7 +1683,7 @@ export function resolveRouteAfterProjectSwitch(
   return null;
 }
 
-function ProjectSwitcher() {
+export function ProjectSwitcher() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1900,6 +1902,9 @@ function ProjectSwitcher() {
             <p className="text-xs font-semibold text-content-secondary">
               {t('schedule.switch_project', { defaultValue: 'Switch Project' })}
             </p>
+          </div>
+          <div className="px-3 py-2 border-b border-border-light">
+            <BulgarianDemoLauncher className="w-full justify-start" onOpened={() => setOpen(false)} />
           </div>
           <div className="px-3 py-2 border-b border-border-light">
             <div className="relative">

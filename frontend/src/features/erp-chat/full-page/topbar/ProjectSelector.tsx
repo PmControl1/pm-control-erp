@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchProjectList } from '@/shared/lib/projectList';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
+import { BulgarianDemoLauncher } from '@/features/projects/BulgarianDemo';
 
 interface ProjectOption {
   id: string;
@@ -89,6 +90,10 @@ export default function ProjectSelector() {
             zIndex: 100,
           }}
         >
+          <div className="p-2">
+            <BulgarianDemoLauncher className="w-full justify-start" onOpened={() => setOpen(false)} />
+          </div>
+          <div style={{ height: 1, background: 'var(--chat-border-subtle)' }} />
           {/* All Projects option */}
           <button
             type="button"

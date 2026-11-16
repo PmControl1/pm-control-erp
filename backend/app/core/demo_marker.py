@@ -65,7 +65,9 @@ async def live_demo_projects(
             return []
         stmt = stmt.where(Project.id.in_(ids))
     rows = (await session.execute(stmt.order_by(Project.created_at, Project.id))).all()
-    return [(pid, did) for pid, meta in rows if (did := demo_id_of(meta))]
+    # Purpose-built examples opt out of the generic international enrichments.
+    # Their demo_id remains available to the ordinary purge and UI markers.
+    return [(pid, did) for pid, meta in rows if (did := demo_id_of(meta)) and meta.get("demo_enrichment") is not False]
 
 
 async def first_live_demo_project_id(session: AsyncSession) -> uuid.UUID | None:
