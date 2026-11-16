@@ -67,6 +67,20 @@ for (const t of failed) {
     out.push(message.split('\n').slice(0, 15).join('\n'));
     out.push('```');
   }
+  // What the page showed when the test failed: Playwright's accessibility
+  // snapshot, so a missing button or a wrong screen is visible without the
+  // screenshot.
+  const context = (t.result?.attachments ?? []).find((a) => a.name === 'error-context' && a.path);
+  if (context && fs.existsSync(context.path)) {
+    const lines = fs.readFileSync(context.path, 'utf8').split('\n').filter((l) => l.trim() && !l.startsWith('```'));
+    out.push('<details><summary>Page at the moment of failure</summary>');
+    out.push('');
+    out.push('```');
+    out.push(lines.slice(0, 80).join('\n'));
+    if (lines.length > 80) out.push(`... ${lines.length - 80} more lines in the report`);
+    out.push('```');
+    out.push('</details>');
+  }
   const watchdog = (t.result?.attachments ?? []).find((a) => a.name === 'watchdog' && a.body);
   if (!watchdog) continue;
   const findings = JSON.parse(Buffer.from(watchdog.body, 'base64').toString('utf8'));
