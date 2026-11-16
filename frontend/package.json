@@ -33,7 +33,7 @@
     "date-fns": "^4.4.0",
     "exceljs": "^4.4.0",
     "i18next": "^24.2.3",
-    "isomorphic-dompurify": "^3.18.0",
+    "isomorphic-dompurify": "^4.7.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.460.0",
