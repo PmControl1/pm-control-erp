@@ -7801,6 +7801,15 @@ async def import_boq_auto(
             "reading."
         ),
     ),
+    recipe: str | None = Form(
+        None,
+        description=(
+            "Spreadsheets only. The reading the import preview showed "
+            "(``metadata.reading.recipe``), as JSON: the workbook is read with "
+            "it, ``column_mapping`` laid over its columns, so the bill imported "
+            "is the bill previewed."
+        ),
+    ),
 ) -> dict[str, Any]:
     """Auto-detect a BOQ upload's format and dispatch to the matching importer.
 
@@ -7848,6 +7857,7 @@ async def import_boq_auto(
     from app.modules.boq.importers.excel import column_mapping_warning
 
     overrides = _read_column_mapping(column_mapping)
+    reading_recipe = _read_recipe(recipe)
 
     head = content[:4096]
     chosen: type | None = None
@@ -7916,6 +7926,7 @@ async def import_boq_auto(
             column_mapping=column_mapping,
             force=force,
             replace=replace,
+            recipe=reading_recipe.to_json() if reading_recipe is not None else None,
         )
         response.status_code = status.HTTP_202_ACCEPTED
         return job
@@ -7930,6 +7941,7 @@ async def import_boq_auto(
         actor_id=user_id,
         service=service,
         replace=replace,
+        recipe=reading_recipe,
     )
 
 
@@ -8011,6 +8023,7 @@ async def _run_native_import(
     on_phase: Callable[[str], Awaitable[None]] | None = None,
     append_on_collision: bool = False,
     replace: bool = False,
+    recipe: Any = None,
 ) -> dict[str, Any]:
     """Read ``content`` with the importer ``chosen`` and write it into the bill: the body of ``/import/auto/``.
 
@@ -8025,7 +8038,15 @@ async def _run_native_import(
     from app.modules.boq.importers import ImportedBOQ, ImporterParseError
 
     try:
-        imported_boq: ImportedBOQ = await _parse_with_mapping(chosen, content, overrides)
+        imported_boq: ImportedBOQ = await _parse_with_mapping(
+            chosen,
+            content,
+            overrides,
+            recipe=recipe,
+            file_name=file_name,
+            session=getattr(service, "session", None),
+            user_id=actor_id,
+        )
     except ImporterParseError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -8074,6 +8095,15 @@ async def _run_native_import(
                 "message": f"Import failed: {reason}",
             },
         )
+
+    if created + updated:
+        # A layout the AI or a person worked out is kept, so the next file
+        # laid out the same way is read the same way.
+        from app.modules.boq.import_reading import remember
+
+        session = getattr(service, "session", None)
+        if session is not None:
+            await remember(session, content, imported_boq, file_name=file_name, user_id=_as_uuid(actor_id))
 
     # Persist top-level import metadata so the round-trip exporter can
     # reproduce the original layout.
@@ -8187,6 +8217,16 @@ async def import_preview(
             "reading."
         ),
     ),
+    recipe: str | None = Form(
+        None,
+        description=(
+            "Spreadsheets only. A reading to preview the workbook with, as "
+            "``metadata.reading.recipe`` gave it, so a change of columns "
+            "re-reads the same layout instead of guessing it again."
+        ),
+    ),
+    user_id: CurrentUserId = None,  # type: ignore[assignment]
+    session: SessionDep = None,  # type: ignore[assignment]
 ) -> dict[str, Any]:
     """Parse a BOQ upload and return positions without persisting to the database.
 
@@ -8214,6 +8254,7 @@ async def import_preview(
         )
     file_name = file.filename or "upload"
     overrides = _read_column_mapping(column_mapping)
+    reading_recipe = _read_recipe(recipe)
 
     head = content[:4096]
     chosen: type | None = None
@@ -8241,7 +8282,15 @@ async def import_preview(
         )
 
     try:
-        imported_boq: ImportedBOQ = await _parse_with_mapping(chosen, content, overrides)
+        imported_boq: ImportedBOQ = await _parse_with_mapping(
+            chosen,
+            content,
+            overrides,
+            recipe=reading_recipe,
+            file_name=file_name,
+            session=session,
+            user_id=user_id,
+        )
     except ImporterParseError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -8294,6 +8343,28 @@ async def import_preview(
     return response.model_dump()
 
 
+def _read_recipe(raw: str | None) -> Any:
+    """The ``recipe`` form field, or a 422 that says what is wrong with it."""
+    from app.modules.boq.import_reading import recipe_field
+
+    if not isinstance(raw, str):
+        # The route called as a function, with the form field's default.
+        return None
+    try:
+        return recipe_field(raw)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"recipe is not a reading: {exc}"[:600]
+        ) from exc
+
+
+def _as_uuid(value: Any) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(str(value)) if value is not None else None
+    except ValueError:
+        return None
+
+
 def _read_column_mapping(raw: str | None) -> dict[int, str] | None:
     """The ``column_mapping`` form field, or a 422 that says what is wrong with it."""
     from app.modules.boq.importers.excel import parse_column_mapping
@@ -8319,15 +8390,37 @@ async def _parse_with_mapping(
     chosen: type,
     content: bytes,
     overrides: dict[int, str] | None,
+    *,
+    recipe: Any = None,
+    file_name: str = "upload",
+    session: Any = None,
+    user_id: uuid.UUID | str | None = None,
 ) -> "ImportedBOQ":
     """Parse with the importer the dispatcher chose, laying the user's column mapping over a spreadsheet.
 
-    Any other format has no columns to map, so the mapping is noted as not
-    used rather than dropped without a word.
+    An .xlsx or .xls workbook is read the best way there is (the preview's
+    recipe, a saved one, the heading rules or the workspace AI), see
+    :mod:`app.modules.boq.import_reading`; ``session`` and ``user_id`` reach
+    the saved recipes and the user's AI. Any other format has no columns to
+    map, so the mapping is noted as not used rather than dropped without a
+    word.
     """
+    from app.core.file_signature import detect as detect_signature
     from app.modules.boq.importers.excel import ExcelImporter, column_mapping_warning
     from app.modules.boq.importers.pdf_table import PdfTableImporter
 
+    if chosen is ExcelImporter and detect_signature(content[:8]) in ("zip", "ole"):
+        from app.modules.boq.import_reading import read_spreadsheet
+
+        return await read_spreadsheet(
+            content,
+            file_name=file_name,
+            locale=get_locale(),
+            overrides=overrides,
+            recipe=recipe,
+            session=session,
+            user_id=user_id,
+        )
     if chosen in (ExcelImporter, PdfTableImporter):
         # A ruled PDF is read through the spreadsheet reader, columns and all.
         return await chosen.parse(content, locale=get_locale(), column_mapping=overrides)

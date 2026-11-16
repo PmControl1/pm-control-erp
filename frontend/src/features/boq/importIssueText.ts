@@ -15,6 +15,10 @@
  *   to price by, with the headings that were not recognised;
  * - `column_mapping_not_applied`: a column mapping chosen in the preview that
  *   the import could not lay over the file, and why;
+ * - `value_differs`, `value_only_lines`, `file_total_differs`: what an import
+ *   recipe's reading found when it held the bill against the file;
+ * - `layout_read_by_ai`, `ai_layout_unread`, `ai_layout_failed`: whether the
+ *   workspace AI worked out where the bill is in the file;
  * - `xpwe_*`: the notes of an XPWE (Italian estimating XML) import, which name
  *   the bill item they concern by its ordinal rather than a row number.
  *
@@ -294,6 +298,41 @@ export function importIssueText(
         '{{count}} lines repeat a number used earlier in the file; they were imported with a suffix ({{example}})',
       count: Number(issue.params.count ?? 0),
       example: String(issue.params.example ?? ''),
+    });
+  } else if (issue.code === 'value_differs' && issue.params) {
+    // The row comes first, from ``prefixOf``. Imported as written, never corrected.
+    body = t('boq.import_issue.value_differs', {
+      defaultValue:
+        'the file gives the value {{value}}, but quantity × unit price is {{computed}}. Imported as written; check the line',
+      value: formatNumber(Number(issue.params.value ?? 0)),
+      computed: formatNumber(Number(issue.params.computed ?? 0)),
+    });
+  } else if (issue.code === 'value_only_lines' && issue.params) {
+    body = t('boq.import_issue.value_only_lines', {
+      defaultValue:
+        "{{count}} lines give only a value, so each was imported as a lump sum (1 × the value); the unit the file gives is kept in the line's note",
+      count: Number(issue.params.count ?? 0),
+    });
+  } else if (issue.code === 'file_total_differs' && issue.params) {
+    body = t('boq.import_issue.file_total_differs', {
+      defaultValue: "The lines read add up to {{sum}}, but the file's total is {{total}}. Check which rows and columns were read",
+      sum: formatNumber(Number(issue.params.sum ?? 0)),
+      total: formatNumber(Number(issue.params.total ?? 0)),
+    });
+  } else if (issue.code === 'layout_read_by_ai') {
+    body = t('boq.import_issue.layout_read_by_ai', {
+      defaultValue:
+        'The headings of this file are not ones the importer knows, so the workspace AI worked out which rows and columns hold the bill. Check the columns in the preview',
+    });
+  } else if (issue.code === 'ai_layout_unread') {
+    body = t('boq.import_issue.ai_layout_unread', {
+      defaultValue:
+        'The workspace AI was asked where the bill is in this file, but its answer did not read it better. The file was read by its headings; check the columns in the preview',
+    });
+  } else if (issue.code === 'ai_layout_failed') {
+    body = t('boq.import_issue.ai_layout_failed', {
+      defaultValue:
+        "The workspace AI could not be reached to work out this file's layout, so it was read by its headings. Check the columns in the preview",
     });
   } else if (issue.code === 'read_by_ai') {
     // A PDF with no ruled table, copied out by the workspace AI.

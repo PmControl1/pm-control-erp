@@ -3175,6 +3175,12 @@ def _rows_to_positions(
             split = _split_metadata(row, header_language, dot_thousands=dot_thousands, comma_thousands=comma_thousands)
             if split:
                 metadata.update(split)
+            # A row read with an import recipe carries what the reading knows
+            # about it (the value the file wrote, a unit it replaced) and the
+            # note it leaves on the line, shown with the line's comments.
+            metadata.update(row.get("_meta") or {})
+            if row.get("_notes"):
+                metadata["comment"] = " ".join(row["_notes"])
 
             if ordinal.isdigit():
                 highest_line = max(highest_line, int(ordinal))
@@ -3234,17 +3240,26 @@ class ExcelImporter:
         *,
         locale: str = "en",
         column_mapping: dict[int, str] | None = None,
+        recipe: Any = None,
     ) -> ImportedBOQ:
         """Parse an .xlsx, .xls or .csv BOQ into :class:`ImportedBOQ`.
 
         ``column_mapping`` is the user's choice of what each column holds, see
         :func:`parse_column_mapping`; the columns it does not name keep the
         importer's own reading.
+
+        ``recipe`` is an :class:`~app.modules.boq.importers.recipe.ImportRecipe`:
+        the workbook is read the way it says, instead of by its headings, and
+        the reading is held against the file's own total (see
+        :mod:`app.modules.boq.importers.recipe`). ``column_mapping`` is laid
+        over the recipe's columns.
         """
         if not content:
             raise ImporterParseError("Spreadsheet upload is empty", code="spreadsheet_empty_file")
 
         fmt = _detect_file_format(content[:4096])
+        if recipe is not None and fmt in ("xlsx", "xls"):
+            return cls._parse_with_recipe(content, fmt, recipe.with_columns(column_mapping or {}))
 
         # Hungarian bills are not tables with a header row, so the alias mapper
         # below reads nothing out of them: the building shape spreads its item
@@ -3287,6 +3302,52 @@ class ExcelImporter:
                 "No data rows found. Check that the header row names the columns.", code="spreadsheet_no_rows"
             )
 
+        return cls._finish(rows, import_meta, source_format)
+
+    @classmethod
+    def _parse_with_recipe(cls, content: bytes, fmt: str, recipe: Any) -> ImportedBOQ:
+        """Read a workbook the way ``recipe`` says, and hold the reading against the file."""
+        from app.modules.boq.importers.recipe import apply_checks, read_rows
+
+        try:
+            rows, import_meta = read_rows(content, recipe)
+        except ImporterParseError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise ImporterParseError(f"Could not parse spreadsheet: {exc}", code="spreadsheet_unreadable") from exc
+        if not rows:
+            raise ImporterParseError("No data rows found in the rows the reading names.", code="spreadsheet_no_rows")
+        result = cls._finish(rows, import_meta, fmt)
+        if not result.currency and import_meta.get("currency"):
+            result.currency = import_meta["currency"]
+        language = import_meta.get("header_language")
+        counts = import_meta.get("value_counts") or {}
+        if counts.get("value_only"):
+            result.warnings.append(
+                {
+                    "code": "value_only_lines",
+                    "params": {"count": counts["value_only"]},
+                    "count": counts["value_only"],
+                    "severity": "info",
+                    "message": (
+                        f"{counts['value_only']} lines give only a value, so each was imported as a lump sum "
+                        "(1 × the value); the unit the file gives is kept in the line's note."
+                    ),
+                }
+            )
+        check = apply_checks(
+            result, recipe, import_meta.get("file_total"), language, import_meta.get("total_candidates")
+        )
+        result.metadata["reading"] = {
+            **(result.metadata.get("reading") or {}),
+            "recipe": recipe.model_dump(mode="json"),
+            "check": check,
+        }
+        return result
+
+    @classmethod
+    def _finish(cls, rows: list[dict[str, Any]], import_meta: dict[str, Any], source_format: str) -> ImportedBOQ:
+        """Turn the rows read off a sheet into the bill: lines, sections, currency and the notes about them."""
         language = import_meta.get("header_language")
         result = _rows_to_positions(
             rows,

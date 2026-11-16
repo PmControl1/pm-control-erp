@@ -234,6 +234,7 @@ async def enqueue_boq_import(
     column_mapping: str | None,
     force: bool = False,
     replace: bool = False,
+    recipe: str | None = None,
 ) -> dict[str, Any]:
     """Start the import of ``content`` into the bill, or hand back the job already importing it.
 
@@ -244,7 +245,10 @@ async def enqueue_boq_import(
             this bill before and what it imported is still there; ``force``
             imports it again.
     """
-    base_key = _idempotency_base(boq_id, content, delete_missing=delete_missing, column_mapping=column_mapping)
+    # The reading is part of the outcome like the columns are: the same file
+    # read another way is another import.
+    reading = (column_mapping or "") + ("\n" + recipe if recipe else "")
+    base_key = _idempotency_base(boq_id, content, delete_missing=delete_missing, column_mapping=reading or None)
     key, holder, imported = await _attempt(session, base_key)
     if holder is not None:
         return _job_view(holder, reused=True)
@@ -263,6 +267,7 @@ async def enqueue_boq_import(
         "column_mapping": column_mapping,
         "force": force,
         "replace": replace,
+        "recipe": recipe,
     }
     try:
         row = await submit_job(JOB_KIND, payload, idempotency_key=key)
@@ -340,6 +345,7 @@ async def run_boq_import_job(job_run: JobRun, payload: dict[str, Any]) -> dict[s
                     on_phase=lambda phase: _report_phase(job_run.id, phase),
                     append_on_collision=bool(payload.get("force")),
                     replace=bool(payload.get("replace")),
+                    recipe=boq_router._read_recipe(payload.get("recipe")),
                 )
             except HTTPException as exc:
                 await session.rollback()
