@@ -405,7 +405,14 @@ jobs:
           if [ "${{ steps.harness-stack.outcome }}" != "skipped" ]; then
             bash harness/stack/stack.sh logs harness/results/server-logs || true
           fi
-          node harness/scripts/summarize.mjs harness/results >> "$GITHUB_STEP_SUMMARY"
+          # Into the job summary and the job log both: the log is readable
+          # where the report artifact cannot be downloaded.
+          node harness/scripts/summarize.mjs harness/results | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ -f harness/results/server-logs/app.log ]; then
+            echo "::group::Server warnings and errors (last 150)"
+            grep -E "WARNING|ERROR|CRITICAL|Traceback|Exception" harness/results/server-logs/app.log | tail -150 || true
+            echo "::endgroup::"
+          fi
 
       - name: Harness - upload the report
         if: ${{ !cancelled() && steps.harness-install.outcome == 'success' }}

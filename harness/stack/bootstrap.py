@@ -18,7 +18,9 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-OWNER_EMAIL = "harness-owner@example.com"
+# Invented, and not a reserved domain: the app sends nothing to example.com
+# (core/demo_accounts.py). The test stack delivers all mail to Mailpit.
+OWNER_EMAIL = "harness-owner@pmcontrol-harness.eu"
 
 
 def call(base: str, path: str, data: object | None = None, token: str | None = None, method: str | None = None):

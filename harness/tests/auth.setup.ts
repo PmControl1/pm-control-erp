@@ -6,6 +6,9 @@ test('the owner signs in through the login page', async ({ page }) => {
   await page.goto('/login');
   await page.locator('#login-email').fill(account.email);
   await page.locator('#login-password').fill(account.password);
+  // Without "remember me" the app keeps the sign-in in this tab's
+  // sessionStorage, which a saved browser state cannot carry to the next test.
+  await page.getByLabel(/Запомни ме|Remember me/).check();
   await page.locator('form button[type="submit"]').click();
   await page.waitForURL((url) => !url.pathname.startsWith('/login'));
   await expect(page.locator('[data-testid="login-error"]')).toHaveCount(0);
