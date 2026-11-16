@@ -223,7 +223,7 @@ dev = [
     # so the ~6300 mostly database-bound unit tests finish inside the job budget
     # instead of being cancelled at the timeout on every push. Without a
     # .test_durations file it splits by test count, which is enough here.
-    "pytest-split>=0.8.2",
+    "pytest-split>=0.11.0",
     "httpx>=0.28.0",
     "factory-boy>=3.3.0",
     # Gitignore-grammar matcher used by the .dockerignore coverage test, which
