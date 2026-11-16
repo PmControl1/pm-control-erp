@@ -179,7 +179,7 @@ ai = [
 # Installing it adds PaddleOCR, which reads dimension strings and annotation
 # text off the page on top of the geometry the base install already detects.
 cv = [
-    "paddleocr>=2.9.0",
+    "paddleocr>=3.7.0",
     "Pillow>=12.1.1",
 ]
 # E57 reader for the Point Cloud module (app/modules/pointcloud). The open
