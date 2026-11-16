@@ -1,0 +1,118 @@
+name: Harness nightly
+
+# The full end-to-end harness against the image main last published: every
+# sample file, including the large IFC, RVT, point-cloud and near-limit
+# uploads the pull-request run leaves out. See harness/README.md.
+#
+# Runs every night, and on demand from the Actions tab (Run workflow), where an
+# image tag can be given to test something other than main.
+
+on:
+  schedule:
+    # 00:17 UTC: after the working day in Bulgaria, before the next one.
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to test (main, or sha-<commit>)"
+        required: false
+        default: main
+
+concurrency:
+  group: pmpm-harness-nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  harness:
+    name: Harness (nightly tier)
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      HARNESS_TIER: nightly
+      IMAGE: ghcr.io/${{ github.repository_owner }}/pm-control-erp:${{ inputs.image_tag || 'main' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Disk headroom
+        # The image, ~1.5 GB of samples and the near-limit uploads need room.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image name (GHCR names must be lower case)
+        run: echo "IMAGE=${IMAGE,,}" >> "$GITHUB_ENV"
+
+      - name: Pull the image
+        run: docker pull "$IMAGE"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: harness/package-lock.json
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: harness/samples/requirements.txt
+
+      - name: Install
+        id: install
+        working-directory: harness
+        run: |
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npx playwright install --with-deps chromium
+
+      - name: Cache sample files
+        uses: actions/cache@v6
+        with:
+          path: harness/.samples
+          key: harness-samples-nightly-${{ hashFiles('harness/samples/manifest.json') }}
+
+      - name: Sample files
+        run: |
+          node harness/samples/fetch.mjs --tier nightly
+          pip install -r harness/samples/requirements.txt
+          python harness/samples/generate.py --tier nightly
+          du -sh harness/.samples
+
+      - name: Start the test stack
+        id: stack
+        run: bash harness/stack/stack.sh up "$IMAGE"
+
+      - name: Run
+        working-directory: harness
+        run: npx playwright test
+
+      - name: Report
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          if [ "${{ steps.stack.outcome }}" != "skipped" ]; then
+            bash harness/stack/stack.sh logs harness/results/server-logs || true
+          fi
+          node harness/scripts/summarize.mjs harness/results >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-nightly-report
+          path: harness/results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Stop the test stack
+        if: ${{ always() && steps.stack.outcome != 'skipped' }}
+        run: bash harness/stack/stack.sh down || true

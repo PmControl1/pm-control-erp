@@ -1,0 +1,6 @@
+# What generate.py needs to build the synthetic edge-case pack.
+openpyxl==3.1.5
+python-docx==1.2.0
+reportlab==5.0.1
+pillow==12.3.0
+pypdf==6.17.0
