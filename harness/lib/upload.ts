@@ -138,3 +138,14 @@ export async function settle<T extends { status?: string }>(
   }
   return { last, waitedMs: Date.now() - started, settled: !busy.includes(String(last.status)) };
 }
+
+/**
+ * Uploads are limited per user per minute (30 on the documents endpoint),
+ * and every harness test uploads as the same owner. A test that measures an
+ * upload on its own waits for the earlier tests' minute to pass first, so it
+ * sees what one person's action gets.
+ */
+export const UPLOAD_WINDOW_MS = 61_000;
+export async function waitForFreshUploadWindow(): Promise<void> {
+  await new Promise((r) => setTimeout(r, UPLOAD_WINDOW_MS));
+}

@@ -17,7 +17,7 @@ import { bearer, signIn } from '../lib/api';
 import { ensureConverter } from '../lib/converters';
 import { owner } from '../lib/env';
 import { allSamples, folderFor, TIER, type Sample } from '../lib/samples';
-import { createProject, downloadDocument, settle, sha256Of, upload, type Uploaded } from '../lib/upload';
+import { createProject, downloadDocument, settle, sha256Of, upload, waitForFreshUploadWindow, type Uploaded } from '../lib/upload';
 import type { APIRequestContext } from '@playwright/test';
 
 const FOLDER_LABEL = { bim_model: 'BIM models', dwg_drawing: 'DWG drawings', photo: 'Photos', document: 'Documents' } as const;
@@ -153,6 +153,9 @@ test('two different files with the same name both survive', async ({ request }) 
 
 test('40 files sent at once, as a dropped folder sends them, all arrive', async ({ request }) => {
   test.setTimeout(5 * 60_000);
+  // One person dropping a folder: measured on a fresh upload minute, not on
+  // the one the tests above have already used.
+  await waitForFreshUploadWindow();
   const batch = allSamples().filter((s) => s.id.startsWith('batch-'));
   expect(batch).toHaveLength(40);
   const fresh = await createProject(request, token, `Партида 40 файла ${Date.now()}`);

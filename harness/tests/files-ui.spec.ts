@@ -13,7 +13,7 @@ import { ensureConverter } from '../lib/converters';
 import { owner } from '../lib/env';
 import { closeFirstRunWizard } from '../lib/firstRun';
 import { allSamples, sample, type Folder } from '../lib/samples';
-import { createProject, settle } from '../lib/upload';
+import { createProject, settle, UPLOAD_WINDOW_MS, waitForFreshUploadWindow } from '../lib/upload';
 import type { Page, Response } from '@playwright/test';
 
 const UPLOAD = /^(Качване на файлове|Upload files)$/;
@@ -21,6 +21,13 @@ const UPLOAD = /^(Качване на файлове|Upload files)$/;
 let token = '';
 test.beforeAll(async ({ request }) => {
   token = await signIn(request, owner().email, owner().password);
+});
+
+// Each test is one person's action: start it with a fresh upload minute, not
+// one the earlier tests (same owner) have already used up.
+test.beforeEach(async () => {
+  test.setTimeout(test.info().timeout + UPLOAD_WINDOW_MS);
+  await waitForFreshUploadWindow();
 });
 
 /**
@@ -126,6 +133,7 @@ test('a DWG uploaded into the DWG drawings folder is parsed', async ({ page, req
 });
 
 test('a PDF put into the BIM models folder is explained on screen, not silently lost', async ({ page, request }) => {
+  test.setTimeout(3 * 60_000);
   const projectId = await createProject(request, token, `Грешна папка ${Date.now()}`);
   const pdf = sample('protocol-pdf');
   const answers = answersTo(page, '/api/v1/');
