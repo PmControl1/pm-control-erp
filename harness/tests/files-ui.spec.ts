@@ -71,7 +71,7 @@ async function describe(responses: Response[]): Promise<string> {
   return lines.join('\n');
 }
 
-test('40 files chosen at once on a new project\'s Documents page all arrive', async ({ page, request }) => {
+test('40 files chosen at once on a new project\'s Documents page all arrive, the page resending what it is told to', async ({ page, request }) => {
   test.setTimeout(5 * 60_000);
   const projectId = await createProject(request, token, `Партида през интерфейса ${Date.now()}`);
   const batch = allSamples().filter((s) => s.id.startsWith('batch-'));
@@ -80,9 +80,15 @@ test('40 files chosen at once on a new project\'s Documents page all arrive', as
   const input = await openUpload(page, projectId, null);
   await input.setInputFiles(batch.map((s) => s.path));
 
-  await expect.poll(() => answers.length, { timeout: 3 * 60_000, message: 'waiting for the page to send all 40' }).toBe(40);
-  const failed = answers.filter((r) => r.status() >= 300);
-  expect(failed, `${failed.length} of 40 uploads failed:\n${await describe(answers)}`).toHaveLength(0);
+  // Past the server's 30 a minute the page is told to wait (429) and must send
+  // those again by itself; anything else that is not "stored" is a loss.
+  const stored = () => answers.filter((r) => r.status() < 300).length;
+  const lost = () => answers.filter((r) => r.status() >= 300 && r.status() !== 429);
+  await expect
+    .poll(() => stored() + lost().length, { timeout: 3 * 60_000, message: 'waiting for the page to store all 40' })
+    .toBe(40);
+  expect(lost(), `${lost().length} of 40 uploads failed:\n${await describe(lost())}`).toHaveLength(0);
+  test.info().annotations.push({ type: 'throttled', description: `${answers.length - 40} "too many uploads" answers, sent again by the page` });
 
   const list = (await (await request.get(`/api/v1/documents/?project_id=${projectId}&limit=500`, { headers: bearer(token) })).json()) as {
     total: number;

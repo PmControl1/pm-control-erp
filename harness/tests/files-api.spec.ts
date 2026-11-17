@@ -151,7 +151,7 @@ test('two different files with the same name both survive', async ({ request }) 
   expect(sha256Of(await downloadDocument(request, token, String(second.body.id)))).toBe(b!.sha256);
 });
 
-test('40 files sent at once, as a dropped folder sends them, all arrive', async ({ request }) => {
+test('40 files sent at once, as a dropped folder sends them: none lost, past the limit only "wait and resend"', async ({ request }) => {
   test.setTimeout(5 * 60_000);
   // One person dropping a folder: measured on a fresh upload minute, not on
   // the one the tests above have already used.
@@ -159,24 +159,45 @@ test('40 files sent at once, as a dropped folder sends them, all arrive', async 
   const batch = allSamples().filter((s) => s.id.startsWith('batch-'));
   expect(batch).toHaveLength(40);
   const fresh = await createProject(request, token, `Партида 40 файла ${Date.now()}`);
-  // The Documents page starts every upload of a drop at the same moment.
-  const results = await Promise.all(
-    batch.map(async (s) => {
-      const r = await request.post(`/api/v1/documents/upload/?project_id=${fresh}&category=other`, {
-        headers: bearer(token),
-        multipart: { file: { name: s.name, mimeType: 'application/pdf', buffer: fs.readFileSync(s.path) } },
-      });
-      return { name: s.name, status: r.status(), detail: r.ok() ? '' : (await r.text()).slice(0, 200) };
-    }),
-  );
-  const refused = results.filter((r) => r.status >= 300);
+  const send = async (s: Sample) => {
+    const r = await request.post(`/api/v1/documents/upload/?project_id=${fresh}&category=other`, {
+      headers: bearer(token),
+      multipart: { file: { name: s.name, mimeType: 'application/pdf', buffer: fs.readFileSync(s.path) } },
+    });
+    return {
+      sample: s,
+      status: r.status(),
+      retryAfter: r.headers()['retry-after'],
+      detail: r.ok() ? '' : (await r.text()).slice(0, 200),
+    };
+  };
+  // All at once, as the page used to send a drop. The server takes 30 uploads
+  // a minute from one person; past that it must say "too many" and when to
+  // come back (429 with Retry-After), never fail or half-store a file.
+  const first = await Promise.all(batch.map(send));
+  const wrong = first.filter((r) => r.status >= 300 && !(r.status === 429 && r.retryAfter));
   expect(
-    refused,
-    `${refused.length} of 40 were not stored:\n${refused.map((r) => `  ${r.name}: ${r.status} ${r.detail}`).join('\n')}`,
+    wrong,
+    `answers other than "stored" or "too many, come back in N s":\n${wrong.map((r) => `  ${r.sample.name}: ${r.status} ${r.detail}`).join('\n')}`,
   ).toHaveLength(0);
+  const throttled = first.filter((r) => r.status === 429);
+  test.info().annotations.push({ type: 'throttled', description: `${throttled.length} of 40 told to wait` });
+
+  // A client that waits as told gets every one of them stored.
+  if (throttled.length) {
+    const wait = Math.max(...throttled.map((r) => Number(r.retryAfter)));
+    expect(wait, 'Retry-After should be a number of seconds').toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, Math.min(wait, 120) * 1000));
+    const again = await Promise.all(throttled.map((r) => send(r.sample)));
+    const refused = again.filter((r) => r.status >= 300);
+    expect(
+      refused,
+      `${refused.length} were refused again after waiting as told:\n${refused.map((r) => `  ${r.sample.name}: ${r.status} ${r.detail}`).join('\n')}`,
+    ).toHaveLength(0);
+  }
   const list = (await (await request.get(`/api/v1/documents/?project_id=${fresh}&limit=500`, { headers: bearer(token) })).json()) as {
     items?: unknown[];
     total?: number;
   };
-  expect(list.total ?? list.items?.length, 'the project should list all 40').toBe(40);
+  expect(list.total ?? list.items?.length, 'the project should list all 40, once each').toBe(40);
 });
