@@ -13,6 +13,10 @@
  * With no folder chosen (the only choice on a new project), a model or a
  * drawing still goes to the pipeline that can open it, by its extension; if
  * that pipeline refuses it, it is kept as a document, as it always was.
+ * A batch sends a few files at a time, and when the server says "too many
+ * uploads" (429), every file waits as long as it asks and then goes again,
+ * so a dropped folder arrives whole instead of losing what came past the
+ * server's per-minute limit.
  * Large document uploads take the resumable chunked client; the dedicated
  * BIM/DWG/photo endpoints stream server-side. Progress rolls up into the
  * same FloatingQueuePanel used everywhere else.
@@ -62,6 +66,53 @@ export function kindForUnfiledFile(name: string): FileKind | null {
  *  later" (429) or the server failing (5xx). */
 function refusedForWhatItIs(status: number): boolean {
   return status >= 400 && status < 500 && status !== 429;
+}
+
+/** Uploads of one batch in flight at once. A dropped folder used to start
+ *  every upload at the same moment, so all of them raced the server's
+ *  per-minute limit together and the ones past it were refused. */
+export const PARALLEL_UPLOADS = 3;
+
+/** How many times one file waits out "too many uploads" before giving up. */
+export const THROTTLE_RETRIES = 5;
+
+const DEFAULT_RETRY_AFTER_S = 60;
+const MAX_RETRY_AFTER_S = 300;
+
+/** How long a 429's ``Retry-After`` asks to wait, in ms: seconds or an HTTP
+ *  date, a minute when it says nothing, five minutes at most. */
+export function retryAfterMs(header: string | null, now = Date.now()): number {
+  const value = header?.trim();
+  if (value) {
+    if (/^\d+$/.test(value)) return Math.min(Number(value), MAX_RETRY_AFTER_S) * 1000;
+    const at = Date.parse(value);
+    if (!Number.isNaN(at)) return Math.min(Math.max(at - now, 0), MAX_RETRY_AFTER_S * 1000);
+  }
+  return DEFAULT_RETRY_AFTER_S * 1000;
+}
+
+/** When the server last said "too many uploads", the moment it said to come
+ *  back. Shared by every upload, so they all wait instead of each one being
+ *  refused to find out. */
+let throttledUntil = 0;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** Run ``jobs`` with at most ``limit`` going at once, in order. */
+async function runWithLimit(jobs: Array<() => Promise<void>>, limit: number): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const job = jobs[next++]!;
+      try {
+        await job();
+      } catch {
+        // Each job reports its own failure on its queue row; the next one
+        // still goes.
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, jobs.length) }, worker));
 }
 
 export interface UseFileUploadResult {
@@ -120,6 +171,7 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
       // Count 3D mesh files in the batch so we can nudge the user toward the
       // BIM Hub 3D uploader (which actually views/measures them) after queuing.
       let meshCount = 0;
+      const jobs: Array<() => Promise<void>> = [];
 
       for (const file of validFiles) {
         // Common 3D mesh formats (OBJ/STL/glTF/GLB/DAE/FBX/PLY/3DS/…) are not
@@ -137,18 +189,20 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
         // documents pipeline / resumable client.
         const fileDirectUrl = isMesh ? null : directUploadUrl(fileKind);
         const taskId = uuid();
+        const uploadingMessage = t('files.uploading', { defaultValue: 'Uploading…' });
         addQueueTask({
           id: taskId,
           type: 'file_upload',
           filename: file.name,
-          status: 'processing',
+          status: 'queued',
           progress: 0,
-          message: t('files.uploading', { defaultValue: 'Uploading…' }),
+          message: t('files.upload_waiting', { defaultValue: 'Waiting to upload…' }),
         });
 
-        // Fire-and-forget — same pattern as DocumentsPage so progress shows
-        // up in the global FloatingQueuePanel.
-        (async () => {
+        // Run a few at a time in the background; progress shows up in the
+        // global FloatingQueuePanel, same as DocumentsPage.
+        jobs.push(async () => {
+          updateQueueTask(taskId, { status: 'processing', message: uploadingMessage, startedAt: Date.now() });
           const markDone = (message?: string) => {
             updateQueueTask(taskId, {
               status: 'completed',
@@ -202,7 +256,7 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
           };
 
           /** One multipart POST, with progress estimated while it runs. */
-          const sendOnce = async (url: string): Promise<Response> => {
+          const post = async (url: string): Promise<Response> => {
             const formData = new FormData();
             formData.append('file', file);
 
@@ -220,6 +274,27 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
               return await fetch(url, { method: 'POST', headers, body: formData });
             } finally {
               clearInterval(progressTimer);
+            }
+          };
+
+          /** ``post``, after waiting out any "too many uploads" the server has
+           *  answered, and again after each new one, up to THROTTLE_RETRIES. */
+          const sendOnce = async (url: string): Promise<Response> => {
+            for (let attempt = 0; ; attempt += 1) {
+              const wait = throttledUntil - Date.now();
+              if (wait > 0) {
+                updateQueueTask(taskId, {
+                  message: t('files.upload_throttled', {
+                    defaultValue: 'The server asked to wait; sending again in {{seconds}} s',
+                    seconds: Math.ceil(wait / 1000),
+                  }),
+                });
+                await sleep(wait);
+                updateQueueTask(taskId, { message: uploadingMessage });
+              }
+              const res = await post(url);
+              if (res.status !== 429 || attempt >= THROTTLE_RETRIES) return res;
+              throttledUntil = Math.max(throttledUntil, Date.now() + retryAfterMs(res.headers.get('Retry-After')));
             }
           };
 
@@ -267,8 +342,10 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
           } catch (err) {
             markError(err instanceof Error ? err.message : 'Upload failed');
           }
-        })();
+        });
       }
+
+      void runWithLimit(jobs, PARALLEL_UPLOADS);
 
       addToast({
         type: 'info',
