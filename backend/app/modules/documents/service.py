@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import threading
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -296,6 +297,45 @@ def _sanitize_filename(name: str) -> str:
     if not name or name.startswith("."):
         name = "untitled"
     return name
+
+
+# Bidirectional-text controls can disguise an extension: "invoice\u202efdp.exe"
+# is shown as "invoiceexe.pdf". They go, with the other control characters.
+_BIDI_CONTROLS = frozenset("\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069")
+_NAME_MAX_CHARS = 255  # Document.name and ProjectPhoto.filename
+_DISK_NAME_MAX_BYTES = 150  # after the 12-character prefix; Linux allows 255 bytes per name
+
+
+def _display_filename(name: str) -> str:
+    """The name people see: the one they uploaded, without a folder path or
+    control characters. Spaces, punctuation and every script stay as they
+    were; only the copy on disk is reduced to safe characters
+    (``_disk_filename``). Reducing the shown name too turned "Протокол от
+    оглед.pdf" into "Протокол_от_оглед.pdf" in every list."""
+    name = name.replace("\\", "/").rsplit("/", 1)[-1]
+    name = "".join(ch for ch in name if ch not in _BIDI_CONTROLS and unicodedata.category(ch) not in ("Cc", "Cs"))
+    name = name.strip()
+    if not name.strip("."):
+        return "untitled"
+    if len(name) > _NAME_MAX_CHARS:
+        stem, ext = os.path.splitext(name)
+        ext = ext if len(ext) <= 20 else ""
+        name = stem[: _NAME_MAX_CHARS - len(ext)] + ext
+    return name
+
+
+def _disk_filename(name: str) -> str:
+    """The name a file gets on disk: safe characters only, and short enough
+    for any filesystem however long the shown name is. A Windows user can
+    send 255 characters, which in Cyrillic is 510 bytes; stored under that
+    name the upload failed with "Failed to save file to disk"."""
+    safe = _sanitize_filename(name)
+    if len(safe.encode()) <= _DISK_NAME_MAX_BYTES:
+        return safe
+    stem, ext = os.path.splitext(safe)
+    ext = ext if len(ext.encode()) <= 16 else ""
+    stem = stem.encode()[: _DISK_NAME_MAX_BYTES - len(ext.encode())].decode("utf-8", errors="ignore")
+    return (stem or "file") + ext
 
 
 def _blocked_extension_segment(name: str) -> str | None:
@@ -668,12 +708,14 @@ class DocumentService:
         """
         # Sanitize filename
         raw_name = file.filename or "untitled"
-        safe_name = _sanitize_filename(raw_name)
+        safe_name = _display_filename(raw_name)
+        disk_name = _disk_filename(safe_name)
 
         # Block dangerous file extensions - scan EVERY dotted segment so
         # a double-extension payload (shell.php.png) is rejected, not just
-        # the final suffix (A-DOC-10).
-        bad_ext = _blocked_extension_segment(safe_name)
+        # the final suffix (A-DOC-10). Both spellings: the shown name keeps
+        # spaces the disk name turns into underscores.
+        bad_ext = _blocked_extension_segment(safe_name) or _blocked_extension_segment(disk_name)
         if bad_ext is not None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -767,7 +809,7 @@ class DocumentService:
 
         # Build storage path with UUID prefix to avoid collisions
         file_uuid = uuid.uuid4().hex[:12]
-        storage_name = f"{file_uuid}_{safe_name}"
+        storage_name = f"{file_uuid}_{disk_name}"
         upload_dir = UPLOAD_BASE / str(project_id)
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / storage_name
@@ -940,9 +982,10 @@ class DocumentService:
             ``GET /file-versions/?file_id={id}&kind=document``.
         """
         document = await self.get_document(document_id)
-        safe_name = _sanitize_filename(file.filename or document.name)
+        safe_name = _display_filename(file.filename or document.name)
+        disk_name = _disk_filename(safe_name)
 
-        bad_ext = _blocked_extension_segment(safe_name)
+        bad_ext = _blocked_extension_segment(safe_name) or _blocked_extension_segment(disk_name)
         if bad_ext is not None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -983,7 +1026,7 @@ class DocumentService:
         stored_mime = _mime_for_signature(detected)
 
         file_uuid = uuid.uuid4().hex[:12]
-        storage_name = f"{file_uuid}_{safe_name}"
+        storage_name = f"{file_uuid}_{disk_name}"
         upload_dir = UPLOAD_BASE / str(document.project_id)
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / storage_name
@@ -1654,13 +1697,13 @@ class PhotoService:
 
         # Sanitize filename
         raw_name = file.filename or "untitled.jpg"
-        safe_name = _sanitize_filename(raw_name)
+        safe_name = _display_filename(raw_name)
 
         # Block dangerous extensions on the photo path too - a renamed
         # ``evil.exe`` with a fake ``image/jpeg`` content_type still gets
         # caught here even before the magic-byte check. Scans every
         # dotted segment so ``shell.php.png`` is rejected (A-DOC-10).
-        bad_ext = _blocked_extension_segment(safe_name)
+        bad_ext = _blocked_extension_segment(safe_name) or _blocked_extension_segment(_disk_filename(safe_name))
         if bad_ext is not None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -1783,7 +1826,7 @@ class PhotoService:
 
         # Build storage path
         file_uuid = uuid.uuid4().hex[:12]
-        storage_name = f"{file_uuid}_{safe_name}"
+        storage_name = f"{file_uuid}_{_disk_filename(safe_name)}"
         upload_dir = PHOTO_BASE / str(project_id)
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / storage_name
@@ -2908,7 +2951,7 @@ class SheetService:
 
         # Read uploaded file
         raw_name = file.filename or "untitled.pdf"
-        safe_name = _sanitize_filename(raw_name)
+        safe_name = _display_filename(raw_name)
 
         # Stream to a temp file (aborts past the cap) so a multi-GB upload never
         # lands fully in RAM, then read the now-bounded bytes back for the split.
@@ -2925,7 +2968,7 @@ class SheetService:
         file_uuid = uuid.uuid4().hex[:12]
         upload_dir = UPLOAD_BASE / str(project_id)
         upload_dir.mkdir(parents=True, exist_ok=True)
-        pdf_path = upload_dir / f"{file_uuid}_{safe_name}"
+        pdf_path = upload_dir / f"{file_uuid}_{_disk_filename(safe_name)}"
         await asyncio.to_thread(pdf_path.write_bytes, content)
 
         # Also create a Document record for the uploaded PDF
@@ -2938,9 +2981,9 @@ class SheetService:
             mime_type="application/pdf",
             file_path=str(pdf_path),
             uploaded_by=user_id,
-            # The name as the user's machine had it: the title block reader
-            # falls back to it, and ``safe_name`` reads differently ("01 R03"
-            # becomes "01_R03"), so a re-read needs the one the split read.
+            # The name exactly as the user's machine had it: the title block
+            # reader falls back to it, and a re-read needs the one the split
+            # read. ``safe_name`` only drops a path and control characters.
             metadata_={ORIGINAL_NAME: raw_name},
         )
         document = await doc_repo.create(document)
