@@ -19,19 +19,22 @@ from being published.
 
 ## What it uploads
 
-Two kinds of files, neither stored in this repository:
+Two kinds of files, neither stored in this repository (`harness/.samples/`
+is ignored). All test data is invented or comes from vendor and
+standards-body demo sets, never from a real project.
 
-- **Public samples** (`samples/manifest.json`): real IFC 2x3/4/4.3 models
-  from buildingSMART, Autodesk's Revit sample projects, DWG from R14 to 2018
-  and DXF (LibreDWG test data), LAS/LAZ/COPC and E57 point clouds, every EXIF
-  photo orientation, HEIC, glTF and BCF. `samples/fetch.mjs` downloads them
-  and checks each against its sha256 and size; CI caches them between runs.
+- **Public demo samples** (`samples/manifest.json`): IFC 2x3/4/4.3 sample
+  scenes from buildingSMART, Autodesk's Revit sample projects, DWG from R14
+  to 2018 and DXF (LibreDWG test data), E57 point clouds, every EXIF photo
+  orientation, HEIC, glTF and BCF. `samples/fetch.mjs` downloads them and
+  checks each against its sha256 and size; CI caches them between runs.
   Each entry records its source and licence.
 - **A synthetic pack** (`samples/generate.py`): Bulgarian КСС, contracts and
   protocols, an A1 drawing, a scanned PDF, names that break naive code
   (Cyrillic punctuation, `#%&;'`, emoji, 200 characters), empty, truncated,
   password-protected and disguised files, two files with the same name, a
-  40-file batch and, nightly, uploads just under and over the 500 MB limit.
+  40-file batch, invented LAS/LAZ laser scans (about 100 MB nightly) and,
+  nightly, uploads just under and over the 500 MB limit.
 
 Each file goes through the upload path the Documents page would choose for
 it (`lib/upload.ts` mirrors `useFileUpload.ts`), and the test checks what the

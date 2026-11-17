@@ -321,6 +321,80 @@ def photo(width: int, height: int, fmt: str) -> bytes:
     return buf.getvalue()
 
 
+# ── Point clouds ─────────────────────────────────────────────────────────────
+
+
+def point_cloud(path: Path, points: int, seed: int) -> None:
+    """An invented terrain scan: rolling ground, one box-shaped building and
+    scattered trees, in local coordinates that are no real place. Point
+    format 3 (RGB and GPS time), the common laser-scanner output; written
+    compressed when the name ends in .laz."""
+    import laspy
+    import numpy as np
+
+    r = np.random.default_rng(seed)
+    side = 400.0
+    x = r.uniform(0, side, points)
+    y = r.uniform(0, side, points)
+    ground = 3.0 * np.sin(x / 37.0) + 2.0 * np.cos(y / 53.0)
+    z = ground + r.normal(0, 0.03, points)
+    cls = np.full(points, 2, dtype=np.uint8)  # ground
+
+    building = (x > 150) & (x < 210) & (y > 170) & (y < 230)
+    roof = r.random(points) < 0.7
+    z = np.where(building & roof, ground + 12.0 + r.normal(0, 0.02, points), z)
+    cls = np.where(building & roof, 6, cls)  # building
+
+    trees = r.random(points) < 0.08
+    z = np.where(trees & ~building, ground + r.uniform(2, 14, points), z)
+    cls = np.where(trees & ~building, 5, cls)  # high vegetation
+
+    # A scanner records in sweeps: order the points in 2 m strips, which is
+    # also what lets LAZ compress them as it does real scans.
+    order = np.lexsort((x, np.floor(y / 2.0)))
+    x, y, z, cls = x[order], y[order], z[order], cls[order]
+
+    header = laspy.LasHeader(point_format=3, version="1.2")
+    header.offsets = np.array([1000.0, 2000.0, 0.0])
+    header.scales = np.array([0.001, 0.001, 0.001])
+    las = laspy.LasData(header)
+    las.x, las.y, las.z = x + 1000.0, y + 2000.0, z
+    las.classification = cls
+    las.intensity = r.integers(200, 4000, points, dtype=np.uint16)
+    las.return_number = np.ones(points, dtype=np.uint8)
+    las.number_of_returns = np.ones(points, dtype=np.uint8)
+    las.gps_time = np.sort(r.uniform(0, 3600, points))
+    shade = np.clip((z - z.min()) / max(float(np.ptp(z)), 1.0), 0, 1)
+    las.red = (np.where(cls == 6, 0.75, 0.35 + 0.2 * shade) * 65535).astype(np.uint16)
+    las.green = (np.where(cls == 5, 0.65, 0.40 + 0.2 * shade) * 65535).astype(np.uint16)
+    las.blue = (np.where(cls == 6, 0.70, 0.25) * 65535).astype(np.uint16)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    las.write(path)
+
+
+def emit_point_cloud(id: str, name: str, points: int, *, kind: str, tier: str, notes: str) -> None:
+    path = OUT / id / name
+    point_cloud(path, points, seed=len(id) * 7919 + points)
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for block in iter(lambda: fh.read(8 * 1024 * 1024), b""):
+            digest.update(block)
+    entries.append(
+        {
+            "id": id,
+            "name": name,
+            "kind": kind,
+            "tier": tier,
+            "path": str(path),
+            "bytes": path.stat().st_size,
+            "sha256": digest.hexdigest(),
+            "expect": "accepted",
+            "generated": True,
+            "notes": notes,
+        }
+    )
+
+
 # ── Schedules ────────────────────────────────────────────────────────────────
 
 TASKS = [
@@ -474,7 +548,23 @@ def build(tier: str) -> None:
             notes="Part of the 40-file batch.",
         )
 
+    # Laser scans, invented
+    emit_point_cloud(
+        "las-terrain", "Терен_сканиране.las", 100_000, kind="las", tier="pr", notes="Uncompressed LAS, 100k points."
+    )
+    emit_point_cloud(
+        "laz-terrain", "Терен_сканиране.laz", 400_000, kind="laz", tier="pr", notes="Compressed LAZ, 400k points."
+    )
+
     if tier == "nightly":
+        emit_point_cloud(
+            "laz-terrain-large",
+            "Терен_сканиране_голям.laz",
+            9_000_000,
+            kind="laz",
+            tier="nightly",
+            notes="Compressed LAZ, 9 million points, about 100 MB.",
+        )
         emit_big(
             "big-200mb-zip",
             "Архив_200MB.zip",

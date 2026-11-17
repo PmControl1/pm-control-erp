@@ -258,42 +258,6 @@
       "source": "https://github.com/LibreDWG/libredwg/blob/b8ef800c305e69385d8e87b25d2b735e887c8177/test/test-data/example_2018.dxf"
     },
     {
-      "id": "laz-stadium",
-      "name": "stadium-utm.laz",
-      "kind": "laz",
-      "tier": "pr",
-      "bytes": 2748303,
-      "sha256": "d6c62c8f5d99fd2020277b8ec5528bf6ecc0b5eccc3b17486ba74b0264ecd844",
-      "url": "https://media.githubusercontent.com/media/PDAL/data/ce0024257c573526389c4db9ab26e82739b8aaa9/autzen/stadium-utm.laz",
-      "license": "CC-BY-4.0",
-      "attribution": "PDAL sample data, CC BY 4.0",
-      "source": "https://github.com/PDAL/data/blob/ce0024257c573526389c4db9ab26e82739b8aaa9/autzen/stadium-utm.laz"
-    },
-    {
-      "id": "copc-autzen-81mb",
-      "name": "autzen-classified.copc.laz",
-      "kind": "copc",
-      "tier": "nightly",
-      "bytes": 81123042,
-      "sha256": "db2d56cdfa058bffccdc5d6019dae2fc9c6a551df10a5523c06c76a3e25a27fa",
-      "url": "https://media.githubusercontent.com/media/PDAL/data/ce0024257c573526389c4db9ab26e82739b8aaa9/autzen/autzen-classified.copc.laz",
-      "license": "CC-BY-4.0",
-      "attribution": "PDAL sample data, CC BY 4.0",
-      "source": "https://github.com/PDAL/data/blob/ce0024257c573526389c4db9ab26e82739b8aaa9/autzen/autzen-classified.copc.laz"
-    },
-    {
-      "id": "laz-terrain-107mb",
-      "name": "TM_551_101.laz",
-      "kind": "laz",
-      "tier": "nightly",
-      "bytes": 107643468,
-      "sha256": "5c9be52b4d92a4a4a82b11b8dd04bd8f05ebd328bdecb644c806f14c1ecdd688",
-      "url": "https://media.githubusercontent.com/media/PDAL/data/ce0024257c573526389c4db9ab26e82739b8aaa9/workshop/TM_551_101.laz",
-      "license": "CC-BY-4.0",
-      "attribution": "PDAL sample data, CC BY 4.0",
-      "source": "https://github.com/PDAL/data/blob/ce0024257c573526389c4db9ab26e82739b8aaa9/workshop/TM_551_101.laz"
-    },
-    {
       "id": "e57-bunny",
       "name": "bunnyDouble.e57",
       "kind": "e57",
