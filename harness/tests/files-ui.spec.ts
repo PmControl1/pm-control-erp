@@ -4,35 +4,41 @@
  *
  * The folder a file is uploaded into decides where it goes (useFileUpload.ts):
  * BIM models to BIM Hub, DWG drawings to DWG takeoff, everything else to
- * documents. These tests pick the folder a person would pick.
+ * documents. A new project shows no folders, only one upload button, which
+ * uploads with no folder chosen; a folder opens from the page's ?kind= link.
  */
 import { test, expect } from '../lib/fixtures';
 import { bearer, signIn } from '../lib/api';
 import { ensureConverter } from '../lib/converters';
 import { owner } from '../lib/env';
-import { allSamples, sample } from '../lib/samples';
+import { closeFirstRunWizard } from '../lib/firstRun';
+import { allSamples, sample, type Folder } from '../lib/samples';
 import { createProject, settle } from '../lib/upload';
 import type { Page, Response } from '@playwright/test';
 
-const FOLDER = { document: 'Документ', bim_model: 'BIM модел', dwg_drawing: 'DWG чертеж', photo: 'Снимка' } as const;
+const UPLOAD = /^(Качване на файлове|Upload files)$/;
 
 let token = '';
 test.beforeAll(async ({ request }) => {
   token = await signIn(request, owner().email, owner().password);
 });
 
-/** Open a new project's Documents page and the upload dialog of one folder. */
-async function openUpload(page: Page, projectId: string, folder: keyof typeof FOLDER) {
-  await page.goto(`/projects/${projectId}/files`);
-  const card = page.getByRole('button').filter({ has: page.getByRole('heading', { name: FOLDER[folder], exact: true }) });
+/**
+ * Open a project's Documents page, in one folder or (null) with none chosen,
+ * and its upload dialog.
+ */
+async function openUpload(page: Page, projectId: string, folder: Exclude<Folder, 'document'> | null) {
+  await page.goto(folder ? `/projects/${projectId}/files?kind=${folder}` : `/projects/${projectId}/files`);
+  await closeFirstRunWizard(page, 3_000);
+  const button = page.getByRole('main').getByRole('button', { name: UPLOAD }).first();
   try {
-    await card.click({ timeout: 20_000 });
+    await button.click({ timeout: 20_000 });
   } catch {
     // Say what is on the page instead, so the report shows why.
     const headings = await page.getByRole('heading').allInnerTexts().catch(() => [] as string[]);
     const main = await page.locator('main').first().ariaSnapshot({ timeout: 5_000 }).catch(() => '(no main region)');
     throw new Error(
-      `No "${FOLDER[folder]}" folder card on ${new URL(page.url()).pathname}.\n` +
+      `No upload button on ${new URL(page.url()).pathname}${new URL(page.url()).search}.\n` +
         `Headings: ${headings.map((h) => h.trim()).filter(Boolean).join(' | ') || '(none)'}\n` +
         `Main region:\n${main.split('\n').slice(0, 60).join('\n')}`,
     );
@@ -58,13 +64,13 @@ async function describe(responses: Response[]): Promise<string> {
   return lines.join('\n');
 }
 
-test('40 files chosen at once in the Documents folder all arrive', async ({ page, request }) => {
+test('40 files chosen at once on a new project\'s Documents page all arrive', async ({ page, request }) => {
   test.setTimeout(5 * 60_000);
   const projectId = await createProject(request, token, `Партида през интерфейса ${Date.now()}`);
   const batch = allSamples().filter((s) => s.id.startsWith('batch-'));
   const answers = answersTo(page, '/api/v1/documents/upload/');
 
-  const input = await openUpload(page, projectId, 'document');
+  const input = await openUpload(page, projectId, null);
   await input.setInputFiles(batch.map((s) => s.path));
 
   await expect.poll(() => answers.length, { timeout: 3 * 60_000, message: 'waiting for the page to send all 40' }).toBe(40);
@@ -77,7 +83,7 @@ test('40 files chosen at once in the Documents folder all arrive', async ({ page
   expect(list.total, 'the project should list all 40').toBe(40);
 });
 
-test('an IFC model uploaded into the BIM folder becomes a model with elements', async ({ page, request }) => {
+test('an IFC uploaded into the BIM models folder becomes a model with elements', async ({ page, request }) => {
   test.setTimeout(10 * 60_000);
   const projectId = await createProject(request, token, `IFC през интерфейса ${Date.now()}`);
   const ifc = sample('ifc4-building-architecture');
@@ -98,7 +104,7 @@ test('an IFC model uploaded into the BIM folder becomes a model with elements', 
   expect(last.element_count).toBeGreaterThan(0);
 });
 
-test('a DWG drawing uploaded into the DWG folder is parsed', async ({ page, request }) => {
+test('a DWG uploaded into the DWG drawings folder is parsed', async ({ page, request }) => {
   test.setTimeout(20 * 60_000);
   await ensureConverter(request, token, 'dwg');
   const projectId = await createProject(request, token, `DWG през интерфейса ${Date.now()}`);
@@ -119,7 +125,7 @@ test('a DWG drawing uploaded into the DWG folder is parsed', async ({ page, requ
   expect(last.status, last.error_message ?? '').toBe('ready');
 });
 
-test('a PDF put into the BIM folder is explained on screen, not silently lost', async ({ page, request }) => {
+test('a PDF put into the BIM models folder is explained on screen, not silently lost', async ({ page, request }) => {
   const projectId = await createProject(request, token, `Грешна папка ${Date.now()}`);
   const pdf = sample('protocol-pdf');
   const answers = answersTo(page, '/api/v1/');
@@ -139,4 +145,35 @@ test('a PDF put into the BIM folder is explained on screen, not silently lost', 
   expect(detail, 'the refusal should carry a reason').not.toBe('');
   // The reason must reach the person, not only the network tab.
   await expect(page.getByText(detail.slice(0, 40), { exact: false }).first()).toBeVisible({ timeout: 15_000 });
+});
+
+test('an IFC uploaded on a new project\'s Documents page, with no folder chosen, becomes a model', async ({ page, request }) => {
+  test.setTimeout(10 * 60_000);
+  // A new project offers one upload button and no folders, so this is what a
+  // person new to the app does with a model file.
+  const projectId = await createProject(request, token, `IFC без папка ${Date.now()}`);
+  const ifc = sample('ifc4-building-architecture');
+  const answers = answersTo(page, '/api/v1/');
+
+  const input = await openUpload(page, projectId, null);
+  await input.setInputFiles(ifc.path);
+
+  await expect.poll(() => answers.length, { timeout: 2 * 60_000 }).toBeGreaterThan(0);
+  const route = new URL(answers[0]!.url()).pathname;
+  expect(answers[0]!.status(), await describe(answers)).toBeLessThan(300);
+  test.info().annotations.push({ type: 'sent to', description: route });
+
+  let models: unknown[] = [];
+  await expect
+    .poll(
+      async () => {
+        const body = (await (await request.get(`/api/v1/bim_hub/?project_id=${projectId}`, { headers: bearer(token) })).json()) as
+          | { items?: unknown[] }
+          | unknown[];
+        models = Array.isArray(body) ? body : (body.items ?? []);
+        return models.length;
+      },
+      { timeout: 2 * 60_000, message: `the IFC went to ${route} and no BIM model was created: it is stored as a plain document` },
+    )
+    .toBeGreaterThan(0);
 });
