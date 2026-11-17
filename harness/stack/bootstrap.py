@@ -3,6 +3,7 @@
   python3 -I bootstrap.py wait   BASE_URL                wait until /api/health is healthy
   python3 -I bootstrap.py owner  BASE_URL STATE_DIR      register the first account (it becomes admin)
   python3 -I bootstrap.py ai     BASE_URL STATE_DIR      save the workspace AI as the owner
+  python3 -I bootstrap.py firstrun BASE_URL STATE_DIR    answer the first-run "What will you use?" choice
 
 Standard library only. The owner's credentials go to STATE_DIR/owner.json,
 which the Playwright tests read.
@@ -107,8 +108,22 @@ def ai(base: str, state: Path) -> None:
     print(f"Workspace AI: {body.get('provider')} / {body.get('model')}")
 
 
+def firstrun(base: str, state: Path) -> None:
+    """Answer the owner's first-run "What will you use?" choice, as closing the
+    wizard does: recorded, with nothing extra started. Until it is recorded
+    the wizard opens over every page and blocks clicks."""
+    token = login(base, state)
+    status, body = call(base, "/api/v1/processes/first-run", {"module_ids": [], "start_now": False}, token=token)
+    if status != 200:
+        sys.exit(f"Recording the first-run choice failed: {status} {body}")
+    status, body = call(base, "/api/v1/processes/", token=token)
+    if status != 200 or not isinstance(body, dict) or not body.get("first_run_done"):
+        sys.exit(f"The first-run choice was not recorded: {status} {body}")
+    print("First-run choice recorded")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 3 or sys.argv[1] not in {"wait", "owner", "ai"}:
+    if len(sys.argv) < 3 or sys.argv[1] not in {"wait", "owner", "ai", "firstrun"}:
         sys.exit(__doc__)
     command, base_url = sys.argv[1], sys.argv[2]
     if command == "wait":
@@ -116,4 +131,4 @@ if __name__ == "__main__":
     else:
         if len(sys.argv) < 4:
             sys.exit(__doc__)
-        {"owner": owner, "ai": ai}[command](base_url, Path(sys.argv[3]))
+        {"owner": owner, "ai": ai, "firstrun": firstrun}[command](base_url, Path(sys.argv[3]))

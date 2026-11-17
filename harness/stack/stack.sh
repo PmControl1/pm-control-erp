@@ -103,6 +103,7 @@ EOF
   compose up -d --no-deps --force-recreate --wait --wait-timeout 300 app
   python3 -I "$here/bootstrap.py" wait "$base"
   python3 -I "$here/bootstrap.py" ai "$base" "$state"
+  python3 -I "$here/bootstrap.py" firstrun "$base" "$state"
 
   echo
   echo "Test stack $project is up."
