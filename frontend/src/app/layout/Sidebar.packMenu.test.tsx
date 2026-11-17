@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const api = vi.hoisted(() => ({
   apiGet: vi.fn(),
@@ -85,6 +86,8 @@ function renderSidebar() {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
 
 beforeEach(() => {
+  // The sidebar is only shown to a signed-in person; the pack is fetched only then.
+  useAuthStore.setState({ isAuthenticated: true });
   hidden.list = [];
   hidden.loading = false;
   hidden.set.mockReset();

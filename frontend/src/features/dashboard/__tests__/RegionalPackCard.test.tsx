@@ -52,6 +52,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RegionalPackCard } from '../RegionalPackCard';
 import { isOnboardingCompleted } from '@/features/onboarding';
 import { apiGet } from '@/shared/lib/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 // The shared setup (`src/test/setup.ts`) replaces `useNavigate` with a fresh
 // no-op spy for every test in the suite. That is why no existing test could
@@ -142,6 +143,12 @@ function renderApp(home: ReactNode) {
 }
 
 const location = () => screen.getByTestId('location').textContent;
+
+// The card sits on the dashboard, which only a signed-in person sees; the pack
+// is fetched only then.
+beforeEach(() => {
+  useAuthStore.setState({ isAuthenticated: true });
+});
 
 describe('RegionalPackCard, no pack active', () => {
   beforeEach(() => {
