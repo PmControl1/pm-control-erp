@@ -534,3 +534,5 @@ email-delivery-failures*.jsonl
 # End-to-end harness: run output and the test stack's generated secrets
 /harness/results/
 /harness/.state/
+# Downloaded and generated sample files: fetched or built at run time, never committed
+/harness/.samples/
