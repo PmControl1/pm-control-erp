@@ -523,6 +523,17 @@ function isAuthEndpoint(path: string): boolean {
  * must never reach this path; that distinction is what stops a single
  * incidental error from logging the whole session out.
  */
+/**
+ * Pages a signed-out person is meant to be on: signing in or up, recovering a
+ * password, finishing a sign-in. A 401 there is what being signed out looks
+ * like, not a session that just ended, so it must not send them elsewhere. A
+ * password-reset link opened signed out used to land on the login page, its
+ * token lost, because a branding request on the reset page got a 401.
+ */
+export function isSignedOutPage(pathname: string): boolean {
+  return pathname.includes('/login') || ['/register', '/forgot-password', '/auth/'].some((p) => pathname.startsWith(p));
+}
+
 function forceLogoutRedirect(path: string, statusText: string, everywhere = false): void {
   logApiError(path, 401, statusText);
   // Only a refresh token the server refused ends the session for every tab.
@@ -530,7 +541,7 @@ function forceLogoutRedirect(path: string, statusText: string, everywhere = fals
   // is this tab's problem, and the others carry on.
   if (everywhere) useAuthStore.getState().logout();
   else useAuthStore.getState().logoutThisTab();
-  if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+  if (typeof window !== 'undefined' && !isSignedOutPage(window.location.pathname)) {
     window.location.href = '/login';
   }
 }

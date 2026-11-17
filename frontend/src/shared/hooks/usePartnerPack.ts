@@ -12,6 +12,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '@/shared/lib/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export interface PartnerPackBranding {
   primary_color: string;
@@ -110,9 +111,13 @@ export interface InstalledPacksResponse {
 }
 
 export function usePartnerPack() {
+  // The server answers this for signed-in users only. Asked signed out (on
+  // the login or password-reset page) it returns 401, which is noise at best.
+  const signedIn = useAuthStore((s) => s.isAuthenticated);
   return useQuery<PartnerPackResponse>({
     queryKey: ['partner-pack', 'current'],
     queryFn: () => apiGet<PartnerPackResponse>('/v1/partner-pack/current'),
+    enabled: signedIn,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
