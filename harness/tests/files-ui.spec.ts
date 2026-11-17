@@ -151,8 +151,18 @@ test('a PDF put into the BIM models folder is explained on screen, not silently 
   const body = (await answer.json().catch(() => ({}))) as { detail?: unknown };
   const detail = typeof body.detail === 'string' ? body.detail : String((body.detail as { message?: string })?.message ?? '');
   expect(detail, 'the refusal should carry a reason').not.toBe('');
-  // The reason must reach the person, not only the network tab.
-  await expect(page.getByText(detail.slice(0, 40), { exact: false }).first()).toBeVisible({ timeout: 15_000 });
+  // The reason must reach the person, not only the network tab. The page
+  // translates refusal codes, so look at what the upload queue shows for this
+  // file rather than for the server's English sentence.
+  const row = page
+    .locator('div')
+    .filter({ has: page.getByText(pdf.name, { exact: true }) })
+    .filter({ has: page.locator('.text-semantic-error') })
+    .last();
+  await expect(row, `the upload queue should list ${pdf.name} as failed`).toBeVisible({ timeout: 15_000 });
+  const shown = (await row.locator('.text-semantic-error').last().innerText()).trim();
+  test.info().annotations.push({ type: 'shown to the person', description: shown });
+  expect(shown, 'the person should see why, not only that it failed').not.toMatch(/^(Failed|Неуспешно|Грешка|)$/i);
 });
 
 test('an IFC uploaded on a new project\'s Documents page, with no folder chosen, becomes a model', async ({ page, request }) => {
