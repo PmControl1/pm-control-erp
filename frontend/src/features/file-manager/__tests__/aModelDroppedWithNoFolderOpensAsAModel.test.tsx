@@ -108,14 +108,11 @@ describe('uploading with no folder chosen', () => {
     expect(task!.message).toBe('Kept as a document: Неподдържана версия на чертежа.');
   });
 
-  it('does not turn "try again later" or a server failure into a document', async () => {
-    answers[BIM] = [
-      { status: 429, body: { detail: 'Too many uploads.' } },
-      { status: 500, body: { detail: 'Internal error' } },
-    ];
-    const tasks = await uploadAll([small('първи.ifc'), small('втори.ifc')], null);
-    expect(sentTo()).toEqual([BIM, BIM]);
-    expect(tasks.map((t) => t.status)).toEqual(['error', 'error']);
+  it('does not turn a server failure into a document', async () => {
+    answers[BIM] = [{ status: 500, body: { detail: 'Internal error' } }];
+    const [task] = await uploadAll([small('първи.ifc')], null);
+    expect(sentTo()).toEqual([BIM]);
+    expect(task!.status).toBe('error');
   });
 
   it('a large document with no model extension still takes the resumable path', async () => {

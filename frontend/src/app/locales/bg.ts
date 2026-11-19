@@ -11272,6 +11272,8 @@ const resource = {
     "files.upload_too_large": "Файловете са твърде големи",
     "files.upload_too_large_msg": "{{count}} файл(а) надхвърлят лимита от 100 MB и бяха пропуснати.",
     "files.kept_as_document": "Запазен като документ: {{reason}}",
+    "files.upload_waiting": "Изчаква качване…",
+    "files.upload_throttled": "Сървърът поиска изчакване; ново изпращане след {{seconds}} с",
     "files.upload_queued": "{{count}} файл(а) в опашката",
     "files.uploading": "Качване…",
     "files.uploaded": "Качено",

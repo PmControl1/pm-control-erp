@@ -8266,6 +8266,8 @@ const resource = {
     "files.upload_too_large": "Files too large",
     "files.upload_too_large_msg": "{{count}} file(s) exceed the 100 MB limit and were skipped.",
     "files.kept_as_document": "Kept as a document: {{reason}}",
+    "files.upload_waiting": "Waiting to upload…",
+    "files.upload_throttled": "The server asked to wait; sending again in {{seconds}} s",
     "files.upload_queued": "{{count}} file(s) queued",
     "files.uploading": "Uploading…",
     "files.uploaded": "Uploaded",
