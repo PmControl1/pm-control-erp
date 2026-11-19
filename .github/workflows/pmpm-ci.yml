@@ -6,7 +6,10 @@ name: PM CI
 #   backend   ruff, then the backend unit tests in 6 shards against PostgreSQL 16
 #   frontend  ESLint and the Vitest suite
 #   typecheck full TypeScript diagnostics in memory-bounded compiler batches
-#   image     builds and smoke-tests the production image on PRs, publishes on main
+#   image     builds and smoke-tests the production image, runs the end-to-end
+#             harness against it (harness/README.md); publishes on main
+#   harness-guard  on PRs, fails when existing harness checks lose lines, so a
+#             weakened check cannot slip through unnoticed
 #
 # The `changes` job skips the backend or frontend half when a change does not
 # touch it, so a frontend-only fix does not pay for six backend shards. That
@@ -247,6 +250,45 @@ jobs:
       - name: Maintenance failure paths
         run: python -m unittest discover -s deploy/pmpm/tests -v
 
+  harness-guard:
+    # New harness tests only add lines. A pull request that removes or rewrites
+    # lines in existing checks goes red here, so the owner reads those lines
+    # before merging: a check should only ever get weaker on purpose.
+    name: Existing harness checks unchanged
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Compare with the base branch
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          changes="$(git diff --numstat "$PR_BASE" "$GITHUB_SHA" -- harness/tests harness/lib | awk '$2 > 0')"
+          if [ -z "$changes" ]; then
+            echo "No existing harness check lost a line."
+            exit 0
+          fi
+          echo "::error::This pull request removes or rewrites lines in existing harness checks. Read them before merging."
+          echo "added removed file"
+          echo "$changes"
+          {
+            echo "### Existing harness checks changed"
+            echo
+            echo "Read these before merging: a check should only get weaker on purpose."
+            echo
+            echo '```'
+            echo "added removed file"
+            echo "$changes"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
   image:
     name: Docker image
     needs: [backend-result, frontend, typecheck, deployment]
@@ -261,7 +303,7 @@ jobs:
               || (github.ref == 'refs/heads/main'
                   && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped'))) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     permissions:
       contents: read
       packages: write
@@ -307,6 +349,62 @@ jobs:
         env:
           IMAGE: ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
         run: bash deploy/pmpm/smoke.sh "$IMAGE"
+
+      # The harness: a real browser against a throwaway copy of this image,
+      # run with the production Compose file, synthetic data, an email catcher
+      # and a stand-in AI. A failure here also stops publication on main.
+      - name: Harness - set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: harness/package-lock.json
+
+      - name: Harness - install
+        id: harness-install
+        working-directory: harness
+        run: |
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npx playwright install --with-deps chromium
+
+      - name: Harness - start the test stack
+        id: harness-stack
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
+        run: bash harness/stack/stack.sh up "$IMAGE"
+
+      - name: Harness - run
+        working-directory: harness
+        run: npx playwright test
+
+      - name: Harness - report
+        if: ${{ !cancelled() && steps.harness-install.outcome == 'success' }}
+        run: |
+          if [ "${{ steps.harness-stack.outcome }}" != "skipped" ]; then
+            bash harness/stack/stack.sh logs harness/results/server-logs || true
+          fi
+          # Into the job summary and the job log both: the log is readable
+          # where the report artifact cannot be downloaded.
+          node harness/scripts/summarize.mjs harness/results | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ -f harness/results/server-logs/app.log ]; then
+            echo "::group::Server warnings and errors (last 150)"
+            grep -E "WARNING|ERROR|CRITICAL|Traceback|Exception" harness/results/server-logs/app.log | tail -150 || true
+            echo "::endgroup::"
+          fi
+
+      - name: Harness - upload the report
+        if: ${{ !cancelled() && steps.harness-install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report
+          path: harness/results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Harness - stop the test stack
+        if: ${{ always() && steps.harness-stack.outcome != 'skipped' }}
+        run: bash harness/stack/stack.sh down || true
 
       - uses: docker/login-action@v3
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}

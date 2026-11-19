@@ -509,7 +509,10 @@ _OPENAI_COMPAT_CONFIG = {
         "model": GROQ_MODEL,
     },
     "deepseek": {
-        "url": "https://api.deepseek.com/chat/completions",
+        # The server operator may send DeepSeek calls to another
+        # OpenAI-compatible endpoint (a gateway, or the test harness's
+        # stand-in AI). Only the process environment sets it, never a user.
+        "url": os.environ.get("OE_DEEPSEEK_URL") or "https://api.deepseek.com/chat/completions",
         "model": DEEPSEEK_MODEL,
     },
     "together": {

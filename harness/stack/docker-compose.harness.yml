@@ -1,0 +1,59 @@
+# Test-stack overrides on top of deploy/pmpm/docker-compose.yml.
+#
+# The harness runs the production stack unchanged except for what a throwaway
+# copy on one machine needs: plain HTTP on a localhost port, an email catcher
+# instead of a mail server, and the stand-in AI instead of DeepSeek.
+#
+# Only harness/stack/stack.sh uses this file, always under a project name that
+# starts with pmpm-harness, so it never shares containers, volumes or ports
+# with a real installation (project "pmpm").
+#
+# Relative paths resolve from deploy/pmpm/, the first compose file's folder.
+
+services:
+  app:
+    depends_on:
+      mailpit:
+        condition: service_started
+      fake-ai:
+        condition: service_healthy
+    environment:
+      ALLOWED_ORIGINS: http://localhost:${HARNESS_PORT:-18080}
+      FRONTEND_URL: http://localhost:${HARNESS_PORT:-18080}
+      # Mailpit speaks plain SMTP on 1025 with no login.
+      SMTP_TLS: "false"
+      OE_DEEPSEEK_URL: http://fake-ai:8000/chat/completions
+
+  # The production Caddyfile, served over plain HTTP on a localhost port that
+  # cannot clash with a real installation's 80/443. stack.sh starts this
+  # instead of the production caddy service, whose host ports Compose
+  # overrides cannot take away.
+  harness-proxy:
+    image: caddy:2-alpine
+    depends_on:
+      - app
+    environment:
+      PMPM_DOMAIN: ":80"
+      PMPM_ACME_EMAIL: harness@example.com
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "127.0.0.1:${HARNESS_PORT:-18080}:80"
+
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    ports:
+      - "127.0.0.1:${HARNESS_MAIL_PORT:-18025}:8025"
+
+  fake-ai:
+    image: python:3.12-alpine
+    command: ["python", "-u", "/fake_ai.py"]
+    volumes:
+      - ../../harness/stack/fake_ai.py:/fake_ai.py:ro
+    ports:
+      - "127.0.0.1:${HARNESS_AI_PORT:-18001}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
