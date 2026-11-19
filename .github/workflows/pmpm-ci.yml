@@ -368,6 +368,27 @@ jobs:
           npm run typecheck
           npx playwright install --with-deps chromium
 
+      - name: Harness - set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: harness/samples/requirements.txt
+
+      - name: Harness - cache sample files
+        uses: actions/cache@v6
+        with:
+          path: harness/.samples
+          key: harness-samples-pr-${{ hashFiles('harness/samples/manifest.json') }}
+
+      - name: Harness - sample files
+        # Public samples (verified against manifest.json) and the synthetic
+        # edge-case pack. The small "pr" tier; the nightly run takes them all.
+        run: |
+          node harness/samples/fetch.mjs --tier pr
+          pip install -r harness/samples/requirements.txt
+          python harness/samples/generate.py --tier pr
+
       - name: Harness - start the test stack
         id: harness-stack
         env:

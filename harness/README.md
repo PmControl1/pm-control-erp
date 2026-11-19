@@ -17,6 +17,37 @@ this harness against it (the `Docker image` job in
 `.github/workflows/pmpm-ci.yml`). On `main`, a red harness stops the image
 from being published.
 
+## What it uploads
+
+Two kinds of files, neither stored in this repository (`harness/.samples/`
+is ignored). All test data is invented or comes from vendor and
+standards-body demo sets, never from a real project.
+
+- **Public demo samples** (`samples/manifest.json`): IFC 2x3/4/4.3 sample
+  scenes from buildingSMART, Autodesk's Revit sample projects, DWG from R14
+  to 2018 and DXF (LibreDWG test data), E57 point clouds, every EXIF photo
+  orientation, HEIC, glTF and BCF. `samples/fetch.mjs` downloads them and
+  checks each against its sha256 and size; CI caches them between runs.
+  Each entry records its source and licence.
+- **A synthetic pack** (`samples/generate.py`): Bulgarian КСС, contracts and
+  protocols, an A1 drawing, a scanned PDF, names that break naive code
+  (Cyrillic punctuation, `#%&;'`, emoji, 200 characters), empty, truncated,
+  password-protected and disguised files, two files with the same name, a
+  40-file batch, invented LAS/LAZ laser scans (about 100 MB nightly) and,
+  nightly, uploads just under and over the 500 MB limit.
+
+Each file goes through the upload path the Documents page would choose for
+it (`lib/upload.ts` mirrors `useFileUpload.ts`), and the test checks what the
+app made of it: a document must keep its name and download back byte for
+byte, a BIM model must finish processing with elements, a drawing must
+parse. A file meant to be refused must be refused with a reason. No file may
+ever get a server error.
+
+**Tiers.** Every pull request runs the `pr` tier (small, fast files). The
+**Harness nightly** workflow (`.github/workflows/pmpm-harness-nightly.yml`)
+runs everything against the image `main` last published, every night and on
+demand from the Actions tab.
+
 ## Reading a run
 
 The job summary lists each failed test with its error and, for every server
@@ -37,8 +68,10 @@ the same machine.
 
 ```bash
 bash harness/stack/stack.sh up ghcr.io/pmcontrol1/pm-control-erp:main   # or any image:tag
+node harness/samples/fetch.mjs --tier pr                # or --tier nightly for everything
+pip install -r harness/samples/requirements.txt && python3 harness/samples/generate.py --tier pr
 cd harness && npm ci && npx playwright install chromium
-npx playwright test            # npx playwright test --ui to watch it
+npx playwright test            # HARNESS_TIER=nightly for the full set; --ui to watch it
 npx playwright show-report results/html
 cd .. && bash harness/stack/stack.sh down   # deletes the copy and its data
 ```
@@ -57,6 +90,7 @@ http://localhost:18001/_harness/requests.
 | `stack/bootstrap.py` | A firm's first day: the owner's account, pinned as platform owner, AI on |
 | `stack/fake_ai.py` | The stand-in AI |
 | `lib/` | The watchdog, API, Mailpit and environment helpers |
+| `samples/` | The public sample manifest, its downloader, and the synthetic pack generator |
 | `tests/` | The checks |
 | `scripts/summarize.mjs` | Turns a run into the job summary |
 
