@@ -762,12 +762,13 @@ class DocumentService:
             ) from exc
 
         # Magic-byte validation - BLOCKED_EXTENSIONS only rejects known-bad
-        # names; this catches an attacker who renames evil.exe → evil.pdf.
+        # names; this catches an attacker who renames evil.exe → evil.pdf:
+        # the detector names Windows, Linux and macOS programs whatever
+        # they are called, and those are banned below.
         # ``xml`` / ``ole`` types included because DDC converters and many
-        # legitimate design files use those containers. Unknown binary
-        # blobs (detected == None) are tolerated so plain-text uploads
-        # (CSV, JSON, TXT) still work - the extension gate above still
-        # filters executables by name.
+        # legitimate design files use those containers. Unknown content
+        # (detected == None) is tolerated so plain-text uploads (CSV, JSON,
+        # TXT) still work.
         from app.core.file_signature import (
             ALLOWED_CAD_TYPES,
             ALLOWED_DOCUMENT_TYPES,

@@ -31,7 +31,7 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from app.core.file_signature import (
     ALLOWED_CAD_TYPES,
@@ -193,7 +193,7 @@ def _make_upload_file(filename: str, content: bytes) -> UploadFile:
 
 
 # Fake PE-header bytes (Windows Portable Executable).
-_PE_HEADER = b"MZ" + b"\x00" * 14  # detect() returns None for PE — not a named token
+_PE_HEADER = b"MZ" + b"\x00" * 14  # a Windows program; detect() names it "exe"
 
 
 # A legitimate PDF header.
@@ -212,51 +212,24 @@ async def test_upload_service_rejects_pe_disguised_as_pdf() -> None:
     upload = _make_upload_file("contract.pdf", _PE_HEADER * 100)
     project_id = uuid.uuid4()
 
-    # PE bytes are not in ALLOWED_DOCUMENT_TYPES | ALLOWED_CAD_TYPES and
-    # detect() returns None — the service treats unknown binary as tolerated
-    # UNLESS the extension is blocked.  MZ is not a blocked extension, so the
-    # gate that applies here is the "detected in BANNED_SIGNATURE_TOKENS"
-    # check (None is not banned) followed by the "detected not in allowed"
-    # check (None is not in allowed).
-    #
-    # Actually the service passes None through (unknown = tolerated for
-    # plain-text files).  The PE test therefore exercises the extension-gate
-    # fallback (.pdf is not blocked).  We verify that the upload proceeds
-    # without raising — the magic-byte gate tolerates unknown bytes rather
-    # than blocking everything unknown (to allow plain-text uploads).
-    #
-    # What we ACTUALLY test: the stored mime is NOT the attacker's header.
-
+    # The name and the request header both say PDF; the bytes say program.
+    # detect() names it "exe", which is banned, so nothing is created or
+    # written. (It used to return None here, which the service lets through
+    # as possible plain text, and the program was stored as a PDF.)
     repo_mock = AsyncMock()
-    created_doc = MagicMock()
-    created_doc.id = uuid.uuid4()
-    repo_mock.create = AsyncMock(return_value=created_doc)
     svc.repo = repo_mock
 
     with (
         patch("app.modules.documents.service.UPLOAD_BASE") as mock_base,
         patch("app.modules.documents.service.record_activity", new_callable=AsyncMock),
+        pytest.raises(HTTPException) as refused,
     ):
-        # Mock the path so no filesystem write occurs.
-        mock_path = MagicMock()
-        mock_path.__truediv__ = MagicMock(return_value=mock_path)
-        mock_path.mkdir = MagicMock()
-        mock_path.write_bytes = MagicMock()
-        mock_base.__truediv__ = MagicMock(return_value=mock_path)
+        await svc.upload_document(project_id, upload, "contract", "user-1")
 
-        doc = await svc.upload_document(
-            project_id,
-            upload,
-            "contract",
-            "user-1",
-        )
-
-    # The stored MIME must be derived from bytes, not from the request header
-    # ("application/pdf"). For unknown bytes detect() returns None → stored
-    # as "application/octet-stream", never the attacker-supplied value.
-    assert doc.mime_type != "application/pdf", (
-        "MIME type must not be taken from the attacker-controlled Content-Type header"
-    )
+    assert refused.value.status_code == 400
+    assert "exe" in str(refused.value.detail)
+    repo_mock.create.assert_not_called()
+    mock_base.__truediv__.assert_not_called()
 
 
 @pytest.mark.asyncio

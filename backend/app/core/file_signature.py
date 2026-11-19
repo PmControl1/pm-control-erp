@@ -28,6 +28,35 @@ from typing import Final
 SIGNATURE_BYTES_REQUIRED: Final[int] = 16
 
 
+# Mach-O, thin binaries in either byte order and 32 or 64 bits.
+_MACH_O_THIN: Final[frozenset[bytes]] = frozenset(
+    {b"\xfe\xed\xfa\xce", b"\xfe\xed\xfa\xcf", b"\xce\xfa\xed\xfe", b"\xcf\xfa\xed\xfe"}
+)
+
+
+def _native_executable(head: bytes) -> str | None:
+    """Return ``exe``, ``elf`` or ``mach-o`` for a program, else ``None``.
+
+    - Windows (PE and DOS): "MZ", then a binary DOS header. Text that happens
+      to start with "MZ" has no NUL bytes in it, so the header test keeps it
+      out.
+    - Linux and other Unix: 7F "ELF".
+    - macOS: the four Mach-O magics, and the universal ("fat") header
+      CA FE BA BE with a small architecture count. Java class files share
+      that magic but carry a version of 45 or more there, and are left alone.
+    """
+    if head[:2] == b"MZ" and b"\x00" in head[2:SIGNATURE_BYTES_REQUIRED]:
+        return "exe"
+    if head[:4] == b"\x7fELF":
+        return "elf"
+    if head[:4] in _MACH_O_THIN:
+        return "mach-o"
+    if head[:4] in (b"\xca\xfe\xba\xbe", b"\xca\xfe\xba\xbf") and len(head) >= 8:
+        if 0 < int.from_bytes(head[4:8], "big") < 45:
+            return "mach-o"
+    return None
+
+
 def detect(head: bytes) -> str | None:
     """Return a symbolic type token for *head* (first bytes of a file).
 
@@ -37,6 +66,13 @@ def detect(head: bytes) -> str | None:
     """
     if not head:
         return None
+
+    # - Native executables - checked first so that no renaming gets one
+    # past an upload gate. Named rather than left as ``None``, because
+    # ``None`` means "plain text, probably" and is let through.
+    native = _native_executable(head)
+    if native is not None:
+        return native
 
     # - PDF - "%PDF-" at offset 0 (allows for a few bytes of leading
     # whitespace / BOM which some scanners emit).
@@ -122,12 +158,12 @@ ALLOWED_GAEB_TYPES: Final[frozenset[str]] = frozenset({"xml"})
 ALLOWED_PHOTO_TYPES: Final[frozenset[str]] = frozenset({"jpeg", "png", "gif", "webp", "heic", "heif", "tiff"})
 
 # Signature tokens that must NEVER be stored even if the surrounding
-# allow-list would tolerate them. ``detect`` does not currently surface
-# PE/ELF/Mach-O/script types as named tokens - unknown blobs return
-# ``None`` so that plain text (CSV/JSON/TXT) still uploads - but listing
-# the names here keeps the policy contract explicit and lets us tighten
-# the detector later (e.g. add an ``exe`` token) without touching the
-# upload sites.
+# allow-list would tolerate them. ``detect`` names native programs
+# (``exe``, ``elf``, ``mach-o``) whatever the file is called. Scripts and
+# installers are not told apart by their first bytes (a script is text, an
+# MSI is an OLE container), so the extension gate still covers those; the
+# names stay here so the upload sites need no change if the detector learns
+# them.
 BANNED_SIGNATURE_TOKENS: Final[frozenset[str]] = frozenset({"exe", "elf", "mach-o", "shellscript", "batch", "msi"})
 
 # Mapping from detector tokens to canonical IANA MIME types. Used by
@@ -217,6 +253,10 @@ if __name__ == "__main__":
         (b"\x89PNG\r\n\x1a\n", "png"),
         (b"\xff\xd8\xff\xe0", "jpeg"),
         (b"random nonsense", None),
+        (b"MZ\x90\x00\x03\x00\x00\x00\x04\x00\x00\x00\xff\xff", "exe"),
+        (b"MZ is where the text starts", None),
+        (b"\x7fELF\x02\x01\x01\x00", "elf"),
+        (b"\xcf\xfa\xed\xfe\x0c\x00\x00\x01", "mach-o"),
         (b"<?xml version='1.0'?><svg/>", "xml"),
     ]
     failures = 0
