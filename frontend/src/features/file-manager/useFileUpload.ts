@@ -10,6 +10,9 @@
  *   - DWG / DXF drawings           -> POST /api/v1/dwg_takeoff/drawings/upload/
  *   - site photos                  -> POST /api/v1/documents/photos/upload/
  *   - everything else              -> POST /api/v1/documents/upload/
+ * With no folder chosen (the only choice on a new project), a model or a
+ * drawing still goes to the pipeline that can open it, by its extension; if
+ * that pipeline refuses it, it is kept as a document, as it always was.
  * Large document uploads take the resumable chunked client; the dedicated
  * BIM/DWG/photo endpoints stream server-side. Progress rolls up into the
  * same FloatingQueuePanel used everywhere else.
@@ -29,6 +32,7 @@ import type { FileKind } from './types';
 // Name-only mesh check (three.js-free) so recognising a 3D file here does not
 // pull the BIM viewer's loader graph into the file-manager bundle.
 import { isMeshImportFile } from '@/features/bim/meshImport/formats';
+import { BIM_MODEL_EXTENSIONS, HANDOFF_EXTENSIONS } from '@/features/bim/uploadFormats';
 
 /** Map FileKind -> documents-module category. Used only by the documents
  * pipeline (the kinds that don't have a dedicated endpoint). */
@@ -36,6 +40,28 @@ function categoryForKind(kind: FileKind | null): string {
   if (kind === 'photo') return 'photo';
   if (kind === 'sheet') return 'drawing';
   return 'other';
+}
+
+const MODEL_EXTENSIONS = new Set<string>(BIM_MODEL_EXTENSIONS);
+const DRAWING_EXTENSIONS = new Set<string>(HANDOFF_EXTENSIONS);
+
+/** The pipeline a file belongs to when nobody chose a folder: ``.ifc`` and
+ *  ``.rvt`` are models, ``.dwg`` and ``.dxf`` drawings, the rest documents
+ *  (``null``). An IFC stored as a plain document has no viewer, no elements
+ *  and no quantities, which is what a dropped model used to get. */
+export function kindForUnfiledFile(name: string): FileKind | null {
+  const dot = name.lastIndexOf('.');
+  if (dot < 0) return null;
+  const ext = name.slice(dot).toLowerCase();
+  if (MODEL_EXTENSIONS.has(ext)) return 'bim_model';
+  if (DRAWING_EXTENSIONS.has(ext)) return 'dwg_drawing';
+  return null;
+}
+
+/** A refusal that says something about this file, as opposed to "try again
+ *  later" (429) or the server failing (5xx). */
+function refusedForWhatItIs(status: number): boolean {
+  return status >= 400 && status < 500 && status !== 429;
 }
 
 export interface UseFileUploadResult {
@@ -88,10 +114,7 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
 
       const token = useAuthStore.getState().accessToken;
       const cat = categoryForKind(kind);
-      // Non-null for BIM/DWG/photo kinds -> upload goes straight to that
-      // module's ingest endpoint (single-shot, server-streamed) instead of
-      // the documents pipeline / resumable client.
-      const directUrl = directUploadUrl(kind);
+      const documentsUrl = `/api/v1/documents/upload/?project_id=${projectId}&category=${cat}`;
       setUploading(true);
 
       // Count 3D mesh files in the batch so we can nudge the user toward the
@@ -106,7 +129,13 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
         // actually view and measure them.
         const isMesh = isMeshImportFile(file.name);
         if (isMesh) meshCount += 1;
-        const fileDirectUrl = isMesh ? null : directUrl;
+        // A folder someone chose is kept; with none, the extension decides.
+        const fileKind = kind ?? kindForUnfiledFile(file.name);
+        const routedByName = kind === null && fileKind !== null;
+        // Non-null for BIM/DWG/photo -> upload goes straight to that module's
+        // ingest endpoint (single-shot, server-streamed) instead of the
+        // documents pipeline / resumable client.
+        const fileDirectUrl = isMesh ? null : directUploadUrl(fileKind);
         const taskId = uuid();
         addQueueTask({
           id: taskId,
@@ -120,16 +149,16 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
         // Fire-and-forget — same pattern as DocumentsPage so progress shows
         // up in the global FloatingQueuePanel.
         (async () => {
-          const markDone = () => {
+          const markDone = (message?: string) => {
             updateQueueTask(taskId, {
               status: 'completed',
               progress: 100,
-              message: t('files.uploaded', { defaultValue: 'Uploaded' }),
+              message: message ?? t('files.uploaded', { defaultValue: 'Uploaded' }),
               completedAt: Date.now(),
             });
             queryClient.invalidateQueries({ queryKey: [fileManagerKeys.tree, projectId] });
             queryClient.invalidateQueries({ queryKey: [fileManagerKeys.list, projectId] });
-            if (kind === 'photo') {
+            if (fileKind === 'photo') {
               queryClient.invalidateQueries({
                 predicate: (q) =>
                   q.queryKey.some(
@@ -146,11 +175,9 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
             });
           };
 
-          // Large document files take the resumable, chunked path: real
-          // progress and per-chunk retry. Small files keep the single-shot
-          // multipart upload. BIM/DWG/photo always take the single-shot path
-          // to their own endpoint (which streams server-side regardless).
-          if (!fileDirectUrl && file.size >= RESUMABLE_THRESHOLD_BYTES) {
+          /** Large document files take the resumable, chunked path: real
+           *  progress and per-chunk retry. */
+          const sendResumable = async (doneMessage?: string) => {
             try {
               updateQueueTask(taskId, {
                 message: t('files.uploading_chunked', {
@@ -162,7 +189,7 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
                 category: cat,
                 onProgress: (percent) => updateQueueTask(taskId, { progress: percent }),
               });
-              markDone();
+              markDone(doneMessage);
             } catch (err) {
               markError(
                 err instanceof Error
@@ -172,10 +199,10 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
                     }),
               );
             }
-            return;
-          }
+          };
 
-          try {
+          /** One multipart POST, with progress estimated while it runs. */
+          const sendOnce = async (url: string): Promise<Response> => {
             const formData = new FormData();
             formData.append('file', file);
 
@@ -189,26 +216,54 @@ export function useFileUpload(projectId: string | null | undefined): UseFileUplo
                 updateQueueTask(taskId, { progress: task.progress + 5 });
               }
             }, estimatedMs / 18);
-
-            const res = await fetch(
-              fileDirectUrl ?? `/api/v1/documents/upload/?project_id=${projectId}&category=${cat}`,
-              { method: 'POST', headers, body: formData },
-            );
-
-            clearInterval(progressTimer);
-
-            if (!res.ok) {
-              let detail = file.name;
-              try {
-                const body = await res.json();
-                detail = extractErrorMessageFromBody(body) ?? detail;
-              } catch {
-                /* ignore — keep filename */
-              }
-              markError(detail);
-            } else {
-              markDone();
+            try {
+              return await fetch(url, { method: 'POST', headers, body: formData });
+            } finally {
+              clearInterval(progressTimer);
             }
+          };
+
+          const reasonFrom = async (res: Response): Promise<string> => {
+            try {
+              const body = await res.json();
+              return extractErrorMessageFromBody(body) ?? file.name;
+            } catch {
+              return file.name;
+            }
+          };
+
+          // Small documents keep the single-shot multipart upload.
+          // BIM/DWG/photo always take the single-shot path to their own
+          // endpoint (which streams server-side regardless).
+          if (!fileDirectUrl && file.size >= RESUMABLE_THRESHOLD_BYTES) {
+            await sendResumable();
+            return;
+          }
+
+          try {
+            const res = await sendOnce(fileDirectUrl ?? documentsUrl);
+            if (res.ok) {
+              markDone();
+              return;
+            }
+            const reason = await reasonFrom(res);
+            if (!(routedByName && refusedForWhatItIs(res.status))) {
+              markError(reason);
+              return;
+            }
+            // Nobody asked for a model or a drawing, so a refusal there must
+            // not lose the file: keep it as a document, as before, and say why.
+            const keptAsDocument = t('files.kept_as_document', {
+              defaultValue: 'Kept as a document: {{reason}}',
+              reason,
+            });
+            if (file.size >= RESUMABLE_THRESHOLD_BYTES) {
+              await sendResumable(keptAsDocument);
+              return;
+            }
+            const asDocument = await sendOnce(documentsUrl);
+            if (asDocument.ok) markDone(keptAsDocument);
+            else markError(await reasonFrom(asDocument));
           } catch (err) {
             markError(err instanceof Error ? err.message : 'Upload failed');
           }
